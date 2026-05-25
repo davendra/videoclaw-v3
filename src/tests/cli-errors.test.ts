@@ -7,6 +7,7 @@ import {
   VclawError,
   errorResponse,
   ALL_ERROR_CODES,
+  EXIT_CODES,
 } from '../video/errors.js';
 
 describe('error catalog', () => {
@@ -51,5 +52,23 @@ describe('error catalog', () => {
     assert.equal(err.code, 'invalid_slug');
     assert.equal(err.message, 'Bad slug: --project');
     assert.ok(err instanceof Error);
+  });
+
+  it('EXIT_CODES TS map matches schemas/video/errors.json exitCode per entry', async () => {
+    const catalogRaw = await readFile(
+      join(process.cwd(), 'schemas', 'video', 'errors.json'),
+      'utf-8',
+    );
+    const catalog = JSON.parse(catalogRaw) as {
+      codes: Array<{ code: string; exitCode: 1 | 2 | 3 }>;
+    };
+    for (const entry of catalog.codes) {
+      assert.equal(
+        EXIT_CODES[entry.code as ErrorCode],
+        entry.exitCode,
+        `EXIT_CODES['${entry.code}'] should be ${entry.exitCode} per JSON catalog`,
+      );
+      assert.ok([1, 2, 3].includes(entry.exitCode), `exitCode for ${entry.code} should be 1/2/3`);
+    }
   });
 });

@@ -22,6 +22,8 @@ import { doctorProject } from '../video/doctor.js';
 import { doctorPortfolio } from '../video/doctor-portfolio.js';
 import { importLegacyProjects } from '../video/legacy-import.js';
 import { listProjects, isProjectSlug } from '../video/projects.js';
+import { exitWith, writeOutput } from '../video/cli-output.js';
+import { VclawError } from '../video/errors.js';
 
 const RESERVED_SLUG_NAMES = new Set([
   'history',
@@ -39,31 +41,41 @@ const RESERVED_SLUG_NAMES = new Set([
 
 function validateInitSlug(value: string): void {
   if (value.length < 3 || value.length > 64) {
-    throw new Error(
+    throw new VclawError(
+      'invalid_slug',
       `video init: slug must be 3-64 chars (got ${value.length}): ${JSON.stringify(value)}`,
+      { slug: value, reason: 'length' },
     );
   }
   if (value.startsWith('-')) {
-    throw new Error(
+    throw new VclawError(
+      'invalid_slug',
       `video init: slug cannot start with '-' (looks like a CLI flag): ${JSON.stringify(value)}. ` +
       `If you meant to pass --project as a flag value, that's the argv-as-slug bug — run \`vclaw video init <real-slug>\` instead.`,
+      { slug: value, reason: 'leading-hyphen' },
     );
   }
   if (!isProjectSlug(value)) {
-    throw new Error(
+    throw new VclawError(
+      'invalid_slug',
       `video init: slug must match /^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/ (got ${JSON.stringify(value)}). ` +
       `Lowercase letters, digits, and single hyphens only; must start and end with [a-z0-9].`,
+      { slug: value, reason: 'pattern' },
     );
   }
   if (RESERVED_SLUG_NAMES.has(value)) {
-    throw new Error(
+    throw new VclawError(
+      'invalid_slug',
       `video init: slug ${JSON.stringify(value)} is a reserved per-project directory name. ` +
       `Reserved: ${[...RESERVED_SLUG_NAMES].sort().join(', ')}.`,
+      { slug: value, reason: 'reserved' },
     );
   }
   if (value.includes('--')) {
-    throw new Error(
+    throw new VclawError(
+      'invalid_slug',
       `video init: slug cannot contain consecutive hyphens '--' (got ${JSON.stringify(value)}).`,
+      { slug: value, reason: 'double-hyphen' },
     );
   }
 }
@@ -1082,7 +1094,11 @@ async function handleVideoApprove(args: string[]): Promise<void> {
 async function handleVideoInit(args: string[]): Promise<void> {
   const slug = args[0];
   if (!slug) {
-    throw new Error('video init requires a project slug');
+    throw new VclawError(
+      'missing_required_flag',
+      'video init requires a project slug',
+      { flag: '<slug>' },
+    );
   }
   validateInitSlug(slug);
   const root = parseFlagValue(args, '--root') ?? process.cwd();
@@ -2199,7 +2215,11 @@ async function handleVideoExecutionPlan(args: string[]): Promise<void> {
 async function handleVideoExecute(args: string[]): Promise<void> {
   const slug = parseFlagValue(args, '--project');
   if (!slug) {
-    throw new Error('video execute requires --project <slug>');
+    throw new VclawError(
+      'missing_required_flag',
+      'video execute requires --project <slug>',
+      { missing: ['--project'] },
+    );
   }
   const root = parseFlagValue(args, '--root') ?? process.cwd();
   const mode = (parseFlagValue(args, '--mode') ?? 'storyboard') as VideoProductionMode;
@@ -2612,7 +2632,15 @@ async function handleVideoBrief(args: string[]): Promise<void> {
   const title = parseFlagValue(args, '--title');
   const intent = parseFlagValue(args, '--intent');
   if (!slug || !title || !intent) {
-    throw new Error('video brief requires --project <slug>, --title <title>, and --intent <intent>');
+    const missing: string[] = [];
+    if (!slug) missing.push('--project');
+    if (!title) missing.push('--title');
+    if (!intent) missing.push('--intent');
+    throw new VclawError(
+      'missing_required_flag',
+      'video brief requires --project <slug>, --title <title>, and --intent <intent>',
+      { missing },
+    );
   }
   const root = parseFlagValue(args, '--root') ?? process.cwd();
   const mode = (parseFlagValue(args, '--mode') ?? 'storyboard') as VideoProductionMode;
@@ -2684,7 +2712,14 @@ async function handleVideoStoryboard(args: string[]): Promise<void> {
   const templateId = parseFlagValue(args, '--template');
   const scenes = parseRepeatableFlag(args, '--scene');
   if (!slug || (scenes.length === 0 && !templateId)) {
-    throw new Error('video storyboard requires --project <slug> and either --scene <text> or --template <template-id>');
+    const missing: string[] = [];
+    if (!slug) missing.push('--project');
+    if (scenes.length === 0 && !templateId) missing.push('--scene|--template');
+    throw new VclawError(
+      'missing_required_flag',
+      'video storyboard requires --project <slug> and either --scene <text> or --template <template-id>',
+      { missing },
+    );
   }
   const charactersByScene = parseSceneCharacters(args);
   const root = parseFlagValue(args, '--root') ?? process.cwd();
@@ -2767,7 +2802,14 @@ async function handleVideoAssets(args: string[]): Promise<void> {
   const slug = parseFlagValue(args, '--project');
   const assetSpecs = parseRepeatableFlag(args, '--asset');
   if (!slug || assetSpecs.length === 0) {
-    throw new Error('video assets requires --project <slug> and at least one --asset <kind:path[:sceneIndex][:backend]>');
+    const missing: string[] = [];
+    if (!slug) missing.push('--project');
+    if (assetSpecs.length === 0) missing.push('--asset');
+    throw new VclawError(
+      'missing_required_flag',
+      'video assets requires --project <slug> and at least one --asset <kind:path[:sceneIndex][:backend]>',
+      { missing },
+    );
   }
   const root = parseFlagValue(args, '--root') ?? process.cwd();
   const workspace = await ensureProjectWorkspace(slug, root);
@@ -3073,7 +3115,6 @@ export async function main(): Promise<void> {
 
   if (command === 'schema') {
     const { buildSchemaDump } = await import('../video/cli-schema.js');
-    const { writeOutput } = await import('../video/cli-output.js');
     writeOutput(buildSchemaDump(), { json: true });
     return;
   }
@@ -3532,10 +3573,20 @@ export async function main(): Promise<void> {
     return;
   }
 
-  printHelp();
-  process.exitCode = 1;
+  const attemptedSubcommand = subcommand
+    ? `${command} ${subcommand}`
+    : command;
+  throw new VclawError(
+    'unknown_subcommand',
+    `Unknown subcommand: ${attemptedSubcommand}. Run \`vclaw schema --json\` for the full command list.`,
+    { command, subcommand: subcommand ?? null },
+  );
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  await main();
+  try {
+    await main();
+  } catch (err) {
+    exitWith(err);
+  }
 }

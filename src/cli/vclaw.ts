@@ -3630,6 +3630,21 @@ export async function main(): Promise<void> {
     return;
   }
 
+  if (command === 'mcp') {
+    const verb = videoArgs[0];
+    if (verb !== 'serve') {
+      throw new VclawError(
+        'unknown_subcommand',
+        `vclaw mcp: unknown verb '${verb ?? ''}'. Only 'serve' is supported.`,
+        { command, subcommand: `mcp ${verb ?? ''}`.trim() },
+      );
+    }
+    const { startMcpServer } = await import('../mcp/index.js');
+    await startMcpServer();
+    // startMcpServer runs until stdin closes; control returns then.
+    return;
+  }
+
   if (command === 'veo') {
     const { spawnVeo } = await import('../video/veo-subprocess.js');
     const verb = videoArgs[0];

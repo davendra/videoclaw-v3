@@ -141,6 +141,9 @@ const COMMANDS: CommandSpec[] = [
   { name: 'veo useapi:gif', usage: 'vclaw veo useapi:gif --media-id <id> --output-file <path>', description: 'Convert a Veo video to GIF (free, no CAPTCHA).' },
   { name: 'veo useapi:upscale', usage: 'vclaw veo useapi:upscale --media-id <id> --resolution 1080p|4k', description: 'Upscale a Veo video.' },
 
+  // --- mcp server ---
+  { name: 'mcp serve', usage: 'vclaw mcp serve', description: 'Start the videoclaw MCP server (stdio) exposing read-only project introspection to MCP-aware agent hosts.' },
+
   // --- introspection ---
   { name: 'schema', usage: 'vclaw schema [--json]', description: 'Dump the full v3 contract (commands, flags, artifact schemas, error codes, exit codes) for agent introspection.' },
 ];

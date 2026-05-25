@@ -1,4 +1,0 @@
-interface:
-  display_name: "Seedance Music Video Prompts"
-  short_description: "Create audio-native Seedance music-video prompt packs"
-  default_prompt: "Use $seedance-music-video-prompts to create a Seedance music-video prompt pack with character sheets, beat-sync shots, lip-sync shots, world-building prompts, and verification notes."

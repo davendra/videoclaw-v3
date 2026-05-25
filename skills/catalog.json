@@ -153,13 +153,6 @@
       "status": "imported"
     },
     {
-      "id": "seedance-music-video-prompts",
-      "category": "video",
-      "status": "ported-from-videoclaw",
-      "specializes": "seedance-prompts",
-      "role": "specialist"
-    },
-    {
       "id": "seedance-prompts",
       "category": "video",
       "status": "imported"

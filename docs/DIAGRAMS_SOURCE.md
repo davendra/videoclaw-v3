@@ -109,7 +109,6 @@ flowchart LR
     VF --> CC["character-creator"]
     VF --> CL["character-library"]
     VF --> SP["seedance-prompts"]
-    VF --> SMP["seedance-music-video-prompts"]
     VF --> VPO["video-portfolio-ops"]
     VF --> VPH["video-production-handoff"]
     VF --> VRR["video-release-readiness"]

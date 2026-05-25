@@ -1,5 +1,16 @@
 # CLAUDE.md
 
+> **As of videoclaw v3.0.0-alpha.0:** The standalone Bun CLI surface
+> documented in this file (`bun run flow.ts <verb>`) is being superseded
+> by `vclaw veo <verb>` in the main TS CLI. The Bun subprocess is still
+> required for Google Flow / Puppeteer access — it's just wrapped now.
+>
+> **Prefer:** `vclaw veo status`, `vclaw veo list`, `vclaw veo useapi:health`, etc.
+>
+> **Legacy use:** `bun run flow.ts status` still works for now (no
+> deletion in v3.0). Scheduled for soft-deprecation in v3.x and likely
+> removal in v4.0.
+
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Project Overview

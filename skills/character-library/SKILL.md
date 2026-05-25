@@ -105,6 +105,6 @@ Minimum fields:
 ## Related Surfaces
 
 - `skills/character-creator/SKILL.md`
-- `skills/director-video/SKILL.md`
+- `skills/movie-director/SKILL.md`
 - `vclaw video library clean`
 - `vclaw video create --gb-character Name:ID`

@@ -13,7 +13,7 @@ Use these canonical surfaces first:
 
 | Goal | Start With | Then Specialize Into |
 |---|---|---|
-| Generic video request | `video-framework` | `video-storyboard`, `video-analyze-template`, `video-clone-ad`, `video-replicator`, `director-video`, `video-production-handoff`, `video-review-ui-qa`, `video-portfolio-ops`, `video-release-readiness`, `ugc` |
+| Generic video request | `video-framework` | `video-storyboard`, `video-analyze-template`, `video-clone-ad`, `video-replicator`, `movie-director`, `video-production-handoff`, `video-review-ui-qa`, `video-portfolio-ops`, `video-release-readiness`, `ugc` |
 | Narrated presenter / host-led deck video | `brand-presenter` | `davendra-presenter`, `nex-presenter`, `bunty` |
 
 Compatibility/deep-reference surfaces remain available, but the preferred UX is:
@@ -33,7 +33,6 @@ Compatibility/deep-reference surfaces remain available, but the preferred UX is:
 - `video-review-ui-qa`
 - `video-portfolio-ops`
 - `video-release-readiness`
-- `director-video`
 - `movie-director`
 - `seedance-prompts`
 - `ugc`

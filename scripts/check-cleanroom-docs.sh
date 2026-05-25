@@ -8,7 +8,6 @@ cd "$ROOT_DIR"
 targets=(
   "README.md"
   "docs"
-  "skills/director-video"
   "skills/movie-director"
   "skills/seedance-prompts"
 )

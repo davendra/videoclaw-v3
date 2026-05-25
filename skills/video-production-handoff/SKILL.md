@@ -9,7 +9,7 @@ Use this skill when the operator or agent needs to decide whether a VideoClaw
 project is ready for execution, review, publish, or the next human handoff.
 
 This is a workflow skill, not a command wrapper. Prefer it after
-`video-framework`, `director-video`, or `video-storyboard` has created or
+`video-framework`, `movie-director`, or `video-storyboard` has created or
 updated a project.
 
 ## Core Rule

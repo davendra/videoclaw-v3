@@ -25,7 +25,7 @@ This skill is intentionally generic and repo-local.
 - it works against any final `.mp4`
 - it prefers `ffmpeg` and `ffprobe`
 - it does not assume a fixed project root
-- it complements `movie-director`, `director-video`, and `video-framework`
+- it complements `movie-director` and `video-framework`
 
 ## Standard Sequence
 
@@ -93,6 +93,5 @@ vclaw video archive-project --project <slug> [--root <path>] [--archive-dir <pat
 ## Related Skills
 
 - `skills/video-framework/SKILL.md`
-- `skills/director-video/SKILL.md`
 - `skills/movie-director/SKILL.md`
 - `skills/video-thumbnail-lab/SKILL.md`

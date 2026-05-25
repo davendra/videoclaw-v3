@@ -48,7 +48,7 @@ describe('skills catalog', () => {
     assert.ok(entries.some((entry) => entry.id === 'davendra-presenter' && entry.aliasOf === 'brand-presenter'));
     assert.ok(entries.some((entry) => entry.id === 'nex-presenter' && entry.aliasOf === 'brand-presenter'));
     assert.ok(entries.some((entry) => entry.id === 'bunty' && entry.aliasOf === 'brand-presenter'));
-    assert.ok(entries.some((entry) => entry.id === 'movie-director' && entry.specializes === 'director-video'));
+    assert.ok(entries.some((entry) => entry.id === 'movie-director' && entry.specializes === 'video-framework'));
     assert.ok(entries.some((entry) => entry.id === 'video-post' && entry.specializes === 'video-framework'));
     assert.ok(entries.some((entry) => entry.id === 'video-production-handoff' && entry.specializes === 'video-framework'));
     assert.ok(entries.some((entry) => entry.id === 'video-review-ui-qa' && entry.specializes === 'video-framework'));

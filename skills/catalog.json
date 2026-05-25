@@ -84,13 +84,6 @@
       "status": "imported"
     },
     {
-      "id": "director-video",
-      "category": "video",
-      "status": "imported",
-      "specializes": "video-framework",
-      "role": "specialist"
-    },
-    {
       "id": "doctor",
       "category": "workflow",
       "status": "imported"
@@ -114,7 +107,7 @@
       "id": "movie-director",
       "category": "video",
       "status": "imported",
-      "specializes": "director-video",
+      "specializes": "video-framework",
       "role": "specialist"
     },
     {
@@ -237,7 +230,7 @@
         "video-analyze-template",
         "video-clone-ad",
         "video-replicator",
-        "director-video",
+        "movie-director",
         "video-production-handoff",
         "video-review-ui-qa",
         "video-portfolio-ops",

@@ -103,7 +103,6 @@ flowchart LR
     VF --> VAT["video-analyze-template"]
     VF --> VCA["video-clone-ad"]
     VF --> VTL["video-thumbnail-lab"]
-    VF --> DV["director-video"]
     VF --> MD["movie-director"]
     VF --> UGC["ugc"]
     VF --> VP["video-post"]

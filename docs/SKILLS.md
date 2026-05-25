@@ -19,7 +19,7 @@ The library is **not** a flat bag of equally-preferred entry points. It uses a s
 | Role | Examples | When you reach for it |
 |---|---|---|
 | **Canonical entry** | `video-framework`, `brand-presenter` | Generic or unspecified video request — the entry skill routes into a specialist. |
-| **Specialist** | `video-storyboard`, `video-clone-ad`, `director-video`, `video-post`, ... | The mode is clearly known up front (e.g. "clone this ad", "storyboard these 6 scenes"). |
+| **Specialist** | `video-storyboard`, `video-clone-ad`, `movie-director`, `video-post`, ... | The mode is clearly known up front (e.g. "clone this ad", "storyboard these 6 scenes"). |
 | **Compatibility alias** | `davendra-presenter`, `nex-presenter`, `bunty` | Personal/brand presets that exist for discoverability — they all delegate into `brand-presenter`. |
 | **Workflow** | `autopilot`, `ralph`, `team`, `doctor`, `pipeline`, ... | Orchestration, debugging, and ops — independent of any one production mode. |
 
@@ -38,7 +38,6 @@ aliases as discovery handles rather than first-choice workflows.
 | 🎬 Video | [`video-analyze-template`](#video-analyze-template) | native clean-room | Reference video → reusable template packet. |
 | 🎬 Video | [`video-clone-ad`](#video-clone-ad) | native clean-room | Saved template → new product/brand using `clone-execute`. |
 | 🎬 Video | [`video-thumbnail-lab`](#video-thumbnail-lab) | native clean-room | Final render → thumbnail + platform variants. |
-| 🎬 Video | [`director-video`](#director-video) | imported | Character-consistent multi-scene Director-mode production with two-phase approval. |
 | 🎬 Video | [`movie-director`](#movie-director) | imported | Short-film production across 12 genres with interview/auto/hybrid entry modes. |
 | 🎬 Video | [`video-replicator`](#video-replicator) | imported (deep-surface) | 7-mode professional pipeline: COPY/CREATE/NARRATED/PRESENTATION/LONG-FORM/FILM/UGC. |
 | 🎬 Video | [`video-post`](#video-post) | imported | Post-render verify, social variants, thumbnails, archival. |
@@ -68,7 +67,7 @@ clean adapter boundaries. Picks the right specialist instead of forcing the user
 **Key features:**
 - Single intake surface for both clone-style and from-scratch video requests
 - Adapter pattern preserves legacy engine quality without inheriting legacy mess
-- Hands off to a specialist (storyboard, clone-ad, director-video, replicator, ugc, ...) once the mode is decided
+- Hands off to a specialist (storyboard, clone-ad, movie-director, replicator, ugc, ...) once the mode is decided
 - Useful as the default first-touch when the user's intent is ambiguous
 
 **When to reach for it:** Any open-ended video request — *"I want to make a video"*, *"can you do a video for X?"* —
@@ -167,24 +166,6 @@ the Gemini key pool to fill pacing, beats, keep/change guidance, and reusable va
 **When to reach for it:** *"generate a thumbnail for this render"*, *"make square and vertical promo cuts"*, *"package this final video for YouTube/Shorts/social"*.
 
 **Full guide:** [`skills/video-thumbnail-lab/SKILL.md`](../skills/video-thumbnail-lab/SKILL.md)
-
----
-
-### director-video
-
-**Role:** Character-consistent multi-scene Director-mode production with two-phase approval.
-**What it does:** Produces a multi-scene video by chaining Seedance clips with Go Bananas character refs
-and an LLM scene decomposer. Always writes `storyboard.md` for review **before** burning Seedance credits;
-renders only on explicit approval.
-**Key features:**
-- Two-phase gate: storyboard review then render (no surprise credit burn)
-- Go Bananas character anchoring for identity consistency across scenes
-- LLM-driven scene decomposition aware of provider safety constraints
-- Produces canonical clean-room artifacts at every stage
-
-**When to reach for it:** When the request is explicitly cinematic / multi-scene and identity consistency matters.
-
-**Full guide:** [`skills/director-video/SKILL.md`](../skills/director-video/SKILL.md)
 
 ---
 

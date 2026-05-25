@@ -1,5 +1,47 @@
 # Master Plan Alignment
 
+## v3 status (2026-05-25) — what ships today + honest gaps
+
+videoclaw is at **3.0.0-alpha.0**, the v3 unification line. Read this
+section first; the legacy alignment tracking below is historical context
+for the v2 merge.
+
+**Shipped and production-ready now (build green, 499 tests, `npm run check:release-readiness-lite` green, npm-publishable):**
+
+- **Agent-friendly CLI contract** (Slice 1): `vclaw schema --json` single-call
+  discovery; exit-code taxonomy (0/1/2/3); 23 stable string error codes;
+  JSON-default-on-non-TTY; noun-verb command aliases.
+- **Consolidated skills** (Slice 2): presenter family parametric via
+  `brand-profile.json`; `video-framework` as sole video front door;
+  `director-video`/`creative-brief`/`seedance-music-video-prompts` folded
+  into their canonical homes.
+- **Veo bridge** (Slice 4): `vclaw veo {status|list|history|resume|reset|cancel}`
+  + `vclaw veo useapi:*` wrap the Bun `vclaw-cli` as a subprocess.
+- **MCP server** (Slice 5): `vclaw mcp serve` exposes 5 read-only
+  introspection tools; `mcp/skills-pack/` ships 3 sample agent skills.
+- **Core video lifecycle**: init → brief → storyboard → assets → readiness →
+  plan → execute, with 4 production provider routes (`veo-direct`,
+  `veo-useapi`, `seedance-direct`, `runway-useapi`).
+
+**The one remaining feature gap — Slice 3 (Python fold), NOT yet shipped:**
+
+The final-assembly pipeline (TTS · music · slide animation · title cards ·
+FFmpeg stitch) still lives in the **Python scripts** under
+`skills/video-replicator/scripts/` (~9.2K LOC). Until Slice 3 lands, a
+pure `npm install -g videoclaw` does NOT give you the assemble stage
+without a working Python environment. The TS port is planned in 9
+sub-slices at `docs/superpowers/plans/2026-05-25-slice-3-python-fold.md`
+and is estimated at 2-3 months — it requires human video-quality review
+(eyeballing stitched output) and so is deliberately not executed
+autonomously. **`vclaw video assemble` does not exist yet.**
+
+Practical impact: v3 today is production-ready as a **provider-dispatch +
+project-state + agent-integration toolkit**. The end-to-end
+"deck/script → final narrated MP4" path still depends on the Python
+sidecar until Slice 3 completes.
+
+---
+
 Source plan:
 
 - `videoclaw/docs/superpowers/plans/2026-04-19-vclaw-video-unification-master-plan.md`

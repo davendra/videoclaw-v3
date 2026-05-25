@@ -133,6 +133,13 @@ const COMMANDS: CommandSpec[] = [
   { name: 'veo resume', usage: 'vclaw veo resume [batchId]', description: 'Resume a paused Veo batch.' },
   { name: 'veo reset', usage: 'vclaw veo reset', description: 'Reset failed Veo jobs to pending.' },
   { name: 'veo cancel', usage: 'vclaw veo cancel', description: 'Cancel current Veo batch.' },
+  { name: 'veo useapi:accounts', usage: 'vclaw veo useapi:accounts list|add [--cookies <path>]', description: 'Manage useapi.net accounts (via Bun bridge).' },
+  { name: 'veo useapi:captcha', usage: 'vclaw veo useapi:captcha list | --provider <name> --key <key>', description: 'Manage useapi.net CAPTCHA providers.' },
+  { name: 'veo useapi:health', usage: 'vclaw veo useapi:health', description: 'useapi.net account health + history.' },
+  { name: 'veo useapi:image', usage: 'vclaw veo useapi:image --image-prompt "<text>" [--image-model imagen-4|nano-banana|nano-banana-pro] [--ref <url> ...] [--yes]', description: 'Generate images via useapi.net (Imagen-4 / nano-banana family).' },
+  { name: 'veo useapi:image:upscale', usage: 'vclaw veo useapi:image:upscale --media-id <id> --resolution 2k|4k', description: 'Upscale a nano-banana-pro image.' },
+  { name: 'veo useapi:gif', usage: 'vclaw veo useapi:gif --media-id <id> --output-file <path>', description: 'Convert a Veo video to GIF (free, no CAPTCHA).' },
+  { name: 'veo useapi:upscale', usage: 'vclaw veo useapi:upscale --media-id <id> --resolution 1080p|4k', description: 'Upscale a Veo video.' },
 
   // --- introspection ---
   { name: 'schema', usage: 'vclaw schema [--json]', description: 'Dump the full v3 contract (commands, flags, artifact schemas, error codes, exit codes) for agent introspection.' },

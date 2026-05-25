@@ -3630,6 +3630,21 @@ export async function main(): Promise<void> {
     return;
   }
 
+  if (command === 'veo') {
+    const { spawnVeo } = await import('../video/veo-subprocess.js');
+    const verb = videoArgs[0];
+    if (!verb) {
+      throw new VclawError(
+        'missing_required_flag',
+        'vclaw veo requires a verb. Try: status, list, history, resume, reset, cancel, useapi:accounts, useapi:health.',
+        { flag: '<verb>' },
+      );
+    }
+    const veoArgs = [verb, ...videoArgs.slice(1)];
+    const result = await spawnVeo(veoArgs);
+    process.exit(result.exitCode);
+  }
+
   const attemptedSubcommand = subcommand
     ? `${command} ${subcommand}`
     : command;

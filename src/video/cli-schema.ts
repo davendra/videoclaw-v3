@@ -126,6 +126,14 @@ const COMMANDS: CommandSpec[] = [
   { name: 'video export-obsidian', usage: 'vclaw video export-obsidian --project <slug> [--root <path>] [--output-dir <path>] [--mode storyboard|director]' },
   { name: 'video sync-obsidian', usage: 'vclaw video sync-obsidian [--root <path>] [--output-dir <path>] [--mode storyboard|director]' },
 
+  // --- veo (Bun bridge for Google Flow) ---
+  { name: 'veo status', usage: 'vclaw veo status [batchId]', description: 'Show status of current or specific Veo batch.' },
+  { name: 'veo list', usage: 'vclaw veo list', description: 'List all Veo batches.' },
+  { name: 'veo history', usage: 'vclaw veo history [--limit <n>]', description: 'Show recent Veo job history.' },
+  { name: 'veo resume', usage: 'vclaw veo resume [batchId]', description: 'Resume a paused Veo batch.' },
+  { name: 'veo reset', usage: 'vclaw veo reset', description: 'Reset failed Veo jobs to pending.' },
+  { name: 'veo cancel', usage: 'vclaw veo cancel', description: 'Cancel current Veo batch.' },
+
   // --- introspection ---
   { name: 'schema', usage: 'vclaw schema [--json]', description: 'Dump the full v3 contract (commands, flags, artifact schemas, error codes, exit codes) for agent introspection.' },
 ];

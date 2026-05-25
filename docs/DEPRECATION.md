@@ -13,7 +13,7 @@ predecessor repos never existed.
 
 Primary:
 
-1. `videoclaw-v2` (npm: `videoclaw`)
+1. `videoclaw-v3` (npm: `videoclaw`)
 
 Reference/fallback only:
 
@@ -58,7 +58,7 @@ Those conditions are now satisfied.
 
 When a user asks to create or run video work:
 
-1. prefer `videoclaw-v2` (`vclaw` CLI)
+1. prefer `videoclaw-v3` (`vclaw` CLI)
 2. fall back to the legacy `videoclaw` v0.11.x runtime only when the missing feature is clearly identified
 3. track every such fallback as a porting task
 
@@ -66,7 +66,7 @@ When a user asks to create or run video work:
 
 Use this internal framing:
 
-1. `videoclaw-v2` (npm: `videoclaw`) is now the recommended runtime
+1. `videoclaw-v3` (npm: `videoclaw`) is now the recommended runtime
 2. `omx` remains available only as a temporary CLI alias for `vclaw`
 3. `videoclaw` v0.11.x and `vclaw-video-core` remain available as migration/reference sources
 4. old workflows should not be expanded further unless they are being ported

@@ -2,9 +2,10 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-> **Repository status (2026-05-25):** This is `videoclaw-v2`, the merged successor of
-> the older `videoclaw` package and the clean-room `vclaw-video-core` rebuild. (The
-> npm package is `videoclaw`; "videoclaw-v2" is just the repo name.) Foundation
+> **Repository status (2026-05-25):** This is `videoclaw-v3`, the current repo —
+> unified from `videoclaw-v2`, itself the merged successor of the older `videoclaw`
+> package and the clean-room `vclaw-video-core` rebuild. (The
+> npm package is `videoclaw`; "videoclaw-v3" is just the repo name.) Foundation
 > copied from `vclaw-video-core`; presenter skills synced from
 > `video-creation-projects/video-replicator-veo-cli/.claude/skills/`; Runway
 > transport ported from `videoclaw/src/video/providers/runway-useapi.ts`.

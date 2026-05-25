@@ -36,7 +36,7 @@ Use the repos like this:
 2. `vclaw-video-core` (intermediate clean-room rebuild)
    - intermediate rebuild that became this repo's foundation
    - now retired in favor of `videoclaw-v2`
-3. `videoclaw-v2` (current — npm package: `videoclaw`)
+3. `videoclaw-v3` (current — npm package: `videoclaw`)
    - active product surface
    - canonical CLI
    - current execution/runtime lane

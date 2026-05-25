@@ -1,6 +1,6 @@
 # Project Layout
 
-This doc describes the canonical on-disk structure of a `videoclaw-v2`
+This doc describes the canonical on-disk structure of a `videoclaw`
 project — the unit `vclaw video init <slug>` creates and every
 downstream stage operates on.
 

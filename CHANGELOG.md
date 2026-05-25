@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to `videoclaw-v2` (npm: `videoclaw`).
+All notable changes to `videoclaw` (the npm package; repo: `videoclaw-v3`).
 
 Format loosely based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 The repo follows [Semantic Versioning](https://semver.org/).

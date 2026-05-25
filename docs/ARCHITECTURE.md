@@ -1,6 +1,6 @@
 # Architecture
 
-`videoclaw-v2` (npm package: `videoclaw`) is a multi-provider video CLI
+`videoclaw` (npm package: `videoclaw`) is a multi-provider video CLI
 that grew out of two predecessor codebases:
 
 - the original `videoclaw` package (v0.11.x) which had an orchestration

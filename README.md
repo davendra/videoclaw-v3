@@ -12,7 +12,7 @@ machine-readable artifact at every stage. Supports Veo (Google Flow direct
 + UseAPI including Omni Flash), Seedance, and Runway out of the box;
 Kling adapter scaffolded.
 
-[![CI](https://github.com/davendra/videoclaw-v2/actions/workflows/ci.yml/badge.svg?branch=codex/core-visibility-savepoint)](https://github.com/davendra/videoclaw-v2/actions/workflows/ci.yml)
+[![CI](https://github.com/davendra/videoclaw-v3/actions/workflows/ci.yml/badge.svg?branch=codex/core-visibility-savepoint)](https://github.com/davendra/videoclaw-v3/actions/workflows/ci.yml)
 [![Node](https://img.shields.io/badge/node-20%2B-brightgreen)](./package.json)
 [![TypeScript](https://img.shields.io/badge/typescript-strict%20%7C%20NodeNext%20ESM-3178c6)](./tsconfig.json)
 [![Status](https://img.shields.io/badge/status-active%20development-orange)](./docs/MASTER_PLAN_ALIGNMENT.md)
@@ -26,7 +26,7 @@ Kling adapter scaffolded.
 
 ## 💡 Why this exists
 
-`videoclaw-v2` (npm: `videoclaw`) is the **merged successor** of two predecessor codebases:
+`videoclaw` (the current `videoclaw-v3` repo) is the **merged successor** of two predecessor codebases:
 
 - the older `videoclaw` package (v0.11.x), which had an orchestration layer (ralph / ralplan / team / MCP servers) on top of a video pipeline
 - the clean-room `vclaw-video-core` rebuild, which kept only the video pipeline with strict on-disk artifacts and approval gates

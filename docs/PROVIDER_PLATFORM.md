@@ -1,6 +1,6 @@
 # Provider Platform
 
-This doc describes `videoclaw-v2`'s provider/transport architecture as of
+This doc describes `videoclaw`'s provider/transport architecture as of
 2026-05-25, after the Phase 1c schema upgrade and the Phase 5b Runway port.
 
 ## Routes at a glance

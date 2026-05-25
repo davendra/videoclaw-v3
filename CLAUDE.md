@@ -15,7 +15,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Repository purpose
 
-`videoclaw` is a TypeScript/Node.js 20 multi-provider video CLI (`vclaw`, with legacy `omx` alias). It targets Veo (Google Flow + UseAPI, including Omni Flash), Seedance, Runway, and Kling. Every pipeline stage is explicit, every artifact is machine-readable JSON, and provider routes never silently fall back across materially different paths. The on-disk per-project layout (`projects/<slug>/{project.json, artifacts/, checkpoints/, characters/, events/, ...}`) is the source of truth; the CLI is a thin operator over it. A browser-based Review UI (`vclaw video review-ui`) handles human-in-the-loop storyboard approval.
+`videoclaw` is a TypeScript/Node.js 20 multi-provider video CLI (`vclaw`). It targets Veo (Google Flow + UseAPI, including Omni Flash), Seedance, and Runway. Every pipeline stage is explicit, every artifact is machine-readable JSON, and provider routes never silently fall back across materially different paths. The on-disk per-project layout (`projects/<slug>/{project.json, artifacts/, checkpoints/, characters/, events/, ...}`) is the source of truth; the CLI is a thin operator over it. A browser-based Review UI (`vclaw video review-ui`) handles human-in-the-loop storyboard approval.
 
 ## Build, test, and smoke commands
 
@@ -57,7 +57,7 @@ npm run check:release-readiness-lite     # one-shot: build + tests + main smokes
 
 1. `src/cli/vclaw.ts` — the single user-facing entrypoint. It argparses by hand and dispatches into `src/video/*` modules. `src/cli/omx.ts` is a deprecation wrapper that delegates to the same handlers and prints a notice to stderr. `src/cli/provider-adapter.ts` is the built-in adapter binary for `seedance-direct` / `veo-direct`.
 2. `src/video/` — the core domain. Each file is small and single-purpose, e.g. `artifacts.ts`, `artifact-store.ts`, `checkpoints.ts`, `workspace.ts`, `projects.ts`, `status.ts`, `doctor.ts`, `doctor-portfolio.ts`, `readiness.ts`, `execution-plan.ts`, `execute.ts`, `execution-runtime.ts`, `execution-status.ts`, `execution-cancel.ts`, `director-preflight.ts`, `report.ts`, `csv-export.ts`, `obsidian-export.ts`, `project-index.ts`, `metrics.ts`, `next-actions.ts`, `template-store.ts`, `provider-status.ts`, `native-seedance.ts`, `native-veo.ts`.
-3. `src/video/provider-platform/` — route descriptors (Veo / Seedance / Runway / Kling direct and useapi flavors).
+3. `src/video/provider-platform/` — route descriptors (Veo / Seedance / Runway direct and useapi flavors).
 4. `src/video/pipeline-manifests/` — built-in stage definitions for the two production modes.
 5. `schemas/video/` — canonical JSON Schema contracts for artifacts and pipeline manifests. Treat these as the source of truth for artifact shapes.
 6. `src/tests/` — `node:test` files named `*.test.ts`. `dist/tests/**.test.js` runs via `node --test`.
@@ -98,12 +98,11 @@ VCLAW_VEO_DIRECT_ADAPTER
 VCLAW_VEO_USEAPI_ADAPTER
 VCLAW_SEEDANCE_DIRECT_ADAPTER
 VCLAW_RUNWAY_USEAPI_ADAPTER
-VCLAW_KLING_USEAPI_ADAPTER
 ```
 
 Adapters receive JSON on stdin and must return JSON on stdout (`externalJobId` for submit, `pending|completed|failed` for poll).
 
-For `seedance-direct`, `veo-useapi`, and `runway-useapi`, `vclaw` ships a built-in adapter binary (`dist/cli/provider-adapter.js`) used automatically unless the full `..._ADAPTER` override is set. The built-in adapters read route-specific `..._SUBMIT_CMD` / `..._POLL_CMD` / `..._CANCEL_CMD` command shims. Routes also have native in-process transports: `native-seedance.ts` (uses `SUTUI_API_KEY`), `native-veo.ts` (drives the local `vclaw-cli` Bun package), `native-runway.ts` (pure Node fetch + fs, UseAPI bearer auth). `kling-useapi` remains scaffold-only until an adapter is written.
+For `seedance-direct`, `veo-useapi`, and `runway-useapi`, `vclaw` ships a built-in adapter binary (`dist/cli/provider-adapter.js`) used automatically unless the full `..._ADAPTER` override is set. The built-in adapters read route-specific `..._SUBMIT_CMD` / `..._POLL_CMD` / `..._CANCEL_CMD` command shims. Routes also have native in-process transports: `native-seedance.ts` (uses `SUTUI_API_KEY`), `native-veo.ts` (drives the local `vclaw-cli` Bun package), `native-runway.ts` (pure Node fetch + fs, UseAPI bearer auth).
 
 ### Gemini key pool
 

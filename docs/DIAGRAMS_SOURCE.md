@@ -55,7 +55,7 @@ provider paths.
 
 ```mermaid
 flowchart TD
-  Start(["Provider route selected<br/>(veo-direct · veo-useapi · seedance-direct ·<br/>runway-useapi · kling-useapi)"]) --> Q1{"VCLAW_*_ADAPTER<br/>env var set?"}
+  Start(["Provider route selected<br/>(veo-direct · veo-useapi · seedance-direct ·<br/>runway-useapi)"]) --> Q1{"VCLAW_*_ADAPTER<br/>env var set?"}
   Q1 -->|Yes| Custom["✅ Custom adapter binary<br/>stdin → JSON, stdout → JSON"]
   Q1 -->|No| Q2{"Built-in adapter<br/>supports route?<br/>(seedance-direct · veo-useapi ·<br/>runway-useapi)"}
   Q2 -->|No| Fail1["❌ Hard fail<br/>no silent fallback"]

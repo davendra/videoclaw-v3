@@ -9,8 +9,7 @@
 A TypeScript/Node 20 CLI that turns an intent string into a reviewed,
 provider-executed, portfolio-tracked video project — with an explicit,
 machine-readable artifact at every stage. Supports Veo (Google Flow direct
-+ UseAPI including Omni Flash), Seedance, and Runway out of the box;
-Kling adapter scaffolded.
++ UseAPI including Omni Flash), Seedance, and Runway out of the box.
 
 [![CI](https://github.com/davendra/videoclaw-v3/actions/workflows/ci.yml/badge.svg?branch=codex/core-visibility-savepoint)](https://github.com/davendra/videoclaw-v3/actions/workflows/ci.yml)
 [![Node](https://img.shields.io/badge/node-20%2B-brightgreen)](./package.json)
@@ -140,7 +139,6 @@ Handoff checklist: [`docs/OPERATOR_HANDOFF.md`](./docs/OPERATOR_HANDOFF.md).
 flowchart TB
     U[👤 Operator / AI agent]
     U -->|vclaw video ...| CLI["src/cli/vclaw.ts<br/>single entrypoint"]
-    CLI -. deprecation alias .-> OMX[src/cli/omx.ts]
     CLI --> CORE["src/video/*<br/>domain modules"]
 
     CORE --> ART[Artifacts · JSON]
@@ -165,7 +163,7 @@ flowchart TB
 
 - **CLI layer** — argparse + dispatch only; no business logic.
 - **Domain layer** (`src/video/*`) — small, single-purpose modules. Each file owns one concept (artifacts, checkpoints, readiness, execution-plan, execution-runtime, doctor, metrics, next-actions, project-index, obsidian-export, etc.).
-- **Provider platform** — route descriptors for `veo-direct`, `veo-useapi`, `seedance-direct`, `seedance-useapi`, `runway-useapi`, `kling-useapi`.
+- **Provider platform** — route descriptors for `veo-direct`, `veo-useapi`, `seedance-direct`, `runway-useapi`.
 - **Adapter layer** — three resolution strategies (custom binary → built-in adapter with command shim → native in-process transport). Explicit fall-through, never silent.
 - **Schemas** — JSON Schema contracts under `schemas/video/` are the source of truth for every artifact shape.
 
@@ -255,7 +253,7 @@ blocks `execute`/`execute-status` even if approval is set** — review freshness
 
 ```mermaid
 flowchart TD
-    Start[["route ∈ { veo-direct · veo-useapi ·<br/>seedance-direct · seedance-useapi ·<br/>runway-useapi · kling-useapi }"]]
+    Start[["route ∈ { veo-direct · veo-useapi ·<br/>seedance-direct · runway-useapi }"]]
     Start --> Q1{"VCLAW_*_ADAPTER set?"}
     Q1 -->|yes| Custom[["Custom adapter binary<br/>stdin → JSON, stdout → JSON"]]
     Q1 -->|no| Q2{"Built-in adapter supports route?<br/>(seedance-direct · veo-useapi · runway-useapi)"}
@@ -277,7 +275,6 @@ flowchart TD
 | `VCLAW_VEO_USEAPI_ADAPTER` | veo-useapi | custom adapter binary override |
 | `VCLAW_SEEDANCE_DIRECT_ADAPTER` | seedance-direct | custom adapter binary override |
 | `VCLAW_RUNWAY_USEAPI_ADAPTER` | runway-useapi | custom adapter binary override |
-| `VCLAW_KLING_USEAPI_ADAPTER` | kling-useapi | custom adapter binary override |
 | `VCLAW_VEO_DIRECT_SUBMIT_CMD` · `_POLL_CMD` · `_CANCEL_CMD` | veo-direct | command shim through built-in adapter |
 | `VCLAW_SEEDANCE_DIRECT_SUBMIT_CMD` · `_POLL_CMD` · `_CANCEL_CMD` | seedance-direct | command shim through built-in adapter |
 | `SUTUI_API_KEY` | seedance-direct (native) | XSkill API credentials for in-process transport |

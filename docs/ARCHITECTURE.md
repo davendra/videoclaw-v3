@@ -39,7 +39,7 @@ extend it:
 
 - **`vclaw-cli/`** — Bun package (formerly `veo-cli`). Multi-provider
   video automation: Google Labs Flow (Veo 3.x direct + Omni Flash) via
-  Puppeteer scraping, UseAPI (Veo / Seedance / Runway / Kling), local
+  Puppeteer scraping, UseAPI (Veo / Seedance / Runway), local
   SQLite job tracking. The main repo's `native-veo.ts` invokes this
   package for the `veo-direct` transport.
 - **`skills/video-replicator/scripts/`** — Python 3.10+ pipeline. 122

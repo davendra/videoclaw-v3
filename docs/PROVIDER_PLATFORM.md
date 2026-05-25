@@ -11,7 +11,6 @@ This doc describes `videoclaw`'s provider/transport architecture as of
 | `veo-useapi` | production | — | `vclaw-provider-adapter --route veo-useapi` | `USEAPI_API_TOKEN`, `USEAPI_ACCOUNT_EMAIL` |
 | `seedance-direct` | production | `native-seedance.ts` (uses `SUTUI_API_KEY`) | `vclaw-provider-adapter --route seedance-direct` | `SUTUI_API_KEY` |
 | `runway-useapi` | production | `native-runway.ts` (pure Node fetch+fs) | `vclaw-provider-adapter --route runway-useapi` | `USEAPI_API_TOKEN`, `USEAPI_ACCOUNT_EMAIL` |
-| `kling-useapi` | scaffold | — | — | (scaffold only — adapter not yet written; set `VCLAW_KLING_USEAPI_ADAPTER` to your own implementation) |
 
 ## Descriptor schema
 
@@ -22,7 +21,7 @@ descriptor has:
 ```typescript
 interface VideoProviderDescriptor {
   id: ProviderRouteId;                     // 'veo-direct' | 'veo-useapi' | ...
-  provider: VideoProvider;                 // 'veo' | 'seedance' | 'runway' | 'kling'
+  provider: VideoProvider;                 // 'veo' | 'runway' | 'seedance'
   displayName: string;
   path: ProviderPath;                      // 'direct' | 'useapi'
   summary: string;
@@ -117,8 +116,8 @@ end-to-end.
 
 ## Adding a new route
 
-When you want to add a working `kling-useapi` route (or any other
-provider):
+When you want to add a working new provider route (for example a
+future `kling-useapi`):
 
 1. **Descriptor.** Add a `VideoProviderDescriptor` entry to
    `DEFAULT_PROVIDER_REGISTRY` in `src/video/provider-platform/registry.ts`.

@@ -22,6 +22,7 @@
     { "code": "character_not_found", "exitCode": 1, "description": "Referenced character name is not in the project's characters/." },
     { "code": "duplicate_project", "exitCode": 1, "description": "vclaw video init on a slug whose workspace already exists." },
     { "code": "directory_not_writable", "exitCode": 1, "description": "Workspace root is not writable." },
+    { "code": "invalid_role", "exitCode": 1, "description": "Reference (--ref or --gb-ref) uses a role that's not valid for the sheet's --type." },
     { "code": "provider_unreachable", "exitCode": 2, "description": "Provider HTTP / native transport returned a non-recoverable error." },
     { "code": "adapter_command_failed", "exitCode": 2, "description": "User-provided ..._ADAPTER command exited non-zero." },
     { "code": "env_var_missing", "exitCode": 2, "description": "Required env var (e.g. USEAPI_API_TOKEN) is not set for the chosen route." },

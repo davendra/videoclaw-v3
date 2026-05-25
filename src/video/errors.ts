@@ -23,6 +23,7 @@ export const ALL_ERROR_CODES = [
   'character_not_found',
   'duplicate_project',
   'directory_not_writable',
+  'invalid_role',
 
   // System errors (exit code 2)
   'provider_unreachable',
@@ -59,6 +60,7 @@ export const EXIT_CODES: Record<ErrorCode, 1 | 2 | 3> = {
   character_not_found: 1,
   duplicate_project: 1,
   directory_not_writable: 1,
+  invalid_role: 1,
   // System errors (2)
   provider_unreachable: 2,
   adapter_command_failed: 2,

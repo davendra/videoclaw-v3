@@ -1412,9 +1412,11 @@ async function handleVideoReferenceSheetAdd(args: string[]): Promise<void> {
       throw new Error(`malformed --ref: ${raw}. Expected path:role[:note]`);
     }
     if (!isRoleValidForType(role as ReferenceRole, type)) {
-      throw new Error(
+      throw new VclawError(
+        'invalid_role',
         `role-vocabulary-violation: role=${role} not valid for sheet-type=${type}. ` +
           `Allowed: ${ROLE_VOCABULARY[type].join(', ')}`,
+        { role, sheetType: type, allowed: ROLE_VOCABULARY[type] },
       );
     }
     sheet = addReferenceToSheet(
@@ -1444,9 +1446,11 @@ async function handleVideoReferenceSheetAdd(args: string[]): Promise<void> {
       throw new Error(`invalid gb-ref id: ${idStr}`);
     }
     if (!isRoleValidForType(roleRaw as ReferenceRole, type)) {
-      throw new Error(
+      throw new VclawError(
+        'invalid_role',
         `role-vocabulary-violation: role=${roleRaw} not valid for sheet-type=${type}. ` +
           `Allowed: ${ROLE_VOCABULARY[type].join(', ')}`,
+        { role: roleRaw, sheetType: type, allowed: ROLE_VOCABULARY[type] },
       );
     }
     const gbNote = noteParts.length > 0 ? noteParts.join(':') : undefined;

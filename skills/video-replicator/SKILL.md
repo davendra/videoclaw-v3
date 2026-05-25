@@ -1,20 +1,17 @@
 ---
 name: video-replicator
 description: |
-  Professional video production pipeline with 7 modes: COPY (replicate/clone existing video ads with subject swap),
-  CREATE (design original video content from scratch), COPY NARRATED (replicate videos with continuous voiceover),
-  PRESENTATION (restyle slide decks into animated videos), LONG-FORM (batch generate 10+ minute videos with 20+ scenes),
-  FILM (full cinematic production from concept to final cut with screenplay and Seedance/Veo backend), or UGC CAMPAIGN.
-
-  Use this skill whenever the user wants to: copy/replicate/clone a video ad, create a video from scratch, make a TikTok
-  reel or YouTube ad, analyze a video with SEALCAM+, generate a storyboard, restyle a presentation into video, produce
-  a cinematic film from a concept, batch-generate video scenes, extend a video clip, or do anything involving video
-  production pipelines with image-to-video or text-to-video generation. Even if the user just says "make a video" or
-  "I saw this ad and want something similar" — this skill applies.
-
-  NOT for: single image generation (use go-bananas skill), writing FFmpeg scripts without the full pipeline,
-  debugging video player components, or static slide deck creation without video output.
+  Reference-only documentation of the legacy 7-mode video-replicator
+  surface. Do NOT use this skill to trigger work — use
+  `video-framework` instead. This document is preserved as historical
+  context for the modes and their parameters; the new user-facing entry
+  point is `video-framework`.
 ---
+
+> **DEPRECATED FOR USER-FACING USE.** This skill's auto-trigger has been
+> disabled in Slice 2. The user-facing video front door is now
+> [`video-framework`](../video-framework/SKILL.md). This file remains as
+> reference documentation for the legacy 7-mode surface.
 
 # Video Replicator
 

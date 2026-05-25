@@ -276,9 +276,9 @@
     {
       "id": "video-replicator",
       "category": "video",
-      "status": "imported",
-      "specializes": "video-framework",
-      "role": "compatibility-deep-surface"
+      "status": "deprecated-reference",
+      "role": "reference",
+      "supersededBy": "video-framework"
     },
     {
       "id": "video-review-ui-qa",

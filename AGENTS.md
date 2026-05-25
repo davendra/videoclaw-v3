@@ -11,6 +11,7 @@ contract:
 3. **Errors carry stable string codes** in their JSON envelope. The catalog: `schemas/video/errors.json`.
 4. **One-call discovery: `vclaw schema --json`** dumps the full contract — commands, flags, artifact schemas, exit codes, error codes.
 5. **Veo (Google Flow) access requires Bun.** `vclaw veo *` subcommands bridge to `bun run vclaw-cli/flow.ts` as a subprocess. Bun must be on PATH (`bun --version` to verify).
+6. **MCP option.** `vclaw mcp serve` exposes read-only project introspection (list_projects, get_project_status, get_artifacts, get_event_log, list_provider_routes) over stdio MCP. Writes still go through the CLI.
 
 If you are an agent author wiring videoclaw into your tool: call
 `vclaw schema --json` once, then drive the CLI deterministically.

@@ -60,6 +60,16 @@ See [`MERGE_PLAN.md`](./MERGE_PLAN.md) for the full merge rationale and per-phas
 > **Don't:** edit `dist/` · drop `.js` extensions from relative imports (NodeNext ESM requires them) ·
 > add silent fallback across materially different provider routes · commit `.omx/` / `.vclaw/` / secrets.
 
+### Agent integration
+
+videoclaw is built as a target for agent hosts, not as an orchestrator.
+
+- **One-call discovery:** `vclaw schema --json` returns the full command contract.
+- **MCP server:** `vclaw mcp serve` exposes read-only state queries to MCP-aware hosts.
+- **Sample skills:** see `mcp/skills-pack/` for Claude Code skill templates.
+
+See [`docs/AGENT_INTEGRATION_RESEARCH.md`](docs/AGENT_INTEGRATION_RESEARCH.md) for the design rationale.
+
 ---
 
 ## 🚀 30-second quickstart

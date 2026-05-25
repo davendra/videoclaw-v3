@@ -688,3 +688,39 @@ vclaw video sync-obsidian [--root <path>] [--output-dir <path>] [--mode storyboa
 ```bash
 vclaw video import-legacy --source <path> [--root <path>]
 ```
+
+## MCP server
+
+`vclaw mcp serve` starts a stdio MCP (Model Context Protocol) server
+exposing read-only project introspection to MCP-aware agent hosts
+(Claude Code, Codex, Cursor, Antigravity).
+
+### Tools exposed (all read-only)
+
+| Tool | Input | Returns |
+|---|---|---|
+| `list_projects` | `{ root? }` | All projects in the workspace |
+| `get_project_status` | `{ slug, root? }` | Stage + checkpoint state for one project |
+| `get_artifacts` | `{ slug, root? }` | The project's JSON artifacts |
+| `get_event_log` | `{ slug, limit?, root? }` | Recent events from events.jsonl |
+| `list_provider_routes` | `{ root? }` | Provider routes + availability |
+
+**Writes go through the CLI, not MCP.** Per the agent-integration
+research, the CLI is the deterministic action surface; MCP is for
+live-state queries. To create/modify a project, an agent calls
+`vclaw video *` commands directly.
+
+### Configuring an MCP client
+
+In a Claude Code / Codex / Cursor MCP config:
+
+```json
+{
+  "mcpServers": {
+    "videoclaw": {
+      "command": "vclaw",
+      "args": ["mcp", "serve"]
+    }
+  }
+}
+```

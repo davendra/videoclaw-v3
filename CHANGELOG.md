@@ -43,6 +43,14 @@ orchestration layer. Research that resolved this question:
 - Bun runtime is now an explicit requirement for Veo / Google Flow access (documented in CLI_REFERENCE).
 - Legacy `bun run vclaw-cli/flow.ts <verb>` still works in v3.0 (soft-deprecation; banner in `vclaw-cli/CLAUDE.md`).
 
+### Added (Slice 5 — MCP server + skills pack, shipped)
+
+- `vclaw mcp serve` — stdio MCP server exposing 5 read-only tools (list_projects, get_project_status, get_artifacts, get_event_log, list_provider_routes).
+- `src/mcp/` — server + tool handlers wrapping existing src/video/* readers. No write ops via MCP.
+- `mcp/skills-pack/` — 3 sample Claude Code skills (create-video, check-status, portfolio-review) demonstrating how agents drive videoclaw.
+- Schema dump now includes `mcp serve` (`vclaw schema --json | jq '.commands | length'` → 69).
+- `@modelcontextprotocol/sdk` runtime dependency.
+
 ### Removed (breaking)
 
 - **`omx` deprecation alias** — `src/cli/omx.ts`, the `omx` bin entry in

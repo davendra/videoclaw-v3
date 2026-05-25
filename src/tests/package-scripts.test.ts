@@ -230,6 +230,7 @@ describe('package verification scripts', () => {
       'docs/*.md',
       'docs/assets/*',
       'dist/cli/',
+      'dist/mcp/',
       'dist/video/',
       'dist/index.d.ts',
       'dist/index.d.ts.map',

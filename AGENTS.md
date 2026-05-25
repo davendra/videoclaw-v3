@@ -1,5 +1,23 @@
 # Repository Guidelines
 
+## Agent integration contract (v3)
+
+videoclaw v3 is designed as a target for external agents (Claude Code,
+Codex, Antigravity, Cursor, Warp), not as an orchestrator itself. The
+contract:
+
+1. **Stdout is JSON when piped.** Pretty-printed when TTY. Progress goes to stderr.
+2. **Exit codes follow a 0/1/2/3 taxonomy** — see `docs/CLI_REFERENCE.md` § Agent-friendly surface.
+3. **Errors carry stable string codes** in their JSON envelope. The catalog: `schemas/video/errors.json`.
+4. **One-call discovery: `vclaw schema --json`** dumps the full contract — commands, flags, artifact schemas, exit codes, error codes.
+
+If you are an agent author wiring videoclaw into your tool: call
+`vclaw schema --json` once, then drive the CLI deterministically.
+Don't try to do natural-language intent classification inside videoclaw
+— that's your job.
+
+---
+
 ## Autonomy Directive
 - Proceed by default. Do not stop to ask for confirmation on obvious next steps.
 - Treat user intent here as: build continuously, keep going, and only ask if the next action is destructive outside the repo or genuinely ambiguous.

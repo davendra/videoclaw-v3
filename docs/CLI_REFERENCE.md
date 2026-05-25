@@ -1,5 +1,88 @@
 # CLI Reference
 
+## Agent-friendly surface (v3)
+
+These four properties hold across every `vclaw` subcommand. They are the
+contract external agents (Claude Code / Codex / Antigravity / Cursor) can
+rely on.
+
+### 1. JSON on non-TTY
+
+When `stdout` is not a TTY (i.e., piped to another command or captured
+by an agent), every subcommand writes JSON to stdout. Human-readable
+formatting is reserved for interactive TTY use. Progress chatter
+(spinners, status updates) always goes to `stderr`.
+
+```bash
+# TTY (human): pretty-printed
+vclaw video providers
+
+# Non-TTY (agent / pipe): newline-terminated JSON
+vclaw video providers | jq '.routes[].routeId'
+```
+
+### 2. Exit-code taxonomy
+
+| Code | Name | Meaning |
+|---:|---|---|
+| 0 | SUCCESS | Command completed without errors. |
+| 1 | USER_ERROR | Bad input — invalid flag, missing argument, validation failure. **Retrying with the same input will fail the same way.** |
+| 2 | SYSTEM_ERROR | Environmental failure — provider down, disk full, missing env var. **Retry may succeed.** |
+| 3 | GATE | Gated by an approval / readiness check (e.g., director storyboard.md not approved yet). **The command CAN succeed once the gate clears.** |
+
+Agents decide retry strategy from the exit code. Code 1 means "fix the
+input and retry"; code 2 means "investigate the system and try later";
+code 3 means "do the gate-clearing work first, then retry."
+
+### 3. Stable error codes
+
+On any non-zero exit, stdout contains a JSON envelope with a stable
+string `code` field. The full catalog lives at
+[`schemas/video/errors.json`](../schemas/video/errors.json) and the
+TS source-of-truth is `src/video/errors.ts` `ALL_ERROR_CODES`.
+
+```json
+{
+  "code": "project_not_found",
+  "message": "No workspace at projects/foo/",
+  "details": { "slug": "foo" }
+}
+```
+
+Codes are **stable** — once shipped, they never change name. New codes
+get added; old ones may get a deprecation note but the string stays
+working for old agents.
+
+### 4. Single-call discovery: `vclaw schema --json`
+
+Returns the full v3 contract in one call:
+
+- `version`: the v3 release this dump comes from
+- `commands`: array of `{name, usage, flags, aliases?}`
+- `exitCodes`: the 0/1/2/3 taxonomy
+- `errorCodes`: the full ALL_ERROR_CODES list
+- `artifactSchemas`: every `schemas/video/artifacts/*.schema.json` embedded by name
+
+Agents should call this once on first contact, then drive the CLI from
+the dump without further introspection. Cheaper than per-command
+`--help` parsing.
+
+```bash
+vclaw schema --json | jq '.commands | map(.name)'
+```
+
+## Noun-verb command conventions
+
+v3 prefers noun-verb command shape (`vclaw video character list`) over
+hyphenated forms (`vclaw video character-list`). Both work — every
+kebab form has a noun-verb alias registered. The canonical name in
+`vclaw schema --json` is the kebab form for now (backwards compat); v3.1
+will switch the canonical form and alias the kebab.
+
+See `vclaw schema --json | jq '.commands[] | {name, aliases}'` for the complete list.
+
+---
+
 ## Project lifecycle
 
 ```bash

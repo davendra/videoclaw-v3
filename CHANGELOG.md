@@ -17,6 +17,15 @@ deterministic, agent-friendly toolkit. No NL front door, no in-CLI
 orchestration layer. Research that resolved this question:
 [`docs/AGENT_INTEGRATION_RESEARCH.md`](./docs/AGENT_INTEGRATION_RESEARCH.md).
 
+### Added (Slice 1 — agent-friendly polish, shipped)
+
+- `vclaw schema --json` — single-call introspection bundle (commands, flags, artifact schemas, error codes, exit codes)
+- Exit-code taxonomy (0=success, 1=user error, 2=system error, 3=gate). Documented in CLI_REFERENCE.md.
+- Stable string error codes in JSON output. Catalog at `schemas/video/errors.json`.
+- JSON default on non-TTY stdout via `writeOutput()` helper.
+- TTY-safe progress: spinners/colors to stderr only.
+- Noun-verb command aliases (e.g., `vclaw video character list` ↔ `vclaw video character-list`).
+
 ### Removed (breaking)
 
 - **`omx` deprecation alias** — `src/cli/omx.ts`, the `omx` bin entry in

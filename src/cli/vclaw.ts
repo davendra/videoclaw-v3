@@ -3102,8 +3102,52 @@ async function handleVideoArtifactHistory(args: string[]): Promise<void> {
   process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
 }
 
+// v3 noun-verb consistency. Both forms dispatch to the same handler.
+// The kebab form is treated as the canonical name internally; the
+// noun-verb form is the user-facing v3 preference. `vclaw schema --json`
+// lists the canonical name; aliases are documented in CLI_REFERENCE.md.
+const NOUN_VERB_ALIASES: Record<string, string> = {
+  // user types -> canonical
+  'export csv': 'export-csv',
+  'character add': 'character-add',
+  'character list': 'character-list',
+  'character show': 'character-show',
+  'character auto-create': 'character-auto-create',
+  'character import-library': 'character-import-library',
+  'character consistency': 'character-consistency',
+  'reference-sheet add': 'reference-sheet-add',
+  'reference-sheet list': 'reference-sheet-list',
+  'reference-sheet show': 'reference-sheet-show',
+  'reference-sheet bind': 'reference-sheet-bind',
+  'reference-sheet validate': 'reference-sheet-validate',
+  'candidates list': 'candidates-list',
+  'candidates show': 'candidates-show',
+  'storyboard review': 'storyboard-review',
+  'storyboard still-add': 'storyboard-still-add',
+  'review ui': 'review-ui',
+  'review autopilot': 'review-autopilot',
+  'execute status': 'execute-status',
+  'execute cancel': 'execute-cancel',
+  'doctor project': 'doctor-project',
+  'doctor portfolio': 'doctor-portfolio',
+  'export obsidian': 'export-obsidian',
+  'sync obsidian': 'sync-obsidian',
+  'verify env': 'verify-env',
+  'verify final': 'verify-final',
+};
+
+function resolveSubcommand(args: string[]): { canonical: string; rest: string[] } {
+  if (args.length >= 2) {
+    const twoWord = `${args[0]} ${args[1]}`;
+    if (NOUN_VERB_ALIASES[twoWord]) {
+      return { canonical: NOUN_VERB_ALIASES[twoWord], rest: args.slice(2) };
+    }
+  }
+  return { canonical: args[0] ?? '', rest: args.slice(1) };
+}
+
 export async function main(): Promise<void> {
-  const [, , command, subcommand, ...rest] = process.argv;
+  const [, , command, ...videoArgs] = process.argv;
 
   if (!command) {
     printCompatibilityNotice();
@@ -3118,6 +3162,15 @@ export async function main(): Promise<void> {
     writeOutput(buildSchemaDump(), { json: true });
     return;
   }
+
+  // Resolve noun-verb aliases for `video <noun> <verb>` -> `video <noun-verb>`.
+  // Single-word subcommands (e.g. `video init`) fall through unchanged via
+  // the resolver's else branch (canonical=args[0], rest=args.slice(1)).
+  const resolved = command === 'video'
+    ? resolveSubcommand(videoArgs)
+    : { canonical: videoArgs[0] ?? '', rest: videoArgs.slice(1) };
+  const subcommand: string | undefined = resolved.canonical || undefined;
+  const rest: string[] = resolved.rest;
 
   if (command === 'video' && subcommand === 'providers') {
     const workspaceRoot = parseFlagValue(rest, '--workspace-root');

@@ -81,6 +81,11 @@ will switch the canonical form and alias the kebab.
 
 See `vclaw schema --json | jq '.commands[] | {name, aliases}'` for the complete list.
 
+**`vclaw veo *` subcommands** keep the Bun CLI's colon-separated form
+(`useapi:accounts list`, not `useapi accounts list`). This matches the
+underlying `bun run flow.ts` surface. Aliasing the colon to a space
+would create confusion for users with existing scripts.
+
 ---
 
 ## Project lifecycle

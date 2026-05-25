@@ -16,6 +16,11 @@ targets=(
 ignore_paths=(
   "docs/RELEASE_READINESS.md"
   "skills/seedance-prompts/SKILL.md"
+  # Workflow / process docs (specs, plans, audits, research) legitimately
+  # reference files that don't exist yet (TDD steps) and absolute paths
+  # for executing agents. Out of scope for the clean-room CLI docs
+  # guardrail. Trailing slash = directory-prefix ignore.
+  "docs/superpowers/"
 )
 
 patterns=(
@@ -38,7 +43,14 @@ for pattern in "${patterns[@]}"; do
     [ -n "${file:-}" ] || continue
     skip=false
     for ignored in "${ignore_paths[@]}"; do
-      if [[ "$file" == "$ignored" ]]; then
+      # Trailing-slash entries are directory-prefix ignores; everything
+      # else still requires exact path match.
+      if [[ "$ignored" == */ ]]; then
+        if [[ "$file" == "$ignored"* ]]; then
+          skip=true
+          break
+        fi
+      elif [[ "$file" == "$ignored" ]]; then
         skip=true
         break
       fi

@@ -1,0 +1,24 @@
+{
+  "presenterName": "Bunty",
+  "characterId": 97,
+  "hostPersona": "Cartoon Indian cricket commentator in an orange blazer; round face, thick black handlebar moustache (curly only at the tips), slicked-back combover, chubby cheeks, warm, excitable, deeply knowledgeable about cricket.",
+  "subjectDomains": ["cricket", "play-cricket scorecards", "match-day analysis", "cricket recaps"],
+  "triggerPhrases": [
+    "Match Day Analysis with Bunty",
+    "Match Day Analysis",
+    "do the Bunty thing",
+    "make a Bunty video",
+    "Bunty match recap",
+    "Bunty recap",
+    "scorecard video",
+    "cricket scorecard",
+    "play-cricket URL",
+    "wbindians",
+    "Bunty"
+  ],
+  "introAsset": "assets/bunty_intro.jpg",
+  "outroAsset": "assets/bunty_outro.jpg",
+  "voiceId": "nwj0s2LU9bDWRKND5yzA",
+  "voiceNotes": "ElevenLabs voice used for BOTH TTS narration AND voice change. Catchphrases: Shabash!, Kya baat hai!, Hai Ram!. Tone registers: hype / mock-outrage / affection / sympathy. Cultural metaphors. Direct address ('my friends', 'boys'). On team losses, switch to TEAM-LOST register: no hype, no triumphant sign-off; 'the Indians took a beating', 'credit where it's due', 'lesson learned'. Voice-change seed 42 with --remove-bg-noise.",
+  "scriptStyle": "Cricket play-by-play commentary with English/Hindi colloquialisms. References batting averages, partnerships, run rates, captain/keeper roles. Generous tone; softens NLM deck's harsh phrasings ('humiliation' becomes 'dignity restored'). 20-25 word lines per slide; outro sign-off capped at 15-20 words."
+}

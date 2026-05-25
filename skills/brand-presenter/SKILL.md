@@ -8,6 +8,20 @@ description: Generic narrated presenter-video workflow for turning a slide deck 
 Create a narrated presentation-style video from a PDF or slide deck using a
 branded presenter profile for intro and outro scenes.
 
+## Brand profile
+
+This skill is parametric. Each child skill (`bunty`, `davendra-presenter`,
+`nex-presenter`, future presenters) provides a `brand-profile.json` that
+specializes this workflow for a specific host.
+
+Schema: [`schemas/video/brand-profile.schema.json`](../../schemas/video/brand-profile.schema.json).
+
+When this skill is invoked via a child alias, the orchestrator should:
+1. Load the child's `brand-profile.json`.
+2. Substitute `{{presenterName}}`, `{{characterId}}`, `{{hostPersona}}`,
+   `{{introAsset}}`, `{{outroAsset}}`, etc. throughout the workflow below.
+3. Use `triggerPhrases` to confirm intent routing was correct.
+
 ## When To Use
 
 Use this workflow when:

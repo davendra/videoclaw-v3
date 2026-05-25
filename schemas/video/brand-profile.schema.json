@@ -1,0 +1,20 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "brand-profile",
+  "description": "Per-brand parameters that specialize brand-presenter for a specific host (bunty/davendra/nex/...).",
+  "type": "object",
+  "required": ["presenterName", "characterId", "hostPersona", "triggerPhrases"],
+  "properties": {
+    "presenterName": { "type": "string", "description": "Human-facing host name (e.g., 'Bunty', 'Davendra', 'Nex')." },
+    "characterId": { "type": ["integer", "string"], "description": "Go Bananas character ID for identity-locking generations." },
+    "hostPersona": { "type": "string", "description": "Short descriptor of the host's visual + tonal style." },
+    "subjectDomains": { "type": "array", "items": { "type": "string" }, "description": "Topics the presenter is typically used for." },
+    "triggerPhrases": { "type": "array", "items": { "type": "string" }, "description": "Phrases in user input that should route to this brand profile." },
+    "introAsset": { "type": "string", "description": "Relative path to the intro image inside this skill's assets/." },
+    "outroAsset": { "type": "string", "description": "Relative path to the outro image inside this skill's assets/." },
+    "voiceId": { "type": "string", "description": "TTS voice identifier (provider-specific)." },
+    "voiceNotes": { "type": "string", "description": "Free-form notes about voice tone, pacing, accent." },
+    "scriptStyle": { "type": "string", "description": "How the presenter's commentary script is shaped (e.g., 'cricket play-by-play', 'executive summary')." }
+  },
+  "additionalProperties": false
+}

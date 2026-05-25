@@ -1,0 +1,21 @@
+{
+  "presenterName": "Nex",
+  "characterId": 98,
+  "hostPersona": "3D Pixar-style animated young tech commentator named Nex; modern gaming/streaming studio with RGB lighting and dual monitors. Energetic, casual, relatable — like a tech YouTube creator.",
+  "subjectDomains": ["tech reviews", "product walkthroughs", "developer commentary", "tech briefings", "The Nex Brief"],
+  "triggerPhrases": [
+    "tech commentator",
+    "tech review video",
+    "tech briefing",
+    "Nex",
+    "Nex Presenter",
+    "The Nex Brief",
+    "product walkthrough",
+    "product walkthrough video"
+  ],
+  "introAsset": "assets/nex_intro_1.jpg",
+  "outroAsset": "assets/nex_outro_1.jpg",
+  "voiceId": "TX3LPaxmHKxFdv7VOQHJ",
+  "voiceNotes": "ElevenLabs Liam voice used for BOTH TTS narration AND voice change. Conversational, brisker cadence than executive content. Voice-change seed 42 with --remove-bg-noise. Signature sign-off: 'I'm Nex, and I'll catch you in the next breakdown. Peace.'",
+  "scriptStyle": "Conversational tech-commentary tone — like a YouTube breakdown, smart but not stuffy. 20-25 words per slide (~8-10s of TTS — brisker than executive). References terminal output, code/spec details, product specifics. Numbers spoken as words. No filler phrases. Outro sign-off (scene 21) capped at 15-20 words. Optional 'The Nex Brief' branding (title card + 6s logo intro from assets/nex_brief_intro.mp4)."
+}

@@ -1,0 +1,20 @@
+{
+  "presenterName": "Davendra",
+  "characterId": 109,
+  "hostPersona": "3D Pixar-style 45-year-old South Asian Indian executive presenter named Davendra; beige polo shirt, warm brown skin, dark gray-black swept hair, kind brown eyes, gentle confident smile. Measured, professional, deck-style commentary. Default setting: modern professional home office with warm wood tones and bookshelf.",
+  "subjectDomains": ["corporate decks", "executive summaries", "investor updates", "strategic briefings", "business briefings"],
+  "triggerPhrases": [
+    "executive presenter",
+    "exec deck video",
+    "exec deck",
+    "Davendra",
+    "Davendra Presenter",
+    "corporate narrated video",
+    "strategic briefing"
+  ],
+  "introAsset": "assets/davendra_intro_1.jpg",
+  "outroAsset": "assets/davendra_outro_1.jpg",
+  "voiceId": "0vPMop5s0QLJlWyI0lJn",
+  "voiceNotes": "ElevenLabs voice used for BOTH TTS narration AND voice change. Warm executive tone, like a trusted strategic advisor. Slower, more measured cadence than B2C. Not slang-heavy. Voice-change seed 42 with --remove-bg-noise. Signature sign-off: 'I'm Davendra, and I'll see you in the next one. Take care.'",
+  "scriptStyle": "Warm executive summary — concise, structured, slide-anchored narration. 25-30 words per slide (~10-14s of TTS). Numbers spoken as words. No filler phrases. Outro sign-off (scene 21) capped at 15-20 words for dramatic pacing. NEVER use character_id=118 (photorealistic) — Veo content filter rejects every time; use 109 (Pixar) only, or switch to seedance audio-lipsync backend for photorealistic faces."
+}

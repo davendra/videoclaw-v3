@@ -12,13 +12,6 @@ done < <(find skills -mindepth 2 -maxdepth 2 -name SKILL.md | sort)
 
 ignore_paths=(
   "skills/seedance-prompts/SKILL.md"
-  # Presenter skills legitimately invoke their bundled Python pipeline
-  # under skills/video-replicator/scripts/ (ported in Phase 4a from the
-  # canonical workspace). Those scripts ARE the implementation; calling
-  # them is the right way. The scanner predates the pipeline import.
-  "skills/bunty/SKILL.md"
-  "skills/davendra-presenter/SKILL.md"
-  "skills/nex-presenter/SKILL.md"
   # movie-director references the legacy script paths in its
   # references/ subdir; those docs are historical-reference-style.
   # The SKILL.md itself uses the vclaw CLI surface.

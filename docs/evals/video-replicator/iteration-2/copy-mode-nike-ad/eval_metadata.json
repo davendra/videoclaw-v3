@@ -1,0 +1,14 @@
+{
+  "eval_id": 1,
+  "eval_name": "copy-mode-nike-ad",
+  "prompt": "hey i found this sick Nike ad on Instagram that id love to copy for our new running shoe 'AeroStride'. heres the reel: https://www.instagram.com/reel/ABC123/ — its about 30 seconds, shows a runner on a mountain trail at golden hour with dramatic camera movements. i want to swap in our shoe and a different model. landscape format for YouTube.",
+  "assertions": [
+    "Selects COPY mode (not CREATE or FILM)",
+    "Reads references/copy-mode.md for the detailed workflow",
+    "Runs analyze_video.py first for SEALCAM+ breakdown",
+    "Uses model_id='gemini-pro-image' (not gemini-flash-image)",
+    "Selects I2V mode for landscape video",
+    "Pipeline follows correct phase order: analyze -> rewrite -> images -> videos -> stitch",
+    "Mentions aspect_ratio='16:9' and --ratio landscape"
+  ]
+}

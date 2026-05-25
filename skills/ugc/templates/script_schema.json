@@ -1,0 +1,116 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "UGC Belief Script",
+  "description": "Schema for a single UGC belief-driven video script. Each script targets 1-3 beliefs and follows the E5 method scene structure (hook, problem, mechanism, proof, offer, cta).",
+  "type": "object",
+  "required": ["script_id", "belief_targeted", "duration_target", "scenes"],
+  "properties": {
+    "script_id": {
+      "type": "string",
+      "description": "Unique script identifier (e.g., 'belief_1', 'belief_2_alt')"
+    },
+    "belief_targeted": {
+      "type": "array",
+      "items": { "type": "string" },
+      "minItems": 1,
+      "maxItems": 3,
+      "description": "Belief IDs this script targets (e.g., ['B1', 'B3']). Max 3 per script."
+    },
+    "duration_target": {
+      "type": "integer",
+      "minimum": 10,
+      "maximum": 120,
+      "description": "Target total duration in seconds (e.g., 30 for a 30s ad)"
+    },
+    "hook_variant": {
+      "type": "string",
+      "description": "Which hook angle is used (e.g., 'H1' from hooks.json)"
+    },
+    "tone": {
+      "type": "string",
+      "description": "Script tone (e.g., 'excited discovery', 'calm authority', 'relatable frustration')"
+    },
+    "platform": {
+      "type": "string",
+      "enum": ["tiktok", "instagram_reels", "youtube_shorts", "facebook", "multi"],
+      "description": "Target platform for framing and pacing decisions"
+    },
+    "scenes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["scene_number", "type", "duration", "visual", "veo_prompt"],
+        "properties": {
+          "scene_number": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Scene order (1-indexed)"
+          },
+          "type": {
+            "type": "string",
+            "enum": ["hook", "problem", "mechanism", "proof", "offer", "cta"],
+            "description": "Scene type from the E5 method structure"
+          },
+          "duration": {
+            "type": "number",
+            "minimum": 2,
+            "maximum": 15,
+            "description": "Scene duration in seconds"
+          },
+          "dialogue": {
+            "type": "string",
+            "description": "What the character says on camera. Word count must fit within duration limits: 4s=12 words, 6s=18, 8s=25, 12s=35"
+          },
+          "visual": {
+            "type": "string",
+            "description": "Visual description of the scene (what the viewer sees)"
+          },
+          "veo_prompt": {
+            "type": "string",
+            "description": "Complete Veo 3 prompt for video generation including camera, character, action, setting, and aesthetic"
+          },
+          "go_bananas_prompt": {
+            "type": "string",
+            "description": "Go Bananas prompt for generating the first-frame image (if using I2V mode)"
+          },
+          "camera": {
+            "type": "string",
+            "description": "Camera movement and framing (e.g., 'static selfie', 'slow push-in', 'handheld pan')"
+          },
+          "transition_to_next": {
+            "type": "string",
+            "description": "How this scene transitions to the next (e.g., 'jump cut', 'whip pan', 'match cut')"
+          },
+          "subtitle_text": {
+            "type": "string",
+            "description": "Text to display as subtitle/caption. Defaults to dialogue if not specified."
+          },
+          "belief_addressed": {
+            "type": "string",
+            "description": "Which belief ID this scene helps instill (e.g., 'B1')"
+          }
+        }
+      },
+      "minItems": 3,
+      "description": "Ordered list of scenes. Must include at least hook and cta types."
+    },
+    "metadata": {
+      "type": "object",
+      "properties": {
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "version": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Script version number for iteration tracking"
+        },
+        "notes": {
+          "type": "string",
+          "description": "Internal notes about this script variant"
+        }
+      }
+    }
+  }
+}

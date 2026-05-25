@@ -1,0 +1,5 @@
+{
+  "jobId": "fixture-video-error-001",
+  "operations": [],
+  "error": "Video generation failed: Content policy violation"
+}

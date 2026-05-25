@@ -1,0 +1,45 @@
+{
+  "expectations": [
+    {
+      "text": "Selects COPY mode (not CREATE or FILM)",
+      "passed": true,
+      "evidence": "Line 9: '## Mode Selection: COPY' — explicitly selected COPY mode with reasoning about auto-detect keywords"
+    },
+    {
+      "text": "Reads references/copy-mode.md for the detailed workflow",
+      "passed": true,
+      "evidence": "Line 17: '## Reference File Read: `references/copy-mode.md`' — extracted 10 key points from the reference file including 6-phase pipeline, SEALCAM+ framework, prompt simplification rules"
+    },
+    {
+      "text": "Runs analyze_video.py first for SEALCAM+ breakdown",
+      "passed": true,
+      "evidence": "Lines 99-118: Phase 1 runs 'python scripts/analyze_video.py' with --video, --output, --project, --save-to-db flags"
+    },
+    {
+      "text": "Uses model_id='gemini-pro-image' (not gemini-flash-image)",
+      "passed": true,
+      "evidence": "Line 37: 'model_id=\"gemini-pro-image\"' stated as model choice; every generate_image call includes model_id=\"gemini-pro-image\" (lines 248, 254, 265)"
+    },
+    {
+      "text": "Selects I2V mode for landscape video",
+      "passed": true,
+      "evidence": "Line 309: 'Using I2V (image-to-video) mode with landscape aspect ratio' — correctly selected I2V since landscape is supported"
+    },
+    {
+      "text": "Pipeline follows correct phase order: analyze -> rewrite -> images -> videos -> stitch",
+      "passed": true,
+      "evidence": "Phases in order: 0 (Input), 1 (Analysis/SEALCAM+), 1.5 (Frame Extract), 2 (Rewrite), 3 (Image Gen), 4 (Video Gen), 5 (Music), 6 (Assembly)"
+    },
+    {
+      "text": "Mentions aspect_ratio='16:9' and --ratio landscape",
+      "passed": true,
+      "evidence": "Line 51: 'aspect_ratio=\"16:9\"' and line 52: '--ratio landscape' — both explicitly mentioned in Aspect Ratio section"
+    }
+  ],
+  "summary": {
+    "passed": 7,
+    "failed": 0,
+    "total": 7,
+    "pass_rate": 1.0
+  }
+}

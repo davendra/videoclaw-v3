@@ -1,0 +1,78 @@
+# Example: Horror (Fincher/Kubrick ice-cold slow-burn)
+# Dread buildup, reveal, aftermath. Uses content-filter-safe language throughout.
+---
+project:
+  name: "The Thirteenth Door"
+  slug: "the-thirteenth-door"
+  genre: horror
+  runtime_target: "3:00"
+  scene_count: 12
+  clip_duration_sec: 15
+
+premise: |
+  A young woman inherits a remote house and discovers a locked door with
+  thirteen locks. She spends the night hearing sounds behind it. The final
+  lock opens itself.
+
+style:
+  preset: fincher
+  grading: ice-cold
+  platform: youtube
+  aspect: 16:9
+
+tone: "dread, unease, silent-buildup, restrained, long takes"
+
+cast:
+  - name: Elena
+    role: protagonist
+    library_id: null
+    description: "late 20s woman with shoulder-length dark brown hair, pale skin, grey-blue eyes with slight dark circles, wearing a grey sweater and jeans, cautious observant expression, Fincher clinical-cold cinematography, desaturated palette"
+    archetype: human-young-adult
+    create_on_first_run: true
+
+adversaries:
+  type: singular  # Entity implied but never shown directly — content-filter safe
+  description: "unseen presence behind the door — only sound cues, door movement, and shadows"
+
+setting:
+  time_period: contemporary
+  location: "remote Victorian house in rural woods, single storm lantern, fireplace"
+  world_notes: "Winter, snow falling outside, no cell signal; one hallway, one locked door"
+
+act_structure:
+  - normalcy: "Elena enters the empty house, sets down a suitcase, looks around at dust-covered furniture."
+  - first_wrongness: "She notices the hallway door — thirteen small brass locks down its front."
+  - dismissal: "She photographs the door, turns away to make coffee in the kitchen."
+  - escalation: "Night. Elena reads by the fire. A single dull thud sounds from the hallway."
+  - witness: "Elena peers into the hallway. The door looks the same. She returns to the fire."
+  - second_escalation: "A second thud, louder. She walks closer. One of the thirteen locks is now unlatched — it wasn't before."
+  - investigation: "Close-up on Elena's hand examining the unlatched lock. The metal is cold."
+  - third_escalation: "A third thud. She steps back. TWO locks are now unlatched."
+  - flight_begins: "Elena retreats to the kitchen, grabs her car keys."
+  - door_rattle: "A massive rattle from the hallway. The snow storm intensifies outside."
+  - approaching_climax: "Elena, keys in hand, looks back toward the door. The hallway is dark — but a faint glow now outlines the door edges."
+  - final_lock_opens: "Extreme close-up on the thirteenth lock — it clicks open on its own. The door creaks one inch. Cut to black."
+
+content_filter_substitutions:
+  # Horror is content-filter sensitive — avoid explicit violence
+  # "attacks" → "approaches"
+  # "screams" → "gasps"
+  # "blood" → never mention
+  # "kills" → never mention; imply only
+  "attacks": "approaches"
+  "screams": "gasps"
+
+estimated_cost:
+  seedance_per_clip: 0.40
+  seedance_total: 4.80
+  gemini_batched: 0.02
+  go_bananas_new_characters: 0.05
+  elevenlabs_narration: 0.12
+  total: ~4.99
+
+estimated_wall_time: "~50min"
+
+audio_direction:
+  score: "Minimal, silence-heavy, occasional low-frequency rumble"
+  sfx: "Wind, snow, fire crackle, three distinct thud sounds with reverb, final lock click"
+  dialogue: "Minimal, Elena has 1-2 lines of murmured self-reassurance"

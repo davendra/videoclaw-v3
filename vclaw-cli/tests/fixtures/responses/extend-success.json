@@ -1,0 +1,13 @@
+{
+  "jobId": "j1731859299999v-extend-u12345-email:jo***@gmail.com-bot:google-flow",
+  "media": [
+    {
+      "name": "b2e06f32-88c3-593e-b465-25fg9913df77",
+      "mediaGenerationId": "user:12345-email:6a6f-video:b2e06f32",
+      "videoUrl": "https://flow-content.google/video/b2e06f32?Expires=1",
+      "thumbnailUrl": "https://flow-content.google/image/b2e06f32?Expires=1",
+      "video": { "generatedVideo": { "seed": 654321, "model": "veo_3_1_t2v" }, "dimensions": { "length": "8s" } }
+    }
+  ],
+  "remainingCredits": 18740
+}

@@ -1,0 +1,40 @@
+{
+  "expectations": [
+    {
+      "text": "Selects COPY mode (not CREATE or FILM) based on 'copy this ad' / 'reference video' intent",
+      "passed": true,
+      "evidence": "Line 5: 'I would select **COPY MODE** (Mode 1)' with clear reasoning about reference video + subject swap"
+    },
+    {
+      "text": "Runs analyze_video.py first for SEALCAM+ breakdown (Phase 1 before any generation)",
+      "passed": true,
+      "evidence": "Lines 82-87: Phase 1 runs 'python scripts/analyze_video.py' with correct flags before any image or video generation"
+    },
+    {
+      "text": "Uses model_id='gemini-pro-image' for Go Bananas image generation (skill's CRITICAL rule, not gemini-flash-image)",
+      "passed": true,
+      "evidence": "Lines 50-54: Explicitly states 'Go Bananas Pro model (gemini-pro-image) -- REQUIRED' and acknowledges the skill overrides user's NB2 preference. All generate_image calls use model_id='gemini-pro-image'"
+    },
+    {
+      "text": "Selects I2V mode for landscape video (skill says I2V works for landscape, T2V only for portrait)",
+      "passed": true,
+      "evidence": "Line 43: 'I2V mode (image-to-video) is fully supported for landscape'. Line 146: '--mode i2v'. Line 306: 'mode frames-to-video'"
+    },
+    {
+      "text": "Pipeline follows correct phase order: analyze -> rewrite_prompts -> generate images -> generate videos -> stitch",
+      "passed": true,
+      "evidence": "Phases laid out as: Phase 1 (analyze_video.py) -> Phase 1.5 (extract frames) -> Phase 2 (rewrite_prompts.py) -> Phase 3 (Go Bananas images) -> Phase 4 (parallel_video_gen.py) -> Phase 5 (music) -> Phase 6 (stitch)"
+    },
+    {
+      "text": "Mentions aspect_ratio='16:9' for both Go Bananas images and veo-cli --ratio landscape",
+      "passed": true,
+      "evidence": "Line 41: 'aspect_ratio=\"16:9\"', Line 42: '--ratio landscape'. All generate_image calls use aspect_ratio='16:9'"
+    }
+  ],
+  "summary": {
+    "passed": 6,
+    "failed": 0,
+    "total": 6,
+    "pass_rate": 1.0
+  }
+}

@@ -1,0 +1,115 @@
+{
+  "project": {
+    "name": "summer-sandals",
+    "type": "product_ad"
+  },
+  "assets": {
+    "products": [
+      {
+        "name": "gold_sandals",
+        "image": "https://example.com/sandals.jpg",
+        "description": "Gold strappy sandals with rhinestone details, 3-inch heel"
+      }
+    ],
+    "characters": [
+      {
+        "name": "sofia",
+        "image": "https://example.com/model.jpg",
+        "description": "Young woman, long blonde hair, beach casual style, warm skin tone"
+      }
+    ]
+  },
+  "format": {
+    "aspect_ratio": "9:16",
+    "duration": 15,
+    "scene_count": 4
+  },
+  "scenes": [
+    {
+      "scene_number": 1,
+      "template_type": "hero_shot",
+      "setting": "minimalist studio with soft sand-colored backdrop",
+      "action_description": "product reveal with dramatic lighting",
+      "lighting": {
+        "setup": "studio",
+        "direction": "rim + key",
+        "quality": "dramatic, warm tones",
+        "shadows": "soft"
+      },
+      "camera": {
+        "shot_type": "close-up",
+        "angle": "eye level",
+        "movement_type": "push_in",
+        "movement_speed": "slow",
+        "movement_direction": "forward",
+        "focus": "rack focus"
+      }
+    },
+    {
+      "scene_number": 2,
+      "template_type": "lifestyle",
+      "setting": "sandy beach at golden hour",
+      "action_description": "sofia walks along shoreline wearing sandals",
+      "lighting": {
+        "setup": "golden_hour",
+        "direction": "side-back",
+        "quality": "warm, soft",
+        "shadows": "long, dramatic"
+      },
+      "camera": {
+        "shot_type": "full body",
+        "angle": "low angle",
+        "movement_type": "tracking",
+        "movement_speed": "matches subject",
+        "movement_direction": "parallel",
+        "focus": "follow focus"
+      }
+    },
+    {
+      "scene_number": 3,
+      "template_type": "detail",
+      "setting": "beach sand with gentle waves in background",
+      "action_description": "close-up of sandals in sand, foot steps into frame",
+      "lighting": {
+        "setup": "natural",
+        "direction": "overhead sun",
+        "quality": "bright, summer",
+        "shadows": "defined"
+      },
+      "camera": {
+        "shot_type": "close-up",
+        "angle": "low angle",
+        "movement_type": "static",
+        "movement_speed": "none",
+        "movement_direction": "none",
+        "focus": "shallow depth"
+      }
+    },
+    {
+      "scene_number": 4,
+      "template_type": "final_shot",
+      "setting": "beach at sunset, sofia in silhouette",
+      "action_description": "sofia poses confidently, sandals visible, sunset behind",
+      "lighting": {
+        "setup": "backlit",
+        "direction": "behind subject",
+        "quality": "silhouette with rim light",
+        "shadows": "dramatic"
+      },
+      "camera": {
+        "shot_type": "medium",
+        "angle": "eye level",
+        "movement_type": "static",
+        "movement_speed": "none",
+        "movement_direction": "none",
+        "focus": "deep focus"
+      }
+    }
+  ],
+  "music": {
+    "style": "chill summer vibes, tropical house",
+    "tempo_bpm": 100,
+    "instruments": ["soft synths", "light percussion", "acoustic guitar"],
+    "mood": "relaxed, warm, aspirational"
+  }
+}

@@ -1,0 +1,83 @@
+# Example: Anime action (anime-cel + dynamic cinematography)
+# Fast-paced combat-adjacent with content-filter-safe language throughout.
+---
+project:
+  name: "The Sky Duel"
+  slug: "the-sky-duel-anime"
+  genre: action-thriller  # anime-style action
+  runtime_target: "2:30"
+  scene_count: 10
+  clip_duration_sec: 15
+
+premise: |
+  A young sky-sailor pilot discovers a rival pilot is actually her
+  long-lost sister. They meet for a radiant-beam duel above the cloud
+  cities and must decide whether to continue or reconcile mid-combat.
+
+style:
+  preset: miyazaki   # anime aesthetic; override grading for more vibrance
+  grading: anime-cel
+  platform: youtube
+  aspect: 16:9
+
+tone: "dynamic, emotional, aerial-combat, vibrant, anime action"
+
+cast:
+  - name: Yuki
+    role: protagonist
+    library_id: null
+    description: "16-year-old Japanese girl with long dark hair streaming in wind, big dark eyes with determined expression, wearing a blue pilot's jacket over a white shirt, leather gloves, anime-cel clean line art aesthetic with vibrant flat-shaded colors, dynamic posture, Miyazaki-style proportions"
+    archetype: human-young-adult
+    create_on_first_run: true
+
+  - name: Rei
+    role: rival-sister
+    library_id: null
+    description: "18-year-old Japanese young woman with shorter bob-cut dark hair, sharp intense eyes, wearing a red pilot's jacket with gold trim over a dark shirt, fingerless gloves, anime-cel aesthetic matching Yuki — family resemblance in eye shape and jaw, dynamic fighting posture"
+    archetype: human-young-adult
+    create_on_first_run: true
+
+adversaries:
+  type: none  # rival → family reveal, not traditional adversary
+
+setting:
+  time_period: "fantastical steampunk era"
+  location: "floating cloud cities visible below, mid-air between two single-seat flying craft"
+  world_notes: "Sunset palette, clouds at multiple altitudes, flying craft have visible propellers and canvas wings, radiant beams are non-lethal cosmetic light weapons"
+
+act_structure:
+  - world_establish: "Wide epic establishing shot of floating cloud cities at sunset, small flying craft visible in distance."
+  - protagonist_sortie: "Yuki in her blue flying craft lifts off from a floating harbor. Resolute expression."
+  - challenger_arrives: "Rei in her red flying craft appears from behind a cloud. They circle each other."
+  - first_exchange: "Radiant beams of light arc between craft — Yuki deflects Rei's beam with practiced swerve. Anime-speed-lines."
+  - close_moment: "Yuki flies close enough to see Rei's face through the cockpit. Her eyes widen — RECOGNITION."
+  - hesitation: "Yuki pulls her flying craft back, beam weapon hand trembling. Close-up on her face: shock, grief."
+  - rei_realizes: "Rei's expression shifts from fierce to uncertain. Her hand relaxes on the controls."
+  - silence: "Both craft hover facing each other. Engines idle. Sunset light on both pilots."
+  - sisters_meet: "Yuki opens her cockpit. Shouts across the gap. Rei's face — realization, tears."
+  - reconciliation: "Both craft fly side-by-side now, radiant beams woven as light ribbons between them, harmoniously."
+
+content_filter_substitutions:
+  # Anime-action must avoid weapon violence language
+  # "shoots energy weapon" → "fires a radiant beam"
+  # "attacks" → "arc a radiant beam toward"
+  # "destroys" → "deflects harmlessly"
+  "shoots": "fires a radiant"
+  "attacks": "arcs a beam toward"
+
+estimated_cost:
+  seedance_per_clip: 0.40
+  seedance_total: 4.00
+  gemini_batched: 0.02
+  go_bananas_new_characters: 0.10
+  elevenlabs_narration: 0.08
+  total: ~4.20
+
+estimated_wall_time: "~45min"
+
+audio_direction:
+  score: "Orchestral with synthesizer, rising tension → reconciliation swell, J-pop-orchestral hybrid"
+  sfx: "Engine hum, wind whoosh, radiant-beam sing, anime-style impact soft-swoosh (not crash)"
+  dialogue: "2 lines — Yuki: 'Rei?!' Rei: 'Sister…'"
+
+audio_mix_notes: "Music should drop to near-silence at the recognition beat (scene 5-6) for emotional impact"

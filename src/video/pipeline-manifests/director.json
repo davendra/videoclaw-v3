@@ -1,0 +1,46 @@
+{
+  "name": "director",
+  "version": "1.0.0",
+  "productionMode": "director",
+  "stages": [
+    {
+      "name": "brief",
+      "produces": ["brief"],
+      "checkpointRequired": true,
+      "humanApprovalDefault": true,
+      "successCriteria": ["brief artifact exists"]
+    },
+    {
+      "name": "storyboard",
+      "requiredArtifactsIn": ["brief"],
+      "produces": ["storyboard"],
+      "checkpointRequired": true,
+      "humanApprovalDefault": true,
+      "successCriteria": ["director beat plan exists"]
+    },
+    {
+      "name": "assets",
+      "requiredArtifactsIn": ["storyboard"],
+      "produces": ["asset-manifest"],
+      "checkpointRequired": true,
+      "humanApprovalDefault": false,
+      "successCriteria": ["asset manifest exists"]
+    },
+    {
+      "name": "review",
+      "requiredArtifactsIn": ["asset-manifest"],
+      "produces": ["review-report"],
+      "checkpointRequired": true,
+      "humanApprovalDefault": true,
+      "successCriteria": ["review verdict is explicit"]
+    },
+    {
+      "name": "publish",
+      "requiredArtifactsIn": ["review-report"],
+      "produces": ["publish-report"],
+      "checkpointRequired": true,
+      "humanApprovalDefault": true,
+      "successCriteria": ["publish readiness is explicit"]
+    }
+  ]
+}

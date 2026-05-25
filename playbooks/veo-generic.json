@@ -1,0 +1,26 @@
+{
+  "name": "veo-generic",
+  "provider": "veo",
+  "useWhen": [
+    "general-purpose motion-led clips",
+    "cleaner realistic scenes",
+    "when a direct or useapi veo route is available and trusted"
+  ],
+  "promptFormula": [
+    "subject and environment",
+    "camera movement",
+    "key action",
+    "timing and framing intent",
+    "safety or exclusion constraints"
+  ],
+  "constraints": [
+    "prefer fewer stronger motions over many conflicting ones",
+    "keep the subject, action, and frame relationship explicit",
+    "do not assume continuity without anchors or references"
+  ],
+  "adaptationChecklist": [
+    "translate the reference beat structure into the new brief",
+    "keep camera logic but replace topic-specific visuals",
+    "check route readiness before promising runtime execution"
+  ]
+}

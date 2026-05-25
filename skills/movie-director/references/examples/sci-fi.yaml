@@ -1,0 +1,72 @@
+# Example: Sci-fi short film (Villeneuve-style world-building)
+# Cerebral, grand-scale, one human against the vastness of space.
+---
+project:
+  name: "First Contact"
+  slug: "first-contact-sci-fi"
+  genre: sci-fi
+  runtime_target: "3:30"
+  scene_count: 14
+  clip_duration_sec: 15
+
+premise: |
+  A lone deep-space botanist receives a strange bloom of light around her
+  Mars greenhouse. Over 14 scenes she discovers it is an alien message
+  written in plant growth.
+
+style:
+  preset: villeneuve
+  grading: teal-orange
+  platform: youtube
+  aspect: 16:9
+
+tone: "epic, awe, isolating, cerebral, grand-scale, quiet"
+
+cast:
+  - name: Dr-Rhea
+    role: protagonist
+    library_id: null
+    description: "40s woman with short grey-black hair, warm brown eyes, olive skin, wearing a grey utility jumpsuit with a NASA patch, kind thoughtful expression, Villeneuve epic cinematic aesthetic with teal-orange color grading"
+    archetype: human-adult-scientist
+    create_on_first_run: true
+
+adversaries:
+  type: none
+
+setting:
+  time_period: "2047, early Mars colonization"
+  location: "small greenhouse dome on Mars surface, alone"
+  world_notes: "Red Martian landscape outside, glass dome, rows of hydroponic plants, humming equipment"
+
+act_structure:
+  - world_establish: "Wide shot of Rhea's greenhouse dome on Mars, sunrise over red plains."
+  - protagonist_in_context: "Inside, Rhea tends to a row of seedlings, humming softly."
+  - concept_introduced: "A single seedling pulses with a faint blue glow. Rhea doesn't notice at first."
+  - stakes_raised: "She looks up from her tablet — one plant glows. Her eyebrows raise."
+  - exploration: "Close-up of the glowing seedling. Rhea touches the leaf gently. The glow deepens."
+  - development: "Time-lapse: overnight, the seedling grows. Its branches form an impossible pattern."
+  - pattern_reveal: "Wide shot: all plants now glow faintly, branches forming a geometric pattern across the greenhouse."
+  - recognition: "Rhea steps back, stunned. She begins to photograph the pattern from above."
+  - crisis: "On her tablet, she overlays the pattern on star-map software. The pattern matches a distant constellation."
+  - choice: "Rhea reaches for her communication panel. She hesitates — if she calls Earth, they might destroy the plants."
+  - commitment: "She powers down the comm and picks up a notebook instead. She will observe first."
+  - realization: "She sketches the pattern. As she does, new branches form into what look like Earth continents."
+  - hope: "Rhea smiles. Outside the dome, another sunrise breaks. She holds up her sketch to the glass."
+  - resolution: "Wide shot from Mars surface looking in: Rhea silhouetted against the dome, sunrise, plants glowing. Silent awe."
+
+content_filter_substitutions: []
+
+estimated_cost:
+  seedance_per_clip: 0.40
+  seedance_total: 5.60
+  gemini_batched: 0.02
+  go_bananas_new_characters: 0.05
+  elevenlabs_narration: 0.15
+  total: ~5.82
+
+estimated_wall_time: "~1h05m"
+
+audio_direction:
+  score: "Sparse ambient synths, drone layer, occasional swelling strings for reveals"
+  sfx: "Dome humming, wind howl outside, plant growth whispers, Mars silence"
+  dialogue: "Rhea has a soft voiceover at 2 or 3 moments, reflective not explanatory"

@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "vclaw-video-core/video/artifacts/clone-plan",
+  "type": "object",
+  "required": [
+    "templateName",
+    "projectSlug",
+    "intent",
+    "recommendedPacing",
+    "recommendedMotionMode",
+    "keepFromReference",
+    "adaptForIntent",
+    "reusableVariables",
+    "beats",
+    "generatedAt"
+  ],
+  "properties": {
+    "templateName": { "type": "string" },
+    "projectSlug": { "type": "string" },
+    "intent": { "type": "string" },
+    "recommendedPacing": { "type": "string", "enum": ["slow", "medium", "fast", "mixed"] },
+    "recommendedMotionMode": { "type": "string", "enum": ["motion-clips", "animated-stills", "mixed", "unknown"] },
+    "keepFromReference": { "type": "array", "items": { "type": "string" } },
+    "adaptForIntent": { "type": "array", "items": { "type": "string" } },
+    "reusableVariables": { "type": "array", "items": { "type": "string" } },
+    "beats": { "type": "array", "items": { "type": "string" } },
+    "styleLayers": { "type": "array", "items": { "type": "string" } },
+    "beatCompression": {
+      "type": "object",
+      "properties": {
+        "targetDurationSeconds": { "type": "number" },
+        "maxBeats": { "type": "number" },
+        "dialogueWordBudget": { "type": "number" },
+        "notes": { "type": "array", "items": { "type": "string" } }
+      },
+      "additionalProperties": true
+    },
+    "technicalNotes": { "type": "array", "items": { "type": "string" } },
+    "dialogueNotes": { "type": "array", "items": { "type": "string" } },
+    "workflowChecklist": { "type": "array", "items": { "type": "string" } },
+    "generatedAt": { "type": "string" }
+  },
+  "additionalProperties": true
+}

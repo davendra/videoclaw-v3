@@ -1,0 +1,40 @@
+{
+  "expectations": [
+    {
+      "text": "Selects CREATE mode (not COPY) since user said 'no reference video' and wants to design from scratch",
+      "passed": true,
+      "evidence": "Line 5: 'This is a **CREATE Mode** project (no reference video)'"
+    },
+    {
+      "text": "Identifies portrait 9:16 and warns about I2V API limitation -- recommends T2V mode for portrait",
+      "passed": false,
+      "evidence": "Line 176-195: Uses '--mode frames-to-video' (I2V) with '--ratio portrait' WITHOUT warning about the API limitation. Does not mention T2V as the required mode for portrait. Without the skill, the agent doesn't know about the INVALID_ARGUMENT bug for portrait I2V."
+    },
+    {
+      "text": "Follows CREATE mode Phase 0-5 workflow: project setup -> asset collection -> format -> scene design -> music -> generate",
+      "passed": true,
+      "evidence": "Steps 0-5 follow: create project -> build SEALCAM+ JSON (scene design) -> generate first-frame images -> generate videos -> music -> stitch"
+    },
+    {
+      "text": "Uses model_id='gemini-pro-image' for all image generation (not gemini-flash-image)",
+      "passed": false,
+      "evidence": "Lines 118, 128, 137, 148, 155: All generate_image calls use model_id='gemini-flash-image'. Line 294: 'Image model: gemini-flash-image (Nano Banana 2 / Gemini 3.1 Flash Image). This is the standard choice per established project preferences.'"
+    },
+    {
+      "text": "Asks about character references before proceeding (Phase 1 Asset Collection)",
+      "passed": false,
+      "evidence": "No interactive question-asking phase. The result goes straight into the pipeline plan without pausing to ask the user about product images, character references, or music preferences."
+    },
+    {
+      "text": "Suggests scene templates or builds SEALCAM+ JSON for the 4 described scenes",
+      "passed": true,
+      "evidence": "Lines 49-107: Full scene config JSON with all 4 scenes including description, camera, lighting, mood, subject, and action fields"
+    }
+  ],
+  "summary": {
+    "passed": 2,
+    "failed": 4,
+    "total": 6,
+    "pass_rate": 0.333
+  }
+}

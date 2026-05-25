@@ -1,0 +1,80 @@
+# Example: Travel vlog (Spielberg cinematic golden-hour travelogue)
+# First-person travel discovery, warm observational.
+---
+project:
+  name: "Seven Sunsets"
+  slug: "seven-sunsets-travel"
+  genre: documentary
+  runtime_target: "2:30"
+  scene_count: 10
+  clip_duration_sec: 15
+
+premise: |
+  A solo traveler films seven sunsets in seven different locations across
+  one trip through the Mediterranean. Each sunset teaches them something
+  different about the place — and themselves.
+
+style:
+  preset: spielberg
+  grading: golden-hour
+  platform: youtube
+  aspect: 16:9
+
+tone: "warm, observational, introspective, cinematic-travelogue"
+
+cast:
+  - name: Traveler
+    role: protagonist
+    library_id: null
+    description: "30s traveler with wavy brown hair, sun-browned skin, warm hazel eyes, wearing a linen shirt over dark jeans, backpack and camera strap visible, authentic relaxed bearing, Spielberg golden-hour travelogue aesthetic, documentary photorealism"
+    archetype: human-adult
+    create_on_first_run: true
+
+adversaries:
+  type: none
+
+setting:
+  time_period: "contemporary, summer"
+  location: "Mediterranean travel route — seven different sunset locations across 10 scenes"
+  world_notes: "Each sunset is distinct; warm golden light throughout; coast or mountain views"
+
+act_structure:
+  - departure: "Traveler at home, packing a small bag. Window light golden-hour. Closes bag. Leaves."
+  - sunset_one_athens: "Wide shot of Traveler sitting on the Acropolis hillside. Sunset over Athens ruins. Camera clicks."
+  - sunset_two_santorini: "Traveler on a white-washed Santorini rooftop. Sunset over the caldera. Deep blue water."
+  - sunset_three_crete: "Traveler walking along a Cretan beach at dusk. Footprints in sand. Gentle waves."
+  - mid_journey_reflect: "Close-up of Traveler's journal open on a cafe table, sunset reflecting in a glass of wine. Writes a line."
+  - sunset_four_malta: "Traveler climbing a Maltese cliff path. Sunset over medieval walls. Golden stone glowing."
+  - sunset_five_sicily: "Traveler at a Sicilian agriturismo, dinner table outdoors. Sunset over olive groves. Family behind."
+  - sunset_six_sardinia: "Traveler on a Sardinian headland. Sunset over clear turquoise water. Solo, contemplative."
+  - sunset_seven_return: "Traveler at home, sitting on their own balcony. Sunset over city. Same camera. Smile."
+  - montage_closing: "Insert shot of the seven printed photographs laid out on a table, each a different sunset. The traveler's hand gently arranging them."
+
+content_filter_substitutions: []
+
+estimated_cost:
+  seedance_per_clip: 0.40
+  seedance_total: 4.00
+  gemini_batched: 0.02
+  go_bananas_new_characters: 0.05
+  elevenlabs_narration: 0.12
+  total: ~4.19
+
+estimated_wall_time: "~45min"
+
+audio_direction:
+  score: "Acoustic guitar with occasional mandolin and soft flute, travel folk warmth, 75 BPM"
+  sfx: "Different sunset-hour ambient per location — waves, cicadas, distant music, wind, bells"
+  dialogue: |
+    Traveler voiceover, reflective, 7 short lines (one per sunset):
+    - "Athens — where every stone has a story."
+    - "Santorini — where the water drinks the sun."
+    - "Crete — where my footprints are my only company."
+    - (Mid-journey) "I forgot to feel home. I'm remembering."
+    - "Malta — where the walls are the color of honey."
+    - "Sicily — where strangers become family over wine."
+    - "Sardinia — where the sea is clearer than my thoughts."
+    - (Closing) "Home — the same sunset, different eyes."
+
+platform_optimization:
+  pacing: "Medium-slow — let each sunset breathe for at least 5 seconds"

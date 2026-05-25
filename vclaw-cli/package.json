@@ -1,0 +1,52 @@
+{
+  "name": "vclaw-cli",
+  "version": "3.0.0-alpha.0",
+  "description": "Bun sidecar for videoclaw v3: Google Labs Flow (Veo 3.x + Omni Flash) via Puppeteer browser automation + UseAPI aggregator (Veo, Seedance, Runway). Subprocess-only — invoked from the main `videoclaw` CLI via native-veo; not a standalone user surface.",
+  "private": true,
+  "scripts": {
+    "start": "bun run flow.ts",
+    "generate": "bun run flow.ts",
+    "benchmark:smoke": "bun run src/provider-platform/benchmark-smoke.ts",
+    "test": "bun test",
+    "typecheck": "tsc --noEmit",
+    "test:watch": "bun test --watch",
+    "test:coverage": "bun test --coverage"
+  },
+  "keywords": [
+    "vclaw-cli",
+    "veo",
+    "veo-3",
+    "omni-flash",
+    "google-flow",
+    "seedance",
+    "runway",
+    "kling",
+    "useapi",
+    "video-generation",
+    "multi-provider",
+    "ai",
+    "automation",
+    "cli"
+  ],
+  "author": "Davendra Patel",
+  "license": "SEE LICENSE IN ../LICENSE",
+  "engines": {
+    "bun": ">=1.3.5"
+  },
+  "dependencies": {
+    "image-size": "^1.2.1",
+    "ora": "^9.0.0",
+    "puppeteer-real-browser": "https://github.com/pencilbsp/puppeteer-real-browser.git"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.3.5"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "overrides": {
+    "basic-ftp": "5.3.1",
+    "ip-address": "10.2.0",
+    "ws": "8.21.0"
+  }
+}

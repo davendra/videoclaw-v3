@@ -1,0 +1,5 @@
+{
+  "jobId": "fixture-image-error-001",
+  "media": [],
+  "error": "Image generation failed: Invalid prompt"
+}

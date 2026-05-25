@@ -1,0 +1,113 @@
+{
+  "skill_name": "video-replicator",
+  "iteration": 1,
+  "configurations": [
+    {
+      "name": "with_skill",
+      "runs": [
+        {
+          "eval_id": 1,
+          "eval_name": "copy-mode-nike-ad",
+          "pass_rate": 1.0,
+          "passed": 6,
+          "failed": 0,
+          "total": 6
+        },
+        {
+          "eval_id": 2,
+          "eval_name": "create-mode-tiktok-portrait",
+          "pass_rate": 1.0,
+          "passed": 6,
+          "failed": 0,
+          "total": 6
+        },
+        {
+          "eval_id": 4,
+          "eval_name": "film-mode-chronos",
+          "pass_rate": 1.0,
+          "passed": 6,
+          "failed": 0,
+          "total": 6
+        }
+      ],
+      "run_summary": {
+        "mean_pass_rate": 1.0,
+        "stddev_pass_rate": 0.0,
+        "total_passed": 18,
+        "total_failed": 0,
+        "total_assertions": 18
+      }
+    },
+    {
+      "name": "without_skill",
+      "runs": [
+        {
+          "eval_id": 1,
+          "eval_name": "copy-mode-nike-ad",
+          "pass_rate": 0.833,
+          "passed": 5,
+          "failed": 1,
+          "total": 6
+        },
+        {
+          "eval_id": 2,
+          "eval_name": "create-mode-tiktok-portrait",
+          "pass_rate": 0.333,
+          "passed": 2,
+          "failed": 4,
+          "total": 6
+        },
+        {
+          "eval_id": 4,
+          "eval_name": "film-mode-chronos",
+          "pass_rate": 1.0,
+          "passed": 6,
+          "failed": 0,
+          "total": 6
+        }
+      ],
+      "run_summary": {
+        "mean_pass_rate": 0.722,
+        "stddev_pass_rate": 0.343,
+        "total_passed": 13,
+        "total_failed": 5,
+        "total_assertions": 18
+      }
+    }
+  ],
+  "delta": {
+    "mean_pass_rate": 0.278,
+    "interpretation": "Skill improves pass rate by +27.8 percentage points (100% vs 72.2%)"
+  },
+  "analyst_notes": [
+    "DISCRIMINATING ASSERTIONS (failed without_skill, passed with_skill):",
+    "  1. 'Uses gemini-pro-image' — FAILED in COPY without_skill and CREATE without_skill. The user's memory says 'always use NB2' but the skill overrides for Pro model in video production. PASSED in FILM without_skill because the agent found the gobananas_prompts.py script documenting Flash's character reference limitation.",
+    "  2. 'Warns about I2V API limitation for portrait' — FAILED in CREATE without_skill. Used I2V (frames-to-video) with portrait, which returns INVALID_ARGUMENT. Only the skill documents this workaround.",
+    "  3. 'Asks about character references before proceeding' — FAILED in CREATE without_skill. Without the skill's interactive question flow, the agent jumps straight to execution.",
+    "",
+    "NON-DISCRIMINATING ASSERTIONS (passed in both configurations):",
+    "  1. 'Selects correct mode' — both versions correctly chose COPY/CREATE/FILM from context clues",
+    "  2. 'Correct pipeline phase order' — both versions ordered phases correctly (the project's script names guide this)",
+    "  3. 'Correct aspect ratio flags' — both versions handled 16:9/landscape correctly",
+    "  4. ALL 6 FILM mode assertions — the without_skill agent explored the codebase and found the pipeline scripts, correctly deduced the full FILM workflow including Seedance backend, screenplay generation, and Pro model requirement",
+    "",
+    "EVAL QUALITY ISSUES:",
+    "  - FILM mode eval is entirely non-discriminating (6/6 both ways). The codebase scripts are well-documented enough that an agent can reconstruct the pipeline without the skill.",
+    "  - COPY mode has only 1 discriminating assertion out of 6 (model choice).",
+    "  - CREATE mode has the highest discrimination (4/6 fail without skill) because it tests edge-case knowledge (portrait I2V bug) and workflow behavior (interactive questions).",
+    "",
+    "RECOMMENDATION: The skill's unique value concentrates in (1) overriding user preferences for Pro model, (2) portrait I2V workaround, (3) mandatory interactive checkpoints. Future evals should focus on these edge cases rather than pipeline ordering which the scripts already teach."
+  ],
+  "timing": {
+    "with_skill": {
+      "copy-mode-nike-ad": {"total_tokens": 90369, "duration_ms": 201697},
+      "create-mode-tiktok-portrait": {"total_tokens": 92756, "duration_ms": 200853},
+      "film-mode-chronos": {"total_tokens": 96830, "duration_ms": 254705}
+    },
+    "without_skill": {
+      "copy-mode-nike-ad": {"total_tokens": null, "duration_ms": null, "note": "timing not captured from earlier completion"},
+      "create-mode-tiktok-portrait": {"total_tokens": 77709, "duration_ms": 179262},
+      "film-mode-chronos": {"total_tokens": 81911, "duration_ms": 288240}
+    }
+  }
+}

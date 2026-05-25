@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "vclaw-video-core/video/artifacts/brief",
+  "type": "object",
+  "required": ["title", "intent", "productionMode", "createdAt"],
+  "properties": {
+    "title": { "type": "string" },
+    "intent": { "type": "string" },
+    "productionMode": { "type": "string", "enum": ["storyboard", "director"] },
+    "createdAt": { "type": "string" }
+  },
+  "additionalProperties": true
+}

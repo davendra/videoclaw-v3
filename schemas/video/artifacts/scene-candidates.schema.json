@@ -1,0 +1,85 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://vclaw.dev/schemas/video/artifacts/scene-candidates.schema.json",
+  "title": "SceneCandidatesArtifact",
+  "type": "object",
+  "required": ["schemaVersion", "scenes"],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "scenes": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/SceneCandidatesEntry" }
+    }
+  },
+  "definitions": {
+    "SceneCandidatesEntry": {
+      "type": "object",
+      "required": ["sceneIndex", "candidates"],
+      "additionalProperties": false,
+      "properties": {
+        "sceneIndex": { "type": "integer", "minimum": 0 },
+        "candidates": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/SceneCandidate" }
+        }
+      }
+    },
+    "SceneCandidate": {
+      "type": "object",
+      "required": [
+        "id",
+        "generationRound",
+        "prompt",
+        "route",
+        "submittedAt",
+        "status",
+        "outputs",
+        "source"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "generationRound": { "type": "integer", "minimum": 1 },
+        "prompt": { "type": "string" },
+        "route": { "type": "string", "minLength": 1 },
+        "submittedAt": { "type": "string", "format": "date-time" },
+        "completedAt": { "type": "string", "format": "date-time" },
+        "status": {
+          "enum": ["pending", "completed", "failed", "cancelled"]
+        },
+        "outputs": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/SceneCandidateOutput" }
+        },
+        "source": { "$ref": "#/definitions/SceneCandidateSource" }
+      }
+    },
+    "SceneCandidateOutput": {
+      "type": "object",
+      "required": ["kind", "path"],
+      "additionalProperties": false,
+      "properties": {
+        "kind": { "enum": ["video", "audio", "image"] },
+        "path": { "type": "string", "minLength": 1 },
+        "durationSec": { "type": "number", "minimum": 0 }
+      }
+    },
+    "SceneCandidateSource": {
+      "type": "object",
+      "required": ["executionRound", "adapter", "chainedFromCandidateId"],
+      "additionalProperties": false,
+      "properties": {
+        "executionRound": { "type": "integer", "minimum": 1 },
+        "adapter": { "enum": ["builtin", "shim", "custom", "native"] },
+        "externalJobId": { "type": "string" },
+        "chainedFromCandidateId": {
+          "oneOf": [
+            { "type": "string", "minLength": 1 },
+            { "type": "null" }
+          ]
+        }
+      }
+    }
+  }
+}

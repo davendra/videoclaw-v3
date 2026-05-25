@@ -1,0 +1,60 @@
+{
+  "schemaVersion": 1,
+  "projectSlug": "e2e-proofy-image-storyboard",
+  "title": "Proofy Image Storyboard E2E",
+  "intent": "Image-only director workflow test for a four-scene Proofy fintech adventure storyboard. Create and select storyboard stills, bind character continuity references, verify review readiness, and stop before video generation.",
+  "sourceDocument": "docs/REFERENCE_VIDEO_SEEDANCE_MOTION_DESIGN_WORKFLOW.md",
+  "character": {
+    "name": "Proofy",
+    "goBananasId": 249,
+    "description": "Playful flat illustrated fintech adventure mascot on warm cream paper.",
+    "referenceImageId": 6642,
+    "referenceImageUrl": "https://pub-fc1a3eb7233f432cbd48bc8087dc8448.r2.dev/davendra/2026-05-06/generate-komo-playful-flat-illustrated-fintech-ixe5xig5.jpg"
+  },
+  "executionProfile": {
+    "platform": "youtube",
+    "aspectRatio": "16:9",
+    "quality": "quality",
+    "resolution": "720p",
+    "audio": "off",
+    "outputs": "1"
+  },
+  "scenes": [
+    {
+      "sceneIndex": 0,
+      "title": "Hook",
+      "description": "Proofy stands at the edge of a warm cream-paper fintech dashboard world, holding a glowing receipt like a treasure map.",
+      "motionIntent": "Locked-off establishing shot; Proofy looks from receipt to dashboard world.",
+      "imageId": 6657,
+      "imageUrl": "https://pub-fc1a3eb7233f432cbd48bc8087dc8448.r2.dev/davendra/2026-05-06/character-proofy-scene-0-hook-still-proofy-stands-gzm2zg6g.jpg",
+      "prompt": "Scene 0 hook still: Proofy stands at the edge of a warm cream-paper fintech dashboard world, holding a glowing receipt like a treasure map. Wide establishing storyboard frame, flat illustrated Pixar storyboard style, vivid primary accents, asymmetric playful composition, clean readable silhouette, no text or logos."
+    },
+    {
+      "sceneIndex": 1,
+      "title": "Discovery",
+      "description": "Proofy kneels beside oversized colorful transaction tiles on cream paper, inspecting a tiny warning spark with a magnifying glass.",
+      "motionIntent": "Gentle push-in; Proofy studies one warning spark and points to the next clue.",
+      "imageId": 6658,
+      "imageUrl": "https://pub-fc1a3eb7233f432cbd48bc8087dc8448.r2.dev/davendra/2026-05-06/character-proofy-scene-1-discovery-still-proofy-3odpaq6w.jpg",
+      "prompt": "Scene 1 discovery still: Proofy kneels beside oversized colorful transaction tiles on cream paper, inspecting a tiny warning spark with a magnifying glass. Medium-wide storyboard frame, flat illustrated fintech adventure, warm off-white canvas, grass green, sky blue, ember orange and sunburst yellow accents, no text or logos."
+    },
+    {
+      "sceneIndex": 2,
+      "title": "Proof Moment",
+      "description": "Proofy raises a bright green checkmark token above a small pile of gold coins while dashboard tiles rearrange neatly around them.",
+      "motionIntent": "Hero beat; Proofy raises the token and the surrounding panels settle into order.",
+      "imageId": 6659,
+      "imageUrl": "https://pub-fc1a3eb7233f432cbd48bc8087dc8448.r2.dev/davendra/2026-05-06/character-proofy-scene-2-proof-moment-still-proofy-9gd3jr5k.jpg",
+      "prompt": "Scene 2 proof moment still: Proofy raises a bright green checkmark token above a small pile of gold coins while dashboard tiles rearrange neatly around them. Low-angle heroic storyboard frame, cream paper background, flat primary-color illustration, no readable text, no logos."
+    },
+    {
+      "sceneIndex": 3,
+      "title": "Handoff",
+      "description": "Proofy rides a paper airplane made from a verified receipt across a warm cream fintech landscape, leaving colored stars and coins behind.",
+      "motionIntent": "Lateral tracking handoff; receipt plane glides across the frame into the final open space.",
+      "imageId": 6660,
+      "imageUrl": "https://pub-fc1a3eb7233f432cbd48bc8087dc8448.r2.dev/davendra/2026-05-06/character-proofy-scene-3-handoff-still-proofy-5uiedidw.jpg",
+      "prompt": "Scene 3 handoff still: Proofy rides a paper airplane made from a verified receipt across a warm cream fintech landscape, leaving a small trail of colored stars and coins. Wide final storyboard frame, flat illustrated primary-color adventure, clean open space for motion, no text or logos."
+    }
+  ]
+}

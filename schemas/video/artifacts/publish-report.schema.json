@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "vclaw-video-core/video/artifacts/publish-report",
+  "type": "object",
+  "required": ["projectSlug", "status", "generatedAt"],
+  "properties": {
+    "projectSlug": { "type": "string" },
+    "status": { "type": "string", "enum": ["ready", "published", "blocked"] },
+    "generatedAt": { "type": "string" }
+  },
+  "additionalProperties": true
+}

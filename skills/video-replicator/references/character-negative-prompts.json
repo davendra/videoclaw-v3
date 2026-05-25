@@ -1,0 +1,48 @@
+{
+  "_description": "Character-specific negative prompts to prevent consistency issues during image generation. Use character names as keys. The negative prompts are automatically appended when generating images with that character_id.",
+  "_usage": "These are combined with global negative prompts and passed to Go Bananas generate_image calls.",
+  "characters": {
+    "Jack": {
+      "character_id": 41,
+      "negative_prompts": ["glasses", "spectacles", "eyeglasses", "aged", "beard", "mustache", "facial hair"]
+    },
+    "Crusher": {
+      "character_id": 2,
+      "negative_prompts": ["human", "person", "man", "transformation", "morphing", "realistic human"]
+    },
+    "Kishy": {
+      "character_id": 1,
+      "negative_prompts": ["aged", "teen", "adult", "old", "elderly", "wrinkles", "gray hair"]
+    },
+    "Sofia": {
+      "character_id": 27,
+      "negative_prompts": ["short hair", "dark hair", "curly hair", "aged", "glasses"]
+    },
+    "Ram Patel": {
+      "character_id": 42,
+      "negative_prompts": ["beard", "glasses", "bald", "long hair", "western clothing"]
+    }
+  },
+  "global": [
+    "extra limbs",
+    "distorted faces",
+    "unnatural poses",
+    "extra fingers",
+    "missing fingers",
+    "fused fingers",
+    "poorly drawn hands",
+    "poorly drawn face",
+    "mutation",
+    "deformed",
+    "ugly",
+    "blurry",
+    "bad anatomy",
+    "bad proportions",
+    "duplicate",
+    "cropped",
+    "watermark",
+    "text",
+    "logo",
+    "signature"
+  ]
+}

@@ -1,0 +1,9 @@
+{
+  "description": "Simulates a network timeout scenario",
+  "shouldTimeout": true,
+  "delayMs": 200000,
+  "expectedError": {
+    "type": "AbortError",
+    "message": "The operation was aborted"
+  }
+}

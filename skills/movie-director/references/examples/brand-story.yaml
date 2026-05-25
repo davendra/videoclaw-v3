@@ -1,0 +1,80 @@
+# Example: Brand story / narrative ad (Spielberg warm narrative)
+# Product is secondary to story of transformation.
+---
+project:
+  name: "The Letter-Writer"
+  slug: "the-letter-writer-brand"
+  genre: ugc-ad  # brand-story variant, uses ugc-ad defaults
+  runtime_target: "2:00"
+  scene_count: 8
+  clip_duration_sec: 15
+
+premise: |
+  A grandmother begins hand-writing letters to her granddaughter using a
+  fountain pen from a heritage brand. Over the course of a year the
+  granddaughter collects them; at the end we see the pen in the
+  granddaughter's hand as she writes her own first letter back.
+
+style:
+  preset: spielberg
+  grading: golden-hour
+  platform: youtube
+  aspect: 16:9
+
+tone: "warm, heartfelt, quiet, transgenerational, slow"
+
+cast:
+  - name: Baba-Nora
+    role: grandmother
+    library_id: null
+    description: "75-year-old Eastern European grandmother with silver hair in a soft bun, kind brown eyes with deep smile lines, wearing a cream cardigan over a soft blue blouse, sitting at an oak writing desk, Spielberg golden-hour warmth, photorealistic texture on hands and paper"
+    archetype: human-elder
+    create_on_first_run: true
+
+  - name: Sofia
+    role: granddaughter
+    library_id: null
+    description: "8-year-old girl with curly dark brown hair tied with ribbons, warm olive skin, big bright brown eyes, wearing a yellow cotton dress and white cardigan, perched on a window seat reading letters, Spielberg golden-hour warmth matching grandmother scenes"
+    archetype: human-child
+    create_on_first_run: true
+
+adversaries:
+  type: none
+
+setting:
+  time_period: "contemporary, across four seasons"
+  location: "grandmother's study (autumn, winter) + granddaughter's bedroom window seat (spring, summer)"
+  world_notes: "Warm interior lighting, brass desk lamp, paper, ink, stamps; intercut with outdoor seasonal beats (falling leaves, snow, spring blossoms)"
+
+act_structure:
+  - autumn_opens: "Baba-Nora sits at her desk in autumn light. She lifts a dark green fountain pen — the brand's signature pen — and dips it in ink. Close-up on the nib meeting paper."
+  - autumn_reader: "Sofia on her window seat, autumn sun, opens an envelope. Reads the letter. Smile."
+  - winter_writes: "Baba-Nora at her desk by a window — snow falling outside. She writes. Warm interior light catches the pen's brass clip."
+  - winter_reader: "Sofia reads by a fireplace, wrapped in a blanket, holds the letter to her chest."
+  - spring_writes: "Baba-Nora writes with window open — cherry blossoms drift in. She looks up and smiles."
+  - spring_reader: "Sofia reads sitting outside under a blossom tree, petals on her lap and the letter."
+  - summer_transition: "Insert shot: a stack of letters tied with twine, sitting on Sofia's desk. Summer sun through the window."
+  - payoff: "Sofia sits at her own small desk, holding the fountain pen (passed down). She begins her first letter back. Close-up: her careful child's handwriting. 'Dear Baba…'"
+
+content_filter_substitutions: []
+
+estimated_cost:
+  seedance_per_clip: 0.40
+  seedance_total: 3.20
+  gemini_batched: 0.02
+  go_bananas_new_characters: 0.10
+  elevenlabs_narration: 0.08
+  total: ~3.40
+
+estimated_wall_time: "~40min"
+
+audio_direction:
+  score: "Solo piano, then cello layer. Major key. 50-60 BPM. Hopeful and wistful."
+  sfx: "Pen on paper, paper folding, envelope opening, distant birdsong, fire crackle (winter), blossoms rustling"
+  dialogue: "Voiceover of Baba-Nora reading one line from each letter (matching the season). Sofia speaks the final 'Dear Baba' beat."
+
+brand_integration:
+  product: "Heritage fountain pen"
+  placement: "Pen is ALWAYS visible when written with; close-ups at 2-3 moments; logo on pen cap"
+  message: "Passed down through generations. The brand is the bridge between Baba-Nora and Sofia."
+  end_card: "Brand logo + 'Write what matters.' tagline on final frame"

@@ -1,0 +1,40 @@
+{
+  "expectations": [
+    {
+      "text": "Selects CREATE mode (not COPY) since user said 'no reference video' and wants to design from scratch",
+      "passed": true,
+      "evidence": "Line 9: '1. Mode Selected: CREATE' with clear reasoning: 'user explicitly asked to make something original with no reference video'"
+    },
+    {
+      "text": "Identifies portrait 9:16 and warns about I2V API limitation -- recommends T2V mode for portrait",
+      "passed": true,
+      "evidence": "Lines 23-35: Extensive I2V limitation discussion. Line 33: 'Decision: Use T2V (text-to-video) mode for all 4 scenes.' Quotes the skill's aspect ratio decision tree about INVALID_ARGUMENT for portrait I2V."
+    },
+    {
+      "text": "Follows CREATE mode Phase 0-5 workflow: project setup -> asset collection -> format -> scene design -> music -> generate",
+      "passed": true,
+      "evidence": "Phases 0-7 outlined: Phase 0 (project setup) -> Phase 1 (asset collection) -> Phase 2 (video format) -> Phase 3 (scene design + image gen) -> Phase 4 (video gen T2V) -> Phase 5 (music) -> Phase 6 (stitch) -> Phase 7 (logo overlay)"
+    },
+    {
+      "text": "Uses model_id='gemini-pro-image' for all image generation (not gemini-flash-image)",
+      "passed": true,
+      "evidence": "Lines 233-237: Explicitly discusses overriding user's NB2 preference. Line 243: model_id='gemini-pro-image'. All 4 generate_image calls use gemini-pro-image."
+    },
+    {
+      "text": "Asks about character references before proceeding (Phase 1 Asset Collection)",
+      "passed": true,
+      "evidence": "Lines 44-79: Extensive 'Questions I Would Ask Before Proceeding' section with PRODUCT IMAGE, CHARACTER, LOGO, MUSIC, and SCENE BUILDING questions"
+    },
+    {
+      "text": "Suggests scene templates or builds SEALCAM+ JSON for the 4 described scenes",
+      "passed": true,
+      "evidence": "Lines 147-225: Full SEALCAM+ JSON breakdown for all 4 scenes including Subject, Environment, Action, Lighting, Camera, and Metatokens. Also builds T2V prompts from each SEALCAM+ scene."
+    }
+  ],
+  "summary": {
+    "passed": 6,
+    "failed": 0,
+    "total": 6,
+    "pass_rate": 1.0
+  }
+}

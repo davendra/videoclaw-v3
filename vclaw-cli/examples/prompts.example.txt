@@ -1,0 +1,57 @@
+# Example prompts file for veo-cli
+# Copy this file to prompts.txt and customize with your own prompts
+#
+# Supported formats:
+#
+# TEXT-TO-VIDEO (Default):
+#   [tag] Your video description prompt
+#
+# IMAGE-TO-VIDEO (local file - auto-uploaded):
+#   [tag] image:./path/to/image.jpg Motion description prompt
+#
+# IMAGE-TO-VIDEO (mediaGenerationId from Flow library):
+#   [tag] image:MEDIA_GENERATION_ID Motion description prompt
+#
+# FRAMES-TO-VIDEO (local files - auto-uploaded):
+#   [tag] frames:./start.jpg,./end.jpg Transition prompt
+#
+# FRAMES-TO-VIDEO (mediaGenerationIds):
+#   [tag] frames:START_MEDIA_ID,END_MEDIA_ID Transition prompt
+#
+# INGREDIENTS/REFERENCES (local files - auto-uploaded):
+#   [tag] ingredients:./ref1.jpg,./ref2.jpg Scene description prompt
+#
+# INGREDIENTS/REFERENCES (mediaGenerationIds):
+#   [tag] ingredients:MEDIA_ID_1,MEDIA_ID_2 Scene description prompt
+#
+# NOTE: Local file paths are auto-uploaded to Flow via browser automation
+#
+# The [tag] becomes part of the output filename
+# Output format: YYYY-MM-DD_HH-MM_tag.mp4 (e.g., 2025-01-13_19-30_sunset.mp4)
+# Lines starting with # are ignored
+
+# Example Text-to-Video prompts:
+[sunset] A breathtaking sunset over the ocean with golden rays piercing through dramatic clouds, cinematic 4K
+[cityscape] Timelapse of a futuristic city at night with flying cars and neon lights reflecting off glass towers
+[nature] A serene forest stream with sunlight filtering through ancient redwood trees, slow motion water droplets
+[space] Astronaut floating in space with Earth visible in the background, helmet reflection showing stars
+
+# Example Image-to-Video with LOCAL FILE (auto-uploaded):
+# [portrait] image:./input-images/photo.jpg The woman slowly turns and smiles at the camera
+# [dance] image:./dancer.png She begins to dance gracefully in the spotlight
+
+# Example Image-to-Video with mediaGenerationId (from Flow library):
+# [portrait] image:CAMaJD...your_media_id... The woman slowly turns and smiles at the camera
+
+# Example Frames-to-Video with LOCAL FILES (auto-uploaded):
+# [morph] frames:./input-images/start.jpg,./input-images/end.jpg Smooth morphing transition between scenes
+
+# Example Frames-to-Video with mediaGenerationIds:
+# [transition] frames:START_MEDIA_ID,END_MEDIA_ID Smooth morphing transition between scenes
+
+# Example Ingredients/References with LOCAL FILES (auto-uploaded):
+# [styled-scene] ingredients:./ref1.jpg,./ref2.jpg Character walks through enchanted forest
+
+# Example Ingredients/References with mediaGenerationIds:
+# [styled-scene] ingredients:MEDIA_ID_1,MEDIA_ID_2,MEDIA_ID_3 Character walks through enchanted forest
+

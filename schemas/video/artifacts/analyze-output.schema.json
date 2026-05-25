@@ -1,0 +1,60 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "vclaw-video-core/video/artifacts/analyze-output",
+  "type": "object",
+  "required": ["reference", "pacing", "structure", "motionClassification", "keep", "change", "reusableVariables", "generatedAt"],
+  "properties": {
+    "reference": {
+      "type": "object",
+      "required": ["source"],
+      "properties": {
+        "source": { "type": "string" }
+      },
+      "additionalProperties": true
+    },
+    "pacing": {
+      "type": "object",
+      "required": ["label", "notes"],
+      "properties": {
+        "label": { "type": "string", "enum": ["slow", "medium", "fast", "mixed"] },
+        "notes": { "type": "array", "items": { "type": "string" } }
+      },
+      "additionalProperties": true
+    },
+    "structure": {
+      "type": "object",
+      "required": ["beats"],
+      "properties": {
+        "beats": { "type": "array", "items": { "type": "string" } }
+      },
+      "additionalProperties": true
+    },
+    "motionClassification": {
+      "type": "object",
+      "required": ["primaryMode", "notes"],
+      "properties": {
+        "primaryMode": { "type": "string", "enum": ["motion-clips", "animated-stills", "mixed", "unknown"] },
+        "notes": { "type": "array", "items": { "type": "string" } }
+      },
+      "additionalProperties": true
+    },
+    "keep": { "type": "array", "items": { "type": "string" } },
+    "change": { "type": "array", "items": { "type": "string" } },
+    "reusableVariables": { "type": "array", "items": { "type": "string" } },
+    "styleLayers": { "type": "array", "items": { "type": "string" } },
+    "beatCompression": {
+      "type": "object",
+      "properties": {
+        "targetDurationSeconds": { "type": "number" },
+        "maxBeats": { "type": "number" },
+        "dialogueWordBudget": { "type": "number" },
+        "notes": { "type": "array", "items": { "type": "string" } }
+      },
+      "additionalProperties": true
+    },
+    "technicalNotes": { "type": "array", "items": { "type": "string" } },
+    "dialogueNotes": { "type": "array", "items": { "type": "string" } },
+    "generatedAt": { "type": "string" }
+  },
+  "additionalProperties": true
+}

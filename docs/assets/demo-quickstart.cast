@@ -1,0 +1,13 @@
+{"version":3,"term":{"cols":100,"rows":28,"type":"xterm-256color"},"timestamp":1776896128,"idle_time_limit":2.0,"command":"node scripts/demo-quickstart.mjs","env":{"SHELL":"/bin/zsh"}}
+[0.100, "o", "vclaw-video-core · 60-second tour\r\nexplicit artifacts · multi-provider · no silent fallbacks\r\n\r\n"]
+[0.600, "o", "▶ vclaw video init demo-ad\r\n  ✓ project ready · next stage: brief\r\n\r\n"]
+[0.900, "o", "▶ vclaw video brief --project demo-ad --title \"Launch tease\" --intent \"15s reveal\"\r\n  ✓ brief.json written · shorts · 9:16 · 1080p · 2 outputs\r\n\r\n"]
+[0.900, "o", "▶ vclaw video storyboard --project demo-ad --scene hook --scene reveal --scene cta\r\n  ✓ 3 scenes written · storyboard.json\r\n\r\n"]
+[0.900, "o", "▶ vclaw video assets --project demo-ad --asset image:logo.png:0:seedance\r\n  ✓ 1 asset pinned · ready to plan\r\n\r\n"]
+[0.900, "o", "▶ vclaw video plan --project demo-ad\r\n  ✓ route: seedance-direct · dry-run safe\r\n\r\n"]
+[0.900, "o", "▶ vclaw video produce --project demo-ad --dry-run\r\n  ✓ dry-run passed · no provider submission\r\n\r\n"]
+[0.900, "o", "▶ vclaw video status --project demo-ad\r\n  ✓ next: assets · review state: missing\r\n\r\n"]
+[0.900, "o", "▶ vclaw video report\r\n  ✓ portfolio · 1 project(s) · machine-readable JSON\r\n\r\n"]
+[0.900, "o", "▶ vclaw video export-obsidian --project demo-ad\r\n  ✓ Obsidian note exported · .../vault/Projects/demo-ad.md\r\n\r\n"]
+[0.400, "o", "done · your campaign is JSON on disk.\r\ngithub.com/davendra/vclaw-video-core\r\n"]
+[0.005, "x", "0"]

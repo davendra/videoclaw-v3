@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "vclaw-video-core/video/artifacts/execution-plan",
+  "type": "object",
+  "required": [
+    "projectSlug",
+    "productionMode",
+    "operationKind",
+    "recommendedRouteId",
+    "ready",
+    "blockers",
+    "rationale",
+    "generatedAt"
+  ],
+  "properties": {
+    "projectSlug": { "type": "string" },
+    "productionMode": { "type": "string", "enum": ["storyboard", "director"] },
+    "operationKind": {
+      "type": "string",
+      "enum": ["text-to-video", "image-to-video", "frames-to-video", "ingredients-to-video", "extend", "edit", "add-audio"]
+    },
+    "recommendedRouteId": {
+      "type": ["string", "null"],
+      "enum": ["veo-direct", "veo-useapi", "seedance-direct", "runway-useapi", null]
+    },
+    "ready": { "type": "boolean" },
+    "blockers": { "type": "array", "items": { "type": "string" } },
+    "rationale": { "type": "array", "items": { "type": "string" } },
+    "promptGuidance": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "reason", "category"],
+        "properties": {
+          "name": { "type": "string" },
+          "reason": { "type": "string" },
+          "category": { "type": "string", "enum": ["provider", "framework"] }
+        },
+        "additionalProperties": true
+      }
+    },
+    "generatedAt": { "type": "string" }
+  },
+  "additionalProperties": true
+}

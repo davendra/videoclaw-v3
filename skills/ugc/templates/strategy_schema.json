@@ -1,0 +1,253 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "UGC Strategy Documents",
+  "description": "Schema for all strategy documents used in the UGC belief-driven pipeline",
+  "type": "object",
+  "properties": {
+    "avatar": {
+      "type": "object",
+      "description": "Target customer avatar defining who the UGC content speaks to",
+      "required": ["name", "age_range", "gender", "pain_points", "desired_outcome", "objections", "language_style"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Persona name for reference (e.g., 'Busy Mom Sarah')"
+        },
+        "age_range": {
+          "type": "string",
+          "description": "Target age range (e.g., '25-34')"
+        },
+        "gender": {
+          "type": "string",
+          "enum": ["male", "female", "non-binary", "any"],
+          "description": "Primary gender target"
+        },
+        "income_level": {
+          "type": "string",
+          "enum": ["budget", "mid-range", "premium", "luxury"],
+          "description": "Spending capacity and price sensitivity"
+        },
+        "pain_points": {
+          "type": "array",
+          "items": { "type": "string" },
+          "minItems": 3,
+          "description": "Top frustrations and problems they experience"
+        },
+        "desired_outcome": {
+          "type": "string",
+          "description": "The transformation they want — painted vividly"
+        },
+        "current_solutions": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "What they have tried before (competitors, DIY, nothing)"
+        },
+        "objections": {
+          "type": "array",
+          "items": { "type": "string" },
+          "minItems": 2,
+          "description": "Reasons they might NOT buy (price, skepticism, timing)"
+        },
+        "language_style": {
+          "type": "string",
+          "description": "How this avatar talks (casual, professional, slang-heavy, etc.)"
+        },
+        "platforms": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["tiktok", "instagram", "youtube_shorts", "facebook", "linkedin"]
+          },
+          "description": "Primary social platforms where this avatar consumes content"
+        },
+        "content_preferences": {
+          "type": "string",
+          "description": "What type of content resonates (humor, educational, emotional, aspirational)"
+        }
+      }
+    },
+    "offer": {
+      "type": "object",
+      "description": "Product/service offer details for script generation",
+      "required": ["product_name", "category", "price", "unique_mechanism", "key_benefits", "proof_points"],
+      "properties": {
+        "product_name": {
+          "type": "string",
+          "description": "Product or service name"
+        },
+        "brand_name": {
+          "type": "string",
+          "description": "Parent brand name"
+        },
+        "category": {
+          "type": "string",
+          "description": "Product category (e.g., 'skincare', 'SaaS', 'supplement')"
+        },
+        "price": {
+          "type": "string",
+          "description": "Price or price range (e.g., '$29.99', '$49-99/mo')"
+        },
+        "unique_mechanism": {
+          "type": "object",
+          "required": ["name", "explanation"],
+          "properties": {
+            "name": {
+              "type": "string",
+              "description": "Named proprietary mechanism (e.g., 'CeraSync Technology')"
+            },
+            "explanation": {
+              "type": "string",
+              "description": "One-sentence explanation of HOW it works differently"
+            },
+            "visual_demo": {
+              "type": "string",
+              "description": "How to visually demonstrate the mechanism in video"
+            }
+          },
+          "description": "The unique mechanism that differentiates this product"
+        },
+        "key_benefits": {
+          "type": "array",
+          "items": { "type": "string" },
+          "minItems": 2,
+          "maxItems": 5,
+          "description": "Top benefits framed as outcomes (not features)"
+        },
+        "proof_points": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["type", "claim"],
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": ["statistic", "testimonial", "before_after", "expert", "award", "press"],
+                "description": "Type of proof"
+              },
+              "claim": {
+                "type": "string",
+                "description": "The specific proof statement"
+              },
+              "source": {
+                "type": "string",
+                "description": "Attribution or source for the claim"
+              }
+            }
+          },
+          "minItems": 1,
+          "description": "Evidence that the product delivers on its promise"
+        },
+        "guarantee": {
+          "type": "string",
+          "description": "Risk reversal offer (e.g., '30-day money-back guarantee')"
+        },
+        "cta_url": {
+          "type": "string",
+          "format": "uri",
+          "description": "Landing page or purchase URL"
+        },
+        "discount_code": {
+          "type": "string",
+          "description": "Promo code to include in CTA if applicable"
+        }
+      }
+    },
+    "beliefs": {
+      "type": "object",
+      "description": "Necessary beliefs the viewer must hold before purchasing",
+      "required": ["product_name", "beliefs"],
+      "properties": {
+        "product_name": {
+          "type": "string",
+          "description": "Product this belief set applies to"
+        },
+        "beliefs": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["id", "category", "statement", "priority"],
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^B[0-9]+$",
+                "description": "Belief identifier (e.g., 'B1', 'B2')"
+              },
+              "category": {
+                "type": "string",
+                "enum": ["problem", "mechanism", "proof", "offer", "urgency", "trust"],
+                "description": "Which stage of the belief journey this targets"
+              },
+              "statement": {
+                "type": "string",
+                "description": "The belief as an 'I believe that...' statement"
+              },
+              "priority": {
+                "type": "string",
+                "enum": ["must-have", "nice-to-have"],
+                "description": "Whether this belief is blocking or reinforcing"
+              },
+              "counter_belief": {
+                "type": "string",
+                "description": "What the viewer currently believes instead (the objection)"
+              },
+              "addressed_by": {
+                "type": "string",
+                "enum": ["hook", "problem", "mechanism", "proof", "offer", "cta"],
+                "description": "Which script section best addresses this belief"
+              }
+            }
+          },
+          "minItems": 3,
+          "description": "List of beliefs ordered by priority"
+        }
+      }
+    },
+    "hooks": {
+      "type": "object",
+      "description": "Library of tested hook templates mapped to beliefs",
+      "required": ["hooks"],
+      "properties": {
+        "hooks": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["id", "template", "belief_targeted", "format"],
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^H[0-9]+$",
+                "description": "Hook identifier (e.g., 'H1')"
+              },
+              "template": {
+                "type": "string",
+                "description": "Hook text with [placeholders] for customization"
+              },
+              "belief_targeted": {
+                "type": "string",
+                "pattern": "^B[0-9]+$",
+                "description": "Which belief ID this hook addresses"
+              },
+              "format": {
+                "type": "string",
+                "enum": ["question", "bold_claim", "mistake", "discovery", "controversy", "social_proof", "pain_call_out"],
+                "description": "Hook format/pattern type"
+              },
+              "duration": {
+                "type": "integer",
+                "minimum": 2,
+                "maximum": 5,
+                "description": "Target duration in seconds"
+              },
+              "example": {
+                "type": "string",
+                "description": "Filled-in example for this product"
+              }
+            }
+          },
+          "minItems": 5,
+          "description": "At least 5 hooks for rotation and testing"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "vclaw-video-core/video/artifacts/execution-report",
+  "type": "object",
+  "required": [
+    "projectSlug",
+    "productionMode",
+    "operationKind",
+    "routeId",
+    "status",
+    "dryRun",
+    "generatedAt",
+    "blockers",
+    "executedSteps"
+  ],
+  "properties": {
+    "projectSlug": { "type": "string" },
+    "productionMode": { "type": "string", "enum": ["storyboard", "director"] },
+    "operationKind": {
+      "type": "string",
+      "enum": ["text-to-video", "image-to-video", "frames-to-video", "ingredients-to-video", "extend", "edit", "add-audio"]
+    },
+    "routeId": {
+      "type": ["string", "null"],
+      "enum": ["veo-direct", "veo-useapi", "seedance-direct", "runway-useapi", null]
+    },
+    "status": {
+      "type": "string",
+      "enum": ["dry-run-complete", "live-submitted", "blocked"]
+    },
+    "dryRun": { "type": "boolean" },
+    "generatedAt": { "type": "string" },
+    "blockers": { "type": "array", "items": { "type": "string" } },
+    "executedSteps": { "type": "array", "items": { "type": "string" } }
+  },
+  "additionalProperties": true
+}

@@ -1,0 +1,89 @@
+# Example: Comedy / sitcom (Wes Anderson symmetry with comedic timing)
+# Beat-driven, character-reaction comedy.
+---
+project:
+  name: "The Doorstep Disaster"
+  slug: "the-doorstep-disaster-comedy"
+  genre: short-film   # comedy routes via short-film template with quirky style
+  runtime_target: "2:30"
+  scene_count: 10
+  clip_duration_sec: 15
+
+premise: |
+  A very formal butler attempts to deliver a teapot to an elderly lady's
+  doorstep, but a cheeky pigeon keeps intercepting him. Each attempt goes
+  progressively more wrong until the butler and the lady accidentally
+  have tea together on her doorstep.
+
+style:
+  preset: wes-anderson
+  grading: pastel-dream
+  platform: youtube
+  aspect: 16:9
+
+tone: "warm, quirky, deadpan, precisely-framed, visual gag comedy, gentle"
+
+cast:
+  - name: Butler-Jenkins
+    role: protagonist
+    library_id: null
+    description: "50s British butler with slicked-back grey hair, pencil mustache, pale skin, wearing a black tailcoat over crisp white shirt, white gloves, dignified rigid posture, carrying a porcelain teapot on a silver tray, slight visible exasperation beneath formal composure, Wes Anderson symmetric framing, pastel-dream palette"
+    archetype: human-adult
+    create_on_first_run: true
+
+  - name: Mrs-Pettigrew
+    role: co-protagonist
+    library_id: null
+    description: "75-year-old British lady with silver hair in a soft bun, kind blue eyes behind half-moon glasses, wearing a mauve cardigan over a floral dress, sitting in a rattan chair on a cottage doorstep, gentle patient expression, Wes Anderson aesthetic with matching pastel palette"
+    archetype: human-elder
+    create_on_first_run: true
+
+  - name: Pip-Pigeon
+    role: antagonist-comedic
+    library_id: null
+    description: "small plump grey pigeon with an impertinent expression, slightly tilted head, iridescent neck feathers, orange eyes looking directly at camera, slightly ruffled, Wes Anderson symmetric framing — organic creature with comedic bearing, pastel palette"
+    archetype: organic-animal
+    create_on_first_run: true
+
+adversaries:
+  type: none  # Pip is comedic antagonist, not narrative threat
+
+setting:
+  time_period: "contemporary-but-timeless English village"
+  location: "stone cottage doorstep with wooden door, flower boxes, brass number 7"
+  world_notes: "Morning light, birdsong, perfectly symmetric Wes Anderson framing, pastel mint door, coral flower boxes, mustard welcome mat"
+
+act_structure:
+  - formal_approach: "Butler-Jenkins walks up the stone path carrying a tea tray with exact posture, perfectly symmetric shot. Stops at the welcome mat."
+  - pigeon_first: "Pip-Pigeon lands on the tray. Butler freezes. Pigeon coos. Butler politely shoos with a single raised eyebrow."
+  - second_attempt: "Butler knocks formally. Pigeon on his shoulder now. Mrs-Pettigrew cracks the door. Butler holds composure: 'Madam, your tea.'"
+  - pigeon_steals: "Pigeon grabs a biscuit from tray. Flies to flower box. Eats. Butler closes eyes briefly."
+  - tea_spills: "Butler bends to retrieve biscuit. Teapot tips ever so slightly. Single drop lands on his polished shoe."
+  - mrs_notices: "Mrs-Pettigrew, seated, observes calmly. Eyes twinkle. 'Oh dear,' she says with perfect deadpan."
+  - pigeon_final_act: "Butler tries again, formal bow. Pigeon lands ON the teapot lid. Coos triumphantly. Butler's mustache twitches ONCE."
+  - breakthrough: "Butler, exhausted dignity, sits beside Mrs-Pettigrew on the doorstep. Places tray between them. The pigeon now perched on her arm, content."
+  - tea_together: "Mrs-Pettigrew pours for Butler. For herself. For the pigeon (somehow, a tiny cup). Symmetric shot of all three."
+  - final_frame: "Static wide of all three on the doorstep sipping tea. Pigeon's tiny cup. Pastel pastoral morning. Title card: 'The tea was lovely.'"
+
+content_filter_substitutions: []
+
+estimated_cost:
+  seedance_per_clip: 0.40
+  seedance_total: 4.00
+  gemini_batched: 0.02
+  go_bananas_new_characters: 0.15
+  elevenlabs_narration: 0.06
+  total: ~4.23
+
+estimated_wall_time: "~45min"
+
+audio_direction:
+  score: "Tiny Wes-Anderson-style acoustic plinking — ukulele, triangle, celesta, French horn stabs on visual gags"
+  sfx: "Pigeon coos, teacup clinks, footsteps on stone, bird ambience, button-up formal sounds"
+  dialogue: |
+    Butler-Jenkins has 2 lines:
+    - "Madam, your tea."
+    - "…Very well."
+    Mrs-Pettigrew has 1 line:
+    - "Oh dear."
+  comedic_beats: "Hold each visual gag a BEAT longer than expected — Wes Anderson deadpan timing"

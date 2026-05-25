@@ -1,0 +1,80 @@
+# Example: Music video (Wong Kar-wai neon-noir)
+# Mood-over-plot, rhythmic cuts, visual motifs.
+---
+project:
+  name: "City of Neon Memories"
+  slug: "city-of-neon-memories"
+  genre: music-video
+  runtime_target: "2:48"
+  scene_count: 14
+  clip_duration_sec: 12  # faster pacing for music
+
+premise: |
+  A lone figure wanders through rain-soaked neon streets after a breakup,
+  haunted by motif flashes of their partner. Melancholic techno soundtrack,
+  no dialogue, pure mood.
+
+style:
+  preset: wong-kar-wai
+  grading: neon-noir
+  platform: youtube
+  aspect: 16:9
+
+tone: "rhythmic, melancholic, mood-over-plot, handheld intimate, step-printed slow motion"
+
+cast:
+  - name: Wanderer
+    role: protagonist
+    library_id: null
+    description: "late 20s androgynous figure with short black hair wet from rain, olive skin, wearing a long black coat and red scarf, soulful dark eyes, Wong Kar-wai intimate cinematography with neon reflection aesthetic, 35mm handheld feel"
+    archetype: human-young-adult
+    create_on_first_run: true
+
+  - name: Echo  # Past partner, appears only in flashback motif
+    role: motif
+    library_id: null
+    description: "late 20s figure with long wavy brown hair and golden-brown eyes, warm smile frozen in memory, wearing a cream turtleneck, dream-soft lighting, slightly overexposed, Wong Kar-wai memorial soft-focus aesthetic"
+    archetype: human-young-adult
+    create_on_first_run: true
+
+adversaries:
+  type: none
+
+setting:
+  time_period: contemporary
+  location: "rain-drenched urban street, neon signs, 3AM, alternating wet pavement and neon interiors"
+  world_notes: "Cuts between present (Wanderer alone, blue/magenta neons) and memory flashes (Echo, warm peach tones)"
+
+act_structure:
+  - intro_hook: "Extreme close-up of Wanderer's eye, raindrop falls across lashes in slow-motion."
+  - motif_one: "Wanderer walks past a neon sign (magenta/cyan reflected in wet pavement)."
+  - memory_flash_one: "Quick cut to Echo laughing in a warm-lit cafe. 1 second, no more."
+  - develop: "Wanderer pauses by a pho shop, steam rising, neon reflection in window."
+  - memory_flash_two: "Echo holding their hand in sunlight. Quick cut."
+  - build: "Wanderer walks faster, rain intensifies, neons streak in motion."
+  - chorus_payoff: "Wanderer spins slowly in the middle of an empty neon-lit intersection."
+  - verse_variation: "Step-printed slow-motion of Wanderer shaking rain from their hair."
+  - memory_flash_three: "Echo's hand reaching out in sunlight. The hand withdraws."
+  - bridge: "Wanderer sits on a wet curb, coat dark with water, staring at an empty phone screen."
+  - second_chorus: "Rain stops. A single streetlight flickers. Wanderer stands up."
+  - breakdown: "Close-up on Wanderer's face, expression shifts from grief to resolve."
+  - final_chorus: "Wanderer walks forward into a pool of warm light spilling from a bar doorway."
+  - outro_fade: "Wide shot: Wanderer silhouetted against the bar's warm light, neon city fading behind. Slow fade to black."
+
+content_filter_substitutions: []  # mood piece, no hazards
+
+estimated_cost:
+  seedance_per_clip: 0.32  # 12s clips slightly cheaper
+  seedance_total: 4.48
+  gemini_batched: 0.02
+  go_bananas_new_characters: 0.10  # Wanderer + Echo
+  elevenlabs_narration: 0.00  # no narration for music video
+  total: ~4.60
+
+estimated_wall_time: "~55min"
+
+# Music + SFX notes (for post-production, not Seedance):
+audio_direction:
+  score: "Melancholic minimalist techno, 85 BPM, filtered synths, reverb-heavy"
+  sfx: "Rain throughout, occasional distant siren, cafe ambience during memory flashes"
+  no_dialogue: true

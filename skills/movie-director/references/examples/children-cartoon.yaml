@@ -1,0 +1,94 @@
+# Example: Children's cartoon (flat-colored 2D animation aesthetic)
+# Simple bold colors, clear emotions, gentle adventure.
+---
+project:
+  name: "Boo the Cloud"
+  slug: "boo-the-cloud-cartoon"
+  genre: storybook
+  runtime_target: "2:30"
+  scene_count: 10
+  clip_duration_sec: 15
+
+premise: |
+  A small lonely cloud named Boo wants to rain on flowers so they'll
+  grow, but Boo has no rain inside. A wise old tree teaches Boo that
+  friendship makes rain happen, and Boo finds its first friend — a
+  small dandelion.
+
+style:
+  preset: miyazaki
+  grading: anime-cel
+  platform: youtube
+  aspect: 16:9
+
+tone: "gentle, playful, simple, warm, cartoon-flat, children-friendly"
+
+cast:
+  - name: Boo
+    role: protagonist
+    library_id: null
+    description: "small round white cloud character with big round blue eyes, tiny smile, slightly fluffy edges, floating mid-air, clearly shy and lonely expression, 2D cartoon flat-colored aesthetic with clean line art, anime-cel style, child-friendly proportions and warmth"
+    archetype: magical-creature
+    create_on_first_run: true
+
+  - name: Old-Oak
+    role: mentor
+    library_id: null
+    description: "large wise old oak tree with a gentle face carved into its trunk (warm brown bark, kind green eyes, soft smile lines around eyes), enormous spreading branches with green leaves, autumn colors on some leaves, 2D cartoon flat-colored aesthetic, patient wise bearing, child-friendly"
+    archetype: magical-creature
+    create_on_first_run: true
+
+  - name: Dandelion
+    role: companion
+    library_id: null
+    description: "small yellow dandelion flower with a tiny happy face on its center (two small eyes, big smile), green stem and leaves, standing alone in a patch of grass, 2D cartoon flat-colored aesthetic, cheerful innocent bearing, child-friendly"
+    archetype: magical-plant
+    create_on_first_run: true
+
+adversaries:
+  type: none
+
+setting:
+  time_period: timeless
+  location: "gentle rolling hills, meadow with flowers, single large oak tree, blue sky"
+  world_notes: "Bright clean cartoon palette — grass is bright green, sky is sky-blue, flowers are vibrant yellow/red/purple, everything has bold clean outlines"
+
+act_structure:
+  - lonely_opening: "Wide shot of blue sky, rolling green hills below. Boo floats alone, small and lonely."
+  - see_flowers: "Boo sees flowers in a meadow. The flowers are wilting in the sun."
+  - try_to_rain: "Boo puffs itself up, trying to make rain. Nothing comes out. Boo looks sad."
+  - meet_tree: "Old-Oak the wise tree spots Boo. 'Why so blue, little cloud?' (face carved into bark gently)"
+  - learn_lesson: "Old-Oak explains: 'Rain comes from friendship, little one. Find a friend first.'"
+  - searching: "Boo floats across the meadow looking. Sees a bunny (busy). Sees a butterfly (flies away). Feels more lonely."
+  - find_dandelion: "Boo notices a small yellow dandelion all alone, also wilting, at the edge of the meadow."
+  - introduction: "Boo floats down. 'Hello. I'm Boo.' Dandelion smiles: 'I'm Dandelion. I'm a bit alone too.'"
+  - friendship_forms: "Boo and Dandelion spend time together — Boo tells a story, Dandelion listens. Boo listens to Dandelion. Both smile, glow slightly."
+  - first_rain: "Boo feels a fluttering inside. Small raindrops begin to fall from Boo onto Dandelion. Dandelion's leaves perk up. Flowers all around the meadow drink in the rain."
+  - meadow_blooms: "Wide shot: the whole meadow blooms with color. Old-Oak smiles in the background. Boo and Dandelion laugh together."
+  - ending_friendship: "Close-up of Boo and Dandelion side by side, both glowing slightly with contentment. Title card: 'The End.'"
+
+content_filter_substitutions: []
+
+estimated_cost:
+  seedance_per_clip: 0.40
+  seedance_total: 4.00
+  gemini_batched: 0.02
+  go_bananas_new_characters: 0.15
+  elevenlabs_narration: 0.08
+  total: ~4.25
+
+estimated_wall_time: "~50min"
+
+audio_direction:
+  score: "Gentle xylophone + flute duet, major key, 80 BPM, warm and playful"
+  sfx: "Bird chirps, gentle wind through leaves, rain patter during the rain beat, leaves rustling"
+  dialogue: |
+    Narrator voice (warm gentle adult) reads 3-4 short lines:
+    - "Boo was a small cloud who felt very alone."
+    - "Old Oak said, 'Rain comes from friendship.'"
+    - "And when Boo found a friend, the rain came."
+    Boo and Dandelion have brief lines of dialogue (child-appropriate).
+
+audience_notes: |
+  Designed for ages 3-7. Simple emotions (lonely → friend → happy).
+  Short lines. Bright colors. Clear faces on non-human characters.

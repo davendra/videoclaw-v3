@@ -1,0 +1,85 @@
+# Example: Period drama (Kubrick-inspired stately historical)
+# Cold measured composition, grand spaces, internal tension.
+---
+project:
+  name: "The Empty Ballroom"
+  slug: "the-empty-ballroom-period"
+  genre: short-film
+  runtime_target: "3:00"
+  scene_count: 12
+  clip_duration_sec: 15
+
+premise: |
+  In 1815 Vienna, a young noblewoman disguises herself as a servant to
+  meet a musician she fell in love with through letters. At the empty
+  grand ballroom before dawn, they finally meet and she must choose
+  whether to reveal her identity.
+
+style:
+  preset: kubrick
+  grading: ice-cold
+  platform: youtube
+  aspect: 16:9
+
+tone: "stately, cold, measured, one-point perspective, silent tension, historical"
+
+cast:
+  - name: Clara
+    role: protagonist
+    library_id: null
+    description: "20-year-old Austrian noblewoman with auburn hair pinned up, pale skin, wide thoughtful grey-green eyes, wearing a plain servant's dress — coarse grey-brown wool over white linen underdress — deliberately unadorned, nervous but composed bearing, Kubrick one-point perspective with ice-cold color grading, 35mm historical photorealism"
+    archetype: human-young-adult
+    create_on_first_run: true
+
+  - name: Anton
+    role: co-protagonist
+    library_id: null
+    description: "25-year-old Austrian musician with short dark brown hair, tan skin, intense hazel eyes, wearing a dark green brocade waistcoat over white shirt, cravat, cream breeches, violin case at his feet, quiet intelligent bearing, Kubrick aesthetic matching Clara"
+    archetype: human-young-adult
+    create_on_first_run: true
+
+adversaries:
+  type: none
+
+setting:
+  time_period: "Vienna, 1815, pre-dawn"
+  location: "grand imperial ballroom, polished marble floor, enormous chandeliers (unlit), tall arched windows with pre-dawn blue light, ornate carved pillars, absolutely empty of other people"
+  world_notes: "Chilly, their breath visible; their footsteps echo; the chandeliers and decor are stately and cold in the pre-dawn blue light"
+
+act_structure:
+  - establishing_space: "Extreme wide one-point perspective of the empty ballroom. Pre-dawn blue light through tall windows. Silence."
+  - clara_enters: "Clara enters from a servant's side door. Looks around the vast empty space. Her footsteps echo."
+  - wait: "Clara stands in the middle of the dance floor. One-point perspective centers her. She clutches a folded letter."
+  - anton_arrives: "Anton enters from the main entrance at the far end. He carries a violin case. He stops when he sees her."
+  - first_look: "Wide symmetric shot — Clara and Anton at opposite ends of the ballroom. Held beat. Dawn light beginning to warm."
+  - approach: "Anton walks slowly toward her. Slow camera dolly backward, keeping both in frame. Footsteps measured on marble."
+  - meet_center: "They meet at the ballroom's exact center. Extreme close-ups of each face. Clara looks at her hands — rough, calloused from deliberately staining them, unlike her real hands."
+  - anton_speaks: "Anton says quietly: 'You came.' Clara nods."
+  - violin_moment: "Anton kneels and opens his violin case. Plays a slow measured piece — a waltz. Clara listens, tears in eyes."
+  - dance: "Clara tentatively takes his hand. They begin a slow waltz in the empty ballroom. Dawn warms the blue light."
+  - revelation_beat: "Mid-waltz, Clara's hand brushes past his — and he notices her wrist, adorned with a servant's plain bracelet that clearly isn't servant-made. His eyes meet hers."
+  - choice_frame: "Clara stops dancing. Hold the beat. She smiles — a small, real smile. Her choice is visible: she will tell him. As the waltz music continues, fade to black."
+
+content_filter_substitutions: []
+
+estimated_cost:
+  seedance_per_clip: 0.40
+  seedance_total: 4.80
+  gemini_batched: 0.02
+  go_bananas_new_characters: 0.10
+  elevenlabs_narration: 0.10
+  total: ~5.02
+
+estimated_wall_time: "~55min"
+
+audio_direction:
+  score: "Single violin piece — a slow waltz. No orchestral accompaniment. Solo instrument only."
+  sfx: "Footsteps on marble, occasional wood creak, very quiet pre-dawn ambient wind"
+  dialogue: |
+    Very sparse — 1 line of dialogue:
+    Anton: 'You came.'
+    Beyond that, pure visual storytelling.
+
+platform_optimization:
+  pacing: "Slow — cuts every 8-10 seconds, stately rhythm"
+  framing: "One-point perspective critical — keep subjects centered"

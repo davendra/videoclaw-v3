@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "vclaw-video-core/video/pipeline-manifest",
+  "title": "Vclaw Video Pipeline Manifest",
+  "type": "object",
+  "required": ["name", "version", "productionMode", "stages"],
+  "properties": {
+    "name": { "type": "string" },
+    "version": { "type": "string" },
+    "productionMode": {
+      "type": "string",
+      "enum": ["storyboard", "director"]
+    },
+    "stages": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["name", "produces", "checkpointRequired", "humanApprovalDefault", "successCriteria"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "enum": ["brief", "storyboard", "assets", "review", "publish"]
+          },
+          "requiredArtifactsIn": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": ["brief", "storyboard", "asset-manifest", "review-report", "publish-report", "analyze-output"]
+            }
+          },
+          "produces": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": ["brief", "storyboard", "asset-manifest", "review-report", "publish-report", "analyze-output"]
+            }
+          },
+          "checkpointRequired": { "type": "boolean" },
+          "humanApprovalDefault": { "type": "boolean" },
+          "successCriteria": {
+            "type": "array",
+            "items": { "type": "string" }
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

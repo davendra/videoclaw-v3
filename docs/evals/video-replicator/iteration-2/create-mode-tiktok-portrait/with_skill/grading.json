@@ -1,0 +1,40 @@
+{
+  "expectations": [
+    {
+      "text": "Selects CREATE mode (not COPY)",
+      "passed": true,
+      "evidence": "Line 3: '## Mode Selection: CREATE' — correctly identified CREATE due to 'no reference video' and 'make something original'"
+    },
+    {
+      "text": "Reads references/create-mode.md for the detailed workflow",
+      "passed": true,
+      "evidence": "Line 11: '## Reference File Read: `references/create-mode.md`' — extracted phase structure, scene templates, and prompt patterns from the reference file"
+    },
+    {
+      "text": "Identifies portrait 9:16 and warns about I2V API limitation — recommends T2V",
+      "passed": true,
+      "evidence": "Lines 28-46: Full section 'Portrait Aspect Ratio Handling' warns 'I2V API returns INVALID_ARGUMENT for portrait' and decides 'T2V (text-to-video) for all 4 scenes' with detailed reasoning"
+    },
+    {
+      "text": "Uses model_id='gemini-pro-image' for all image generation",
+      "passed": true,
+      "evidence": "Lines 49-58: Explicitly states 'model_id=\"gemini-pro-image\"' and 'Every generate_image and generate_with_product call will include model_id=\"gemini-pro-image\"'; all code examples show model_id=\"gemini-pro-image\""
+    },
+    {
+      "text": "Asks about character references before proceeding",
+      "passed": true,
+      "evidence": "Lines 71-73: Question 2 asks 'Do you have a reference image of the model/character you want to feature?' — also asks about product reference (Q1) and logo (Q3)"
+    },
+    {
+      "text": "Builds SEALCAM+ JSON or scene descriptions for the 4 scenes",
+      "passed": true,
+      "evidence": "Lines 282-334: Complete SEALCAM+ breakdown for all 4 scenes with Subject, Environment, Action, Choreography, Lighting, Camera, Audio, and Metatokens elements in structured tables"
+    }
+  ],
+  "summary": {
+    "passed": 6,
+    "failed": 0,
+    "total": 6,
+    "pass_rate": 1.0
+  }
+}

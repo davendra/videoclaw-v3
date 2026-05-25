@@ -1,0 +1,266 @@
+# Genre catalog — maps genre name → opinionated defaults.
+# Used by movie-director skill to answer interview questions automatically
+# when the user picks a genre, and to auto-infer defaults in auto mode.
+#
+# Each genre specifies:
+#   style_presets: ordered list of style presets that work well for this genre
+#   grading_presets: matching color-grading options
+#   default_scenes: scene count for a standard-length version
+#   default_duration_sec: per-clip duration
+#   tone: short phrase fed into the script LLM system prompt
+#   act_structure: list of beat labels — script LLM fills these with scene content
+#   platforms: recommended target platforms (first = default)
+#   adversary_type: "singular" (needs library entry), "plural" (skip coverage check), or "none"
+#   example: filename in references/examples/ showing a complete filled project
+---
+genres:
+  action-thriller:
+    style_presets: [villeneuve, nolan, fincher]
+    grading_presets: [neon-noir, teal-orange, desaturated]
+    default_scenes: 14
+    default_duration_sec: 15
+    tone: "dark, tense, fast-paced, rain-slicked, propulsive"
+    act_structure:
+      - hook (stakes set)
+      - inciting incident
+      - escape begins
+      - chase / near-miss
+      - hideout / mentor arrives
+      - choice (protagonist agency)
+      - rising action
+      - clash (content-filter-safe verbs)
+      - cost / sacrifice
+      - resolution / dawn
+    platforms: [youtube, tiktok-vertical]
+    adversary_type: plural  # "Agents", "Hunters", "Pursuers"
+    example: komo-thriller.yaml
+
+  storybook:
+    style_presets: [miyazaki, wes-anderson]
+    grading_presets: [pastel-dream, golden-hour]
+    default_scenes: 12
+    default_duration_sec: 15
+    tone: "warm, curious, gentle, childlike wonder, hand-painted"
+    act_structure:
+      - opening image
+      - discovery
+      - curiosity
+      - challenge
+      - helper arrives
+      - lesson moment
+      - trial
+      - realization
+      - resolution with object
+      - reflection
+      - return home
+      - warm circular ending
+    platforms: [youtube, instagram-reels]
+    adversary_type: none
+    example: riley-storybook.yaml
+
+  documentary:
+    style_presets: [nolan, villeneuve]
+    grading_presets: [desaturated, teal-orange]
+    default_scenes: 10
+    default_duration_sec: 15
+    tone: "observational, grounded, respectful, natural light, authentic"
+    act_structure:
+      - establishing location
+      - subject at work
+      - detail of tool/skill
+      - interaction
+      - quiet moment
+      - main task begins
+      - challenge
+      - adaptation
+      - resolution
+      - reflection / wide hero
+    platforms: [youtube, linkedin]
+    adversary_type: none
+    example: docufilm-portrait.yaml
+
+  ugc-ad:
+    style_presets: [spielberg, wes-anderson]
+    grading_presets: [golden-hour, pastel-dream]
+    default_scenes: 10
+    default_duration_sec: 12
+    tone: "warm, aspirational, authentic, direct-to-camera friendly"
+    act_structure:
+      - hook (problem)
+      - relatable struggle
+      - discovery moment
+      - first use
+      - surprise delight
+      - feature in action
+      - before/after
+      - testimonial
+      - social proof
+      - logo / CTA
+    platforms: [tiktok-vertical, instagram-reels, youtube-shorts]
+    adversary_type: none
+
+  music-video:
+    style_presets: [wong-kar-wai, tarantino, fincher]
+    grading_presets: [neon-noir, vintage-film]
+    default_scenes: 14
+    default_duration_sec: 12
+    tone: "rhythmic, mood-over-plot, visual motifs, no dialogue"
+    act_structure:
+      - intro hook
+      - motif 1
+      - build
+      - motif 2
+      - pre-chorus tension
+      - chorus payoff (repeat-motif)
+      - verse 2 variation
+      - bridge
+      - second chorus
+      - breakdown
+      - final chorus
+      - outro fade
+    platforms: [youtube, vimeo]
+    adversary_type: none
+
+  short-film:
+    style_presets: [villeneuve, nolan, fincher, ridley-scott]
+    grading_presets: [teal-orange, desaturated, neon-noir]
+    default_scenes: 14
+    default_duration_sec: 15
+    tone: "cinematic, balanced, three-act arc, character-driven"
+    act_structure:
+      - hook
+      - setup / world-establish
+      - inciting incident
+      - resistance
+      - commitment
+      - midpoint turn
+      - complication
+      - crisis
+      - climax
+      - resolution
+    platforms: [youtube, vimeo]
+    adversary_type: singular
+
+  romance:
+    style_presets: [wes-anderson, spielberg]
+    grading_presets: [pastel-dream, golden-hour]
+    default_scenes: 12
+    default_duration_sec: 15
+    tone: "soft, intimate, warm, bittersweet, light touch"
+    act_structure:
+      - meet-cute
+      - attraction
+      - obstacle introduced
+      - first connection
+      - deepening
+      - misunderstanding
+      - separation
+      - revelation
+      - reconciliation
+      - resolution
+    platforms: [youtube, instagram-reels]
+    adversary_type: none
+
+  horror:
+    style_presets: [fincher, kubrick]
+    grading_presets: [ice-cold, desaturated, bleach-bypass]
+    default_scenes: 12
+    default_duration_sec: 15
+    tone: "dread, unease, unsettling, silent-buildup, restrained"
+    act_structure:
+      - normalcy
+      - first wrongness
+      - dismissal
+      - escalation
+      - witness
+      - flight
+      - confrontation
+      - reveal
+      - aftermath
+      - ambiguous ending
+    platforms: [youtube, vimeo]
+    adversary_type: singular  # monster / entity — use character with care, content-filter-sensitive
+
+  sci-fi:
+    style_presets: [villeneuve, ridley-scott, nolan]
+    grading_presets: [teal-orange, ice-cold, neon-noir]
+    default_scenes: 14
+    default_duration_sec: 15
+    tone: "epic, awe, isolating, grand-scale, cerebral"
+    act_structure:
+      - world-establish (wide)
+      - protagonist in context
+      - concept / tech introduced
+      - stakes raised
+      - exploration
+      - complication
+      - crisis / ethical moment
+      - choice
+      - consequence
+      - resolution (mixed hope)
+    platforms: [youtube, vimeo]
+    adversary_type: singular
+
+  fantasy:
+    style_presets: [miyazaki, spielberg, ridley-scott]
+    grading_presets: [golden-hour, pastel-dream, teal-orange]
+    default_scenes: 14
+    default_duration_sec: 15
+    tone: "wonder, quest, magic, epic landscape, heroic"
+    act_structure:
+      - ordinary world
+      - call to adventure
+      - departure
+      - ally meets
+      - trial 1
+      - mentor lesson
+      - trial 2
+      - confrontation with magic
+      - victory with cost
+      - return transformed
+    platforms: [youtube]
+    adversary_type: singular
+
+  western:
+    style_presets: [tarantino, ridley-scott]
+    grading_presets: [desaturated, vintage-film, golden-hour]
+    default_scenes: 12
+    default_duration_sec: 15
+    tone: "laconic, wide landscape, taut silence, honor-code"
+    act_structure:
+      - wide establishing
+      - stranger arrives
+      - tension
+      - backstory hint
+      - confrontation 1
+      - pause
+      - escalation
+      - showdown
+      - aftermath
+      - ride off
+    platforms: [youtube, vimeo]
+    adversary_type: singular
+
+  custom:
+    # User drives every field via interview or CLI flags.
+    style_presets: []
+    grading_presets: []
+    default_scenes: 12
+    default_duration_sec: 15
+    tone: ""
+    act_structure: []
+    platforms: [youtube]
+    adversary_type: singular
+
+# Runtime → scene-count helper (default 15s/clip):
+runtime_to_scenes:
+  "0:30": 2
+  "1:00": 4
+  "1:30": 6
+  "2:00": 8
+  "2:30": 10
+  "3:00": 12
+  "3:30": 14
+  "4:00": 16
+  "4:30": 18
+  "5:00": 20

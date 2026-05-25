@@ -1,0 +1,566 @@
+# CLI Reference
+
+## Project lifecycle
+
+```bash
+vclaw video init <slug> [--root <path>] [--mode storyboard|director]
+vclaw video create "<intent>" [--project <slug>] [--root <path>] [--production-mode storyboard|director] [--title <title>] [--scenes <count>] [--style <preset>] [--color-grading <preset>] [--platform <name>] [--gb-character <Name:ID> ...] [--import-library-characters] [--auto-create-characters <json-path>] [--api-url <url>] [--aspect-ratio 16:9|9:16|1:1] [--quality fast|quality] [--resolution 720p|1080p] [--audio on|off] [--outputs 1-4] [--apply-content-fixes] [--execute] [--dry-run]
+vclaw video brief --project <slug> --title <title> --intent <intent> [--root <path>] [--mode storyboard|director] [--platform <name>] [--aspect-ratio 16:9|9:16|1:1] [--quality fast|quality] [--resolution 720p|1080p] [--audio on|off] [--outputs 1-4]
+vclaw video storyboard-template-list
+vclaw video storyboard-template-show --name <template-id>
+vclaw video storyboard --project <slug> (--scene <text> [--scene <text> ...] | --template <template-id> [--environment <text>] [--character-a <name>] [--character-b <name>]) [--scene-character <sceneIndex:name> ...] [--root <path>]
+vclaw video assets --project <slug> --asset <kind:path[:sceneIndex][:backend]> [--asset ...] [--root <path>]
+vclaw video review-ui --project <slug> [--root <path>] [--host <host>] [--port <port>] [--ui-path <path>] [--dry-run]
+vclaw video review-autopilot --project <slug> [--root <path>] [--template <template-id>] [--character <name>] [--run-id <id>]
+vclaw video review --project <slug> --verdict pass|retry|fail [--finding <text> ...] [--root <path>]
+vclaw video publish --project <slug> --status ready|published|blocked [--final-output <path>] [--note <text> ...] [--root <path>]
+```
+
+For production image-to-video handoff, prefer `review-ui` or
+`review-autopilot`. The simple `review --verdict pass` path is for projects
+that already have equivalent review evidence outside the browser station.
+Publishing remains blocked unless the saved `review-report.json` has
+`verdict: "pass"` and `metrics.publishReady: true`.
+
+`vclaw video create` is the clean-room front door for the legacy “one command
+to start a project” mental model. In its current form it:
+
+- initializes the project when needed
+- writes canonical `brief` and `storyboard` artifacts
+- scaffolds storyboard-seed assets for execution planning
+- records Go Bananas character bindings as project character profiles
+- can import exact-name Go Bananas matches from the story intent when `--import-library-characters` is present
+- can auto-create missing Go Bananas characters from a JSON seed file via `--auto-create-characters <json-path>`
+- carries execution-profile overrides (`aspect-ratio`, `quality`, `resolution`,
+  `audio`, `outputs`) into the canonical brief and status surfaces
+- generates `storyboard.md` automatically for `director` mode
+- optionally hands off to the existing `execute` path when `--execute` is present
+
+For `director` mode, this means the first-run path now supports the same
+storyboard-first approval pattern as the older workflow surface, while still
+writing canonical clean-room artifacts underneath.
+
+## Analysis and templates
+
+```bash
+vclaw video analyze --project <slug> --source <path-or-url> [--title <title>] [--beat <text> ...] [--keep <text> ...] [--change <text> ...] [--var <text> ...] [--auto]
+vclaw video analyze-template --project <slug> --source <path-or-url> [options] [--auto]
+vclaw video prompt-lib-list
+vclaw video prompt-lib-show --name <reference-name> [--root <path>]
+vclaw video template-create --project <slug> --name <template-name> [--root <path>]
+vclaw video template-save --project <slug> --name <template-name> [--root <path>]
+vclaw video template-list [--root <path>]
+vclaw video template-show --name <template-name> [--root <path>]
+vclaw video template-validate --name <template-name> [--root <path>]
+vclaw video clone-ad --template <template-name> --project <slug> --intent <text> [--root <path>] [--mode storyboard|director] [--platform <name>] [--aspect-ratio 16:9|9:16|1:1] [--quality fast|quality] [--resolution 720p|1080p] [--audio on|off] [--outputs 1-4] [--dry-run]
+vclaw video clone-plan --template <template-name> --project <slug> --intent <text> [--root <path>]
+vclaw video clone-init --template <template-name> --project <slug> --intent <text> [--root <path>] [--mode storyboard|director] [--platform <name>] [--aspect-ratio 16:9|9:16|1:1] [--quality fast|quality] [--resolution 720p|1080p] [--audio on|off] [--outputs 1-4]
+vclaw video storyboard-from-clone --project <slug> [--root <path>] [--mode storyboard|director]
+vclaw video clone-execute --template <template-name> --project <slug> --intent <text> [--root <path>] [--mode storyboard|director] [--platform <name>] [--aspect-ratio 16:9|9:16|1:1] [--quality fast|quality] [--resolution 720p|1080p] [--audio on|off] [--outputs 1-4] [--dry-run]
+```
+
+When `--auto` is present on `analyze` / `analyze-template`, the clean-room repo
+uses the Gemini HTTP path to fill the analyze artifact automatically. It reads
+keys from `GEMINI_API_KEYS`, `GOOGLE_API_KEYS`, or `GOOGLE_API_KEY`, and you can
+override the endpoint with `VCLAW_GEMINI_API_ENDPOINT`.
+
+Analyze artifacts can now carry optional clone-planning fields:
+
+- `styleLayers`
+- `beatCompression`
+- `technicalNotes`
+- `dialogueNotes`
+
+Saved templates preserve those fields and clone plans copy them forward with a
+`workflowChecklist` so operators can keep the reusable mechanism while replacing
+brand, product, audience, proof, and offer details.
+
+## Project management
+
+```bash
+vclaw video set-meta --project <slug> [--root <path>] [--owner <name>] [--priority low|medium|high|critical] [--due YYYY-MM-DD] [--tag <value> ...] [--blocked-by <slug> ...] [--blocked-reason <text>]
+vclaw video set-execution-profile --project <slug> [--root <path>] [--aspect-ratio 16:9|9:16|1:1] [--quality fast|quality] [--resolution 720p|1080p] [--audio on|off] [--outputs 1-4]
+vclaw video character-add --project <slug> --name <name> [--gb-id <id>] [--description <text>] [--ref <path> ...] [--note <text> ...] [--root <path>]
+vclaw video character-auto-create --project <slug> --input <json-path> [--root <path>] [--api-url <url>] [--dry-run]
+vclaw video character-import-library --project <slug> --intent "<text>" [--root <path>] [--api-url <url>]
+vclaw video character-list --project <slug> [--root <path>]
+vclaw video character-show --project <slug> --name <name> [--root <path>]
+vclaw video character-consistency --project <slug> [--root <path>]
+vclaw video find-library --intent "<text>" [--api-url <url>]
+vclaw video library find --intent "<text>" [--api-url <url>]
+vclaw video library clean [--ids <csv>] [--name-regex <pattern>] [--bloated] [--max-prompt-chars <n>] [--dry-run] [--yes]
+vclaw video library clean --patch <id> --base-prompt <text> [--dry-run]
+vclaw video status --project <slug> [--root <path>] [--mode storyboard|director]
+vclaw video readiness --project <slug> [--root <path>] [--mode storyboard|director]
+vclaw video plan --project <slug> [--root <path>] [--mode storyboard|director]
+vclaw video execution-plan --project <slug> [--root <path>] [--mode storyboard|director]
+vclaw video produce --project <slug> [--root <path>] [--mode storyboard|director] [--dry-run]
+vclaw video execute --project <slug> [--root <path>] [--mode storyboard|director] [--dry-run]
+vclaw video execute-status --project <slug> [--root <path>] [--mode storyboard|director]
+vclaw video execute-cancel --project <slug> [--root <path>] [--mode storyboard|director]
+vclaw video review-ui --project <slug> [--root <path>] [--host <host>] [--port <port>] [--ui-path <path>] [--dry-run]
+vclaw video review-autopilot --project <slug> [--root <path>] [--template <template-id>] [--character <name>] [--run-id <id>]
+vclaw video artifact-history --project <slug> --artifact <name> [--root <path>]
+vclaw video doctor-project --project <slug> [--root <path>] [--mode storyboard|director]
+```
+
+Primary lifecycle names are now `plan` and `produce`. `execution-plan` and `execute`
+remain supported as compatibility aliases over the same handlers.
+
+`vclaw video review-ui` starts the local human-in-the-loop review station. It
+serves the bundled Review UI asset by default, exposes project inventory at
+`/api/review-inventory`, and lets the operator save the current decision ledger
+to `projects/<slug>/artifacts/review-ui-ledger.json`. Saving also derives
+`reference-board.json`, `director-seedance-plan.json`,
+`storyboard-stills-plan.json`, `scene-selection.json`,
+`gobananas-character-brief.json`, `post-plan.json`, and `review-report.json` so the next agent has
+concrete production artifacts rather than a loose UI note. Publish handoff is
+canonical only when that saved `review-report.json` has `verdict: "pass"` and
+`metrics.publishReady: true`; stale checkpoints or legacy pass reports without
+that metric remain review work. Use it when a project needs storyboard,
+reference, character, motion-plan, or final assembly choices before the next
+agent step. Use `--ui-path <path>` only when testing a local replacement UI.
+
+The review station is explicitly aligned to
+`docs/REFERENCE_VIDEO_SEEDANCE_MOTION_DESIGN_WORKFLOW.md`. Its director defaults
+record the expected professional workflow in the saved ledger: script/voiceover
+first, role-tagged references, still-frame lock, upscaled Seedance inputs,
+start/end frame chaining, control plus short-variant motion prompts, bridge poses
+for hard actions, continuity-frame extraction, and post retiming.
+
+`vclaw video review --verdict pass` remains the simple artifact-stage approval
+command for projects that were already reviewed outside the browser station. It
+writes `review-report.json` with `metrics.publishReady: true`, so use it only
+when the operator has equivalent evidence. For director image handoffs, prefer
+`review-ui` or `review-autopilot`; those paths derive `publishReady` from locked
+scene candidates, artifact-backed 4K stills, character-match checks, and final
+assembly approvals.
+
+For the operator-facing step-by-step workflow, see
+`docs/REVIEW_UI_STORYBOARD_WORKFLOW.md`.
+
+`vclaw video review-autopilot` is the non-interactive counterpart for projects
+that already have storyboard still candidates. It selects and locks the best
+completed still per scene, creates artifact-backed upscaled handoff candidates
+from local still assets where possible, fills the final approval checks, and
+writes the same `review-report.json` readiness truth as the browser station. It
+does not submit video generation jobs.
+
+## Go Bananas library cleanup
+
+`vclaw video library clean` is the clean-room port of the legacy character
+library hygiene tool. It supports:
+
+- listing cleanup candidates by explicit IDs, name regex, or bloated prompt size
+- dry-run review before deletion
+- prompt patching for a single library character without deleting it
+
+`vclaw video find-library` and `vclaw video library find` provide the
+exact-name intent lookup used by the migrated Director lane. They extract
+capitalized candidate names from the intent and call the Go Bananas
+`exact=true` search path so reuse stays conservative.
+
+## Reference sheets
+
+```bash
+vclaw video reference-sheet-add --project <slug> --type <identity|outfit-material|environment|motion-camera|palette-mood> --name <name> [--id <id>] [--description <text>] [--character-name <name>] [--ref <path>:<role>[:<note>] ...] [--gb-ref <kind>:<id>:<role>[:<note>] ...] [--binding <sceneIndex> ...] [--root <path>]
+vclaw video reference-sheet-list --project <slug> [--type <sheet-type>] [--root <path>]
+vclaw video reference-sheet-show --project <slug> --id <sheet-id> [--root <path>]
+vclaw video reference-sheet-bind --project <slug> --id <sheet-id> --scene <sceneIndex> [--scene <sceneIndex> ...] [--root <path>]
+vclaw video reference-sheet-validate --project <slug> [--root <path>]
+```
+
+Reference sheets are role-tagged, per-scene-bound references that the
+readiness, preflight, and ops surfaces treat as first-class state. Every
+sheet has one of five types, each with a closed role vocabulary:
+
+- `identity` — `identity`, `wardrobe`, `silhouette`, `age-reference`
+- `outfit-material` — `outfit`, `material`, `accessory`, `texture`, `product-hero`, `product-variant`, `product-in-use`, `packaging`
+- `environment` — `location`, `set-dressing`, `weather`, `time-of-day`
+- `motion-camera` — `motion-rhythm`, `camera-behavior`, `blocking`, `shot-framing`
+- `palette-mood` — `palette`, `composition`, `mood`, `lighting-reference`
+
+`--gb-ref` accepts the five Go Bananas kinds: `character`, `product`,
+`scene`, `style-preset`, and `reference-group`. The `product` kind pairs
+with the extended `product-*` roles on `outfit-material` sheets.
+
+Full operator guide: [`docs/REFERENCE_SHEETS.md`](./REFERENCE_SHEETS.md).
+
+## Scene candidates and selection
+
+```bash
+vclaw video candidates-list --project <slug> [--scene <sceneIndex>] [--root <path>]
+vclaw video candidates-show --project <slug> --candidate-id <id> [--root <path>]
+vclaw video storyboard-still-add --project <slug> --scene <sceneIndex> --image-url <url> [--image-id <id>] [--prompt <text>] [--notes <text>] [--root <path>]
+vclaw video select-candidate --project <slug> --scene <sceneIndex> --candidate-id <id> [--notes <text>] [--root <path>]
+vclaw video reject-candidate --project <slug> --scene <sceneIndex> --candidate-id <id> [--notes <text>] [--root <path>]
+vclaw video reroll-scene --project <slug> --scene <sceneIndex> [--chain-from-prev on|off] [--root <path>]
+vclaw video chain-from --project <slug> --scene <sceneIndex> --from <sourceSceneIndex> [--root <path>]
+vclaw video unchain --project <slug> --scene <sceneIndex> [--root <path>]
+vclaw video candidates-migrate-from-assets --project <slug> [--dry-run] [--root <path>]
+```
+
+Scene candidates are the output-layer counterpart to reference sheets. The
+execute runtime writes every generated take into
+`projects/<slug>/artifacts/scene-candidates.json` (append-only) and records
+operator selection, rejections, pending ids, reroll state, and chain-from-prev
+into `projects/<slug>/artifacts/scene-selection.json` (mutable).
+
+`storyboard-still-add` records generated storyboard still images, such as Go
+Bananas still outputs, into the same scene-candidate artifact with `kind:
+image`. This lets the image/storyboard review loop reuse the existing
+candidate-selection commands before any video generation happens.
+
+`produce` and `execute` also accept one or more `--scene <sceneIndex>` flags
+for partial reruns: only the listed scenes get a new generation round, every
+other scene stays on its currently-selected candidate.
+
+`chain-from` is v1-limited to chain-from-prev, so `--from` must equal
+`--scene - 1`. Any other source returns `chain-from-unsupported`.
+
+Full operator guide: [`docs/SCENE_CANDIDATES.md`](./SCENE_CANDIDATES.md).
+
+## Director approval gate
+
+For `director` mode, `vclaw video produce` and `vclaw video execute` now export
+`projects/<slug>/storyboard.md` and block before provider submission unless
+`VIDEOCLAW_APPROVE_STORYBOARD=1` is present in the environment. This preserves
+the legacy two-step storyboard-review flow without requiring the long smoke path.
+
+When a live job is already in flight, `vclaw video execute-cancel` attempts to
+cancel it through the configured adapter surface and records the cancellation
+into the project execution report and event timeline.
+
+At the moment, the built-in native cancel path exists for `seedance-direct`.
+Other routes may return an explicit `unsupported` cancellation result rather
+than silently pretending the job was cancelled.
+
+That review file now includes a character-binding table for referenced scene
+characters, including any stored Go Bananas ids and reference assets.
+
+The JSON returned by `vclaw video status` now also includes referenced
+`characterBindings` so project-facing status surfaces can show the same identity
+anchors without reparsing `storyboard.md`.
+
+`vclaw video readiness` now also includes a `warnings` array. Current warnings
+include image-input aspect/size problems and non-blocking identity-sheet quality
+signals such as `reference-sheet-thin-identity-coverage`.
+
+`vclaw video status` now also includes:
+
+- `characterProfiles`
+- `characterHydrationSummary`
+
+so a later inspection can still show how the cast was assembled after the
+initial `video create` response is gone.
+
+When a review file has been generated, `status` and the project index also carry
+the `storyboardReviewPath` so review tooling can link directly to the current
+artifact.
+
+The same `storyboardReviewPath` now flows through:
+
+- `vclaw video report`
+- `vclaw video export-csv`
+- `vclaw video export-obsidian`
+- `vclaw video sync-obsidian` dashboard views
+- `vclaw video next-actions` when approval is waiting on storyboard review
+
+The `Next Actions.md` note generated by `sync-obsidian` now includes the same
+review link when a project is waiting on storyboard approval.
+
+When present, `next-actions` also carries `storyboardReviewGeneratedAt`, and the
+generated note includes that freshness inline with the review link.
+
+`vclaw video doctor-project` now also flags projects whose storyboard checkpoint
+is `awaiting-approval` but whose `storyboard.md` review artifact is missing.
+
+`vclaw video doctor-portfolio` now also reports a portfolio-level
+`missingStoryboardReviewProjects` count for the same workflow invariant.
+
+It now also reports `staleStoryboardReviewProjects` when approval is pending but
+the storyboard changed after the last generated review.
+
+`vclaw video storyboard-review` now also appends a `storyboard.review.generated`
+event, so the review workflow shows up in timeline-style exports and history.
+
+When stale review blocks execution, the runtime now emits a
+`storyboard.review.stale.blocked` event so timeline/history surfaces capture the
+enforcement step as well.
+
+When review events exist, `status` and `index` now also expose
+`storyboardReviewGeneratedAt` alongside `storyboardReviewPath`.
+
+The same surfaces now also expose `storyboardReviewExists`, so tooling can tell
+whether a review has ever been generated before trying to reason about freshness.
+
+They now also expose a normalized `storyboardReviewState` field with one of:
+
+- `missing`
+- `current`
+- `stale`
+
+The same `storyboardReviewState` now flows through:
+
+- `vclaw video report`
+- `vclaw video export-csv`
+- `vclaw video export-obsidian`
+- `vclaw video sync-obsidian` dashboard views
+- `vclaw video next-actions`
+
+`vclaw video report-diff` now also exposes:
+
+- `reviewStateChanged` when the review-state ladder changes between snapshots
+- `platformChanged` when the stored project platform changes between snapshots
+- `executionProfileChanged` when the normalized execution profile changes between snapshots
+- `legacyImportChanged` when captured legacy import diagnostics change between snapshots
+
+Its top-line summary now also carries deltas for:
+
+- `legacyImportedProjectsDelta`
+- `legacyQueueDriftProjectsDelta`
+- `legacyNestedOutputProjectsDelta`
+
+The same `storyboardReviewExists` now flows through:
+
+- `vclaw video report`
+- `vclaw video export-csv`
+- `vclaw video export-obsidian`
+- `vclaw video sync-obsidian` dashboard views
+
+The same `storyboardReviewGeneratedAt` now flows through:
+
+- `vclaw video report`
+- `vclaw video export-csv`
+- `vclaw video export-obsidian`
+- `vclaw video sync-obsidian` dashboard views
+
+When the storyboard changes after the latest review generation, `status` now
+marks the review stale and `next-actions` prioritizes refreshing the review
+artifact before approval.
+
+The same stale-review signal now flows through:
+
+- `vclaw video report`
+- `vclaw video export-csv`
+- `vclaw video export-obsidian`
+- `vclaw video sync-obsidian` dashboard views
+
+That same stale-review signal now gates director runtime operations as well:
+
+- `vclaw video execute`
+- `vclaw video execute-status`
+
+The same referenced `characterBindings` now flow through:
+
+- `vclaw video report`
+- `vclaw video export-csv`
+- `vclaw video export-obsidian`
+- `vclaw video index`
+- `vclaw video sync-obsidian`
+
+The same cast provenance now also flows through:
+
+- `vclaw video status`
+- `vclaw video index`
+- `vclaw video report`
+- `vclaw video export-csv`
+
+The same review file now includes a focused director preflight result. Current
+preflight coverage includes:
+
+- provider-risk content hazard detection
+- stored Go Bananas id resolution and reference-image presence checks
+- remote reference-asset probe failures
+- pronoun drift warnings against known character descriptions
+- repeated adjacent-scene warnings
+- prompt-quality warnings/errors from `docs/PROMPT_QUALITY.md`
+- dialogue duration fit warnings/errors (`DIALOGUE_DURATION_OVERFLOW`)
+- reference-sheet validation and Go Bananas reference checks
+
+Supported env controls for this flow:
+
+- `DIRECTOR_AUTO_FIX_CONTENT=1`
+  auto-rewrites known provider-risk phrases before preflight re-checks the storyboard
+- `SKIP_DIRECTOR_PREFLIGHT=1`
+  bypasses the preflight step and goes straight to the storyboard approval gate
+- `DIRECTOR_STRICT_PROMPT_QUALITY=1`
+  promotes prompt-quality warnings to blocking errors
+- `DIRECTOR_STRICT_DIALOGUE_FIT=1`
+  promotes dialogue duration warnings to blocking errors
+
+Direct CLI surface:
+
+```bash
+vclaw video director-preflight --project <slug> [--root <path>] [--apply-content-fixes]
+vclaw video preflight --project <slug> [--root <path>] [--apply-content-fixes]
+vclaw video storyboard-review --project <slug> [--root <path>] [--mode storyboard|director] [--apply-content-fixes]
+```
+
+For `director` mode, `storyboard-review` now writes `storyboard.md` and, when
+preflight passes, marks the storyboard checkpoint `awaiting-approval` without
+starting execution.
+
+Projects in `awaiting-approval` now surface as `needs-review` across the index,
+dashboard, and metrics layer instead of generic `active`.
+
+Portfolio metrics now also expose `staleStoryboardReviewProjects` so stale
+approval reviews are visible in the summary layer.
+
+They also expose `unreviewedStoryboardProjects`, which counts projects that have
+not generated a storyboard review yet.
+
+They now also expose `byReviewState` with explicit `missing`, `current`, and
+`stale` counts.
+
+## Live execution adapters
+
+`vclaw video produce` submits a JSON payload to a route-specific adapter command
+via `stdin`. Configure one of:
+
+```bash
+VCLAW_VEO_DIRECT_ADAPTER
+VCLAW_VEO_USEAPI_ADAPTER
+VCLAW_SEEDANCE_DIRECT_ADAPTER
+VCLAW_RUNWAY_USEAPI_ADAPTER
+VCLAW_KLING_USEAPI_ADAPTER
+```
+
+The adapter should print JSON to `stdout`. If `produce` returns `externalJobId`,
+`vclaw` records that in the execution report and leaves the assets stage `pending`.
+`execute-status` then sends a poll request to the same adapter and, on completion,
+merges generated outputs into the canonical asset manifest and advances the project
+to `review`.
+
+For built-in core-route adapters:
+
+```bash
+VCLAW_SEEDANCE_DIRECT_SUBMIT_CMD
+VCLAW_SEEDANCE_DIRECT_POLL_CMD
+VCLAW_VEO_DIRECT_SUBMIT_CMD
+VCLAW_VEO_DIRECT_POLL_CMD
+```
+
+If `VCLAW_SEEDANCE_DIRECT_ADAPTER` or `VCLAW_VEO_DIRECT_ADAPTER` is unset,
+`vclaw` automatically falls back to the built-in adapter binary for that route.
+
+Every produce and execute-status path appends `generation.telemetry.recorded`
+events to `projects/<slug>/events/events.jsonl`. These records capture route,
+operation, task count, prompt/reference summary, external job id, provider cost
+fields, timing fields, issues, and output-ingest count when available.
+
+For `seedance-direct`, if `VCLAW_SEEDANCE_DIRECT_SUBMIT_CMD` / `VCLAW_SEEDANCE_DIRECT_POLL_CMD`
+are also unset, the built-in adapter can talk directly to the Seedance API using:
+
+```bash
+SUTUI_API_KEY
+VCLAW_SEEDANCE_BASE_URL   # optional, defaults to https://api.xskill.ai
+```
+
+For `veo-direct`, if `VCLAW_VEO_DIRECT_SUBMIT_CMD` / `VCLAW_VEO_DIRECT_POLL_CMD`
+are unset, the built-in adapter can run the local `vclaw-cli` workspace using:
+
+```bash
+VCLAW_VEO_CLI_ROOT        # optional, defaults to <workspace>/vclaw-cli
+VCLAW_VEO_BUN_BIN         # optional, defaults to bun
+VCLAW_VEO_OUTPUT_DIR      # optional, defaults to <vclaw-cli>/output-videos
+```
+
+## Execution profile normalization
+
+`plan` now emits a normalized execution profile and the runtime uses it.
+
+Supported fields:
+
+1. `aspectRatio`
+2. `quality`
+3. `resolution`
+4. `generateAudio`
+5. `outputCount`
+
+You can override them through brief metadata:
+
+```json
+{
+  "executionProfile": {
+    "aspectRatio": "9:16",
+    "quality": "quality",
+    "resolution": "1080p",
+    "generateAudio": false,
+    "outputCount": 2
+  }
+}
+```
+
+The same profile can now be set directly from the CLI through:
+
+1. `brief`
+2. `clone-init`
+3. `clone-execute`
+4. `set-execution-profile`
+
+## Cost estimates
+
+```bash
+vclaw video cost-estimate [--project <slug>] [--root <path>] [--scenes <count>] [--clip-duration <seconds>] [--new-characters <count>] [--narration on|off]
+```
+
+Direct flag estimates use the static model. Project estimates infer scene count,
+average duration, narration, and new-character count from project artifacts when
+possible. If completed `seedance-direct` telemetry with provider-reported USD is
+available under the same root, the estimate reports `historical-telemetry` in
+`estimateSource` and includes a `telemetry` summary. Otherwise it reports
+`static-default`.
+
+## Compatibility aliases
+
+1. `omx` works as a temporary alias for `vclaw`
+2. `execution-plan` remains an alias for `plan`
+3. `execute` remains an alias for `produce`
+4. deprecation notices are written to `stderr` so JSON `stdout` stays machine-readable
+
+## Prompt library
+
+`prompt-lib-list` and `prompt-lib-show` expose imported reference assets for:
+
+1. Seedance formulas
+2. Veo prompting guidance
+3. style template schema
+4. stage directors
+5. checkpoint protocol
+6. generation telemetry
+7. dialogue duration preflight
+8. character reference sheets
+9. clone-ad template workflow
+
+## Portfolio operations
+
+```bash
+vclaw video list [--root <path>]
+vclaw video index [--root <path>] [--output <path>]
+vclaw video metrics [--root <path>] [--mode storyboard|director]
+vclaw video workload [--root <path>] [--mode storyboard|director]
+vclaw video next-actions [--root <path>] [--mode storyboard|director]
+vclaw video dependencies [--root <path>] [--mode storyboard|director]
+vclaw video doctor-portfolio [--root <path>] [--mode storyboard|director]
+vclaw video report [--root <path>] [--mode storyboard|director]
+vclaw video report-snapshot [--root <path>] [--mode storyboard|director]
+vclaw video report-history [--root <path>]
+vclaw video report-diff [--root <path>] [--from <snapshot-path>] [--to <snapshot-path>]
+vclaw video trends [--root <path>]
+vclaw video export-csv [--root <path>] [--output-dir <path>] [--mode storyboard|director]
+```
+
+## Obsidian
+
+```bash
+vclaw video scaffold-obsidian-vault [--output-dir <path>]
+vclaw video export-obsidian --project <slug> [--root <path>] [--output-dir <path>] [--mode storyboard|director]
+vclaw video sync-obsidian [--root <path>] [--output-dir <path>] [--mode storyboard|director]
+```
+
+## Migration
+
+```bash
+vclaw video import-legacy --source <path> [--root <path>]
+```

@@ -1,0 +1,73 @@
+{
+  "skill_name": "video-replicator",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "hey i found this sick Nike ad on Instagram that id love to copy for our new running shoe 'AeroStride'. heres the reel: https://www.instagram.com/reel/ABC123/ — its about 30 seconds, shows a runner on a mountain trail at golden hour with dramatic camera movements. i want to swap in our shoe and a different model. landscape format for YouTube.",
+      "expected_output": "Selects COPY mode, runs SEALCAM+ analysis, uses Pro model for images, I2V mode for landscape, correct script pipeline",
+      "files": [],
+      "expectations": [
+        "Selects COPY mode (not CREATE or FILM) based on 'copy this ad' / 'reference video' intent",
+        "Runs analyze_video.py first for SEALCAM+ breakdown (Phase 1 before any generation)",
+        "Uses model_id='gemini-pro-image' for Go Bananas image generation (skill's CRITICAL rule, not gemini-flash-image)",
+        "Selects I2V mode for landscape video (skill says I2V works for landscape, T2V only for portrait)",
+        "Pipeline follows correct phase order: analyze -> rewrite_prompts -> generate images -> generate videos -> stitch",
+        "Mentions aspect_ratio='16:9' for both Go Bananas images and veo-cli --ratio landscape"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "i want to create a TikTok reel for our new perfume called 'Velvet Dusk'. no reference video — just make something original. i want 4 scenes: a close-up of the bottle on black velvet, a woman spraying it in a dimly lit boudoir, a slow-mo fabric swirl, and a final beauty shot with the bottle and logo. portrait 9:16 for TikTok. 15 seconds total.",
+      "expected_output": "Selects CREATE mode, handles portrait aspect ratio correctly (T2V not I2V), uses interactive scene wizard flow",
+      "files": [],
+      "expectations": [
+        "Selects CREATE mode (not COPY) since user said 'no reference video' and wants to design from scratch",
+        "Identifies portrait 9:16 and warns about I2V API limitation — recommends T2V mode for portrait",
+        "Follows CREATE mode Phase 0-5 workflow: project setup -> asset collection -> format -> scene design -> music -> generate",
+        "Uses model_id='gemini-pro-image' for all image generation (not gemini-flash-image)",
+        "Asks about character references before proceeding (Phase 1 Asset Collection)",
+        "Suggests scene templates or builds SEALCAM+ JSON for the 4 described scenes"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "i have a 20-slide PowerPoint presentation about our Q4 financial results. the current video is just static slides with transitions — super boring. i want you to restyle it into something that looks like an Apple keynote: clean, dynamic animations, smooth camera movements between data points. keep the content but make it visually stunning. the slide video is at projects/q4-results/reference/slides.mp4",
+      "expected_output": "Selects PRESENTATION mode with correct pipeline phases for slide restyling",
+      "files": [],
+      "expectations": [
+        "Selects PRESENTATION mode (not COPY or CREATE) based on 'restyle presentation' / 'slides' context",
+        "References presentation_mode.py as the orchestrator script",
+        "Mentions extract_pdf_slides.py for slide extraction or analyze_video.py for video analysis",
+        "Uses generate_animation_prompts.py for per-slide animation prompts",
+        "References the correct pipeline: extract slides -> analyze -> generate animation prompts -> generate images -> generate videos -> stitch"
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "i want to make a short film from scratch — like a cinematic ad for our luxury watch brand 'Chronos'. think James Bond meets tech. concept: a mysterious figure in a dark suit walks through a rain-soaked Tokyo street at night, glances at their wrist, and time seems to freeze around them. neon reflections everywhere. about 45 seconds, 6 scenes. use Seedance for the video generation.",
+      "expected_output": "Selects FILM mode, follows the cinematic production pipeline with screenplay generation and Seedance backend",
+      "files": [],
+      "expectations": [
+        "Selects FILM mode (not COPY or CREATE) based on 'make a film' / 'cinematic ad' / 'concept' context",
+        "References film_pipeline.py as the orchestrator",
+        "Mentions screenplay generation step (screenplay_generator.py or concept -> screenplay flow)",
+        "Specifies --backend seedance since user explicitly requested Seedance",
+        "Uses model_id='gemini-pro-image' for first-frame image generation",
+        "Follows FILM pipeline: concept -> screenplay -> characters -> scene breakdown -> images -> videos -> stitch"
+      ]
+    },
+    {
+      "id": 5,
+      "prompt": "we need to copy a narrated explainer video about cryptocurrency — its a 2 minute video with a presenter talking to camera for some scenes and B-roll footage for others. the presenter sections have continuous voiceover throughout. heres the video: projects/crypto-explainer/reference/original.mp4. i want to swap in our fintech product 'CoinFlow' and use our own presenter character.",
+      "expected_output": "Selects COPY NARRATED mode with correct scene classification (presenter vs B-roll) and audio pipeline",
+      "files": [],
+      "expectations": [
+        "Selects COPY NARRATED mode (not plain COPY) based on 'narrated' / 'presenter talking' / 'continuous voiceover' context",
+        "Classifies scenes as Presenter or B-roll before proceeding (skill's mandatory classification step)",
+        "References the narrated pipeline phases: analyze + transcribe -> rewrite + write narration -> images -> videos -> TTS -> voice change -> bake narration -> stitch",
+        "Mentions --transcribe flag for Whisper audio transcription during analysis",
+        "References generate_tts.py for TTS narration and ElevenLabs voice change for presenter scenes"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,79 @@
+# Example: Storybook (Miyazaki pastel watercolor)
+# Shows a warm, gentle children's story structure.
+---
+project:
+  name: "Riley and the Cloud Garden"
+  slug: "riley-cloud-garden"
+  genre: storybook
+  runtime_target: "3:00"
+  scene_count: 12
+  clip_duration_sec: 15
+
+premise: |
+  A 5-year-old girl named Riley discovers a tiny garden growing on a cloud
+  outside her bedroom window and learns to tend it through the seasons.
+
+style:
+  preset: miyazaki
+  grading: pastel-dream
+  platform: youtube
+  aspect: 16:9
+
+tone: "warm, gentle, childlike wonder, hand-painted, patient"
+
+cast:
+  - name: Riley
+    role: protagonist
+    library_id: null  # needs to be created
+    description: "5-year-old mixed-race girl with curly light brown hair tied in two puffs, big hazel eyes with long lashes, freckles across her nose, wearing a yellow dungaree over a white t-shirt and red canvas shoes, soft rounded Miyazaki watercolor aesthetic, pastel pink cheeks, hand-painted illustration style"
+    archetype: human-child
+    create_on_first_run: true
+
+  - name: Sprout
+    role: companion
+    library_id: null
+    description: "small round green sprout character with two tiny leaves for arms and one curly leaf on top of its head, cheerful smile, rosy cheeks, wiggle-walks on tiny roots, Miyazaki watercolor painting style, pastel green, organic magical creature, companion-scale"
+    archetype: magical-plant
+    create_on_first_run: true
+
+adversaries:
+  type: none
+  description: "no antagonists — story is about care and growth"
+
+setting:
+  time_period: timeless
+  location: "a small bedroom window overlooking rolling hills and clouds"
+  world_notes: "Seasons change across the story; clouds float close enough to touch"
+
+act_structure:
+  - opening_image: "Wide watercolor of Riley's bedroom window, curtains blowing, a single cloud drifting past."
+  - discovery: "Riley notices a tiny green sprout poking up from a cloud. Her eyes widen."
+  - curiosity: "Riley reaches through the window. The cloud drifts closer. She touches the sprout gently."
+  - challenge: "The sprout droops — it needs water. Riley doesn't have any in her room."
+  - helper_arrives: "Sprout wiggles to life, points at Riley's watering can on the floor. Riley smiles."
+  - lesson: "Riley waters the sprout. It straightens, glows faintly, grows a small flower."
+  - trial: "Night falls. A cold wind tries to blow the cloud away. Riley holds the cloud's edge."
+  - realization: "Riley wraps a scarf around the cloud. Sprout and cloud nestle together, safe."
+  - resolution_with_object: "Morning. The sprout has grown into a small garden of tiny flowers on the cloud."
+  - reflection: "Riley shows Sprout to her stuffed bear. Sprout waves a leaf-arm at the bear."
+  - return_home: "Riley carefully returns the cloud-garden to the sky. Sprout waves goodbye."
+  - warm_circular_ending: "Riley at her window, next morning. New sprout. Smiles, reaches out."
+
+content_filter_substitutions: []  # storybook genre has no hazards
+
+estimated_cost:
+  seedance_per_clip: 0.40
+  seedance_total: 4.80
+  gemini_batched: 0.02
+  go_bananas_new_characters: "2 × $0.05 = $0.10 (Riley + Sprout)"
+  elevenlabs_narration: 0.12
+  total: ~5.04
+
+estimated_wall_time:
+  character_creation: "~2min (per new character, one-time)"
+  script_gen: "~20s"
+  decomposition: "~15s"
+  seedance_per_clip: "~4min"
+  total_seedance: "~48min"
+  stitch_narration: "~3min"
+  total: "~55min"

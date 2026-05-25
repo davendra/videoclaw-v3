@@ -1,0 +1,23 @@
+# Test prompts for veo-cli - all scenarios with fast model
+# Run with: ./tests/run-tests.sh
+
+# ===========================================
+# TEXT-TO-VIDEO TESTS
+# ===========================================
+
+# Test 1: T2V Landscape
+[t2v-landscape] A majestic eagle soaring over mountain peaks at golden hour, cinematic drone shot
+
+# Test 2: T2V Portrait
+[t2v-portrait] A tall waterfall cascading down a cliff face into a misty pool, vertical framing
+
+# ===========================================
+# FRAME-TO-VIDEO (IMAGE-TO-VIDEO) TESTS
+# Requires test images in ./test-images/
+# ===========================================
+
+# Test 3: I2V Landscape (single start frame)
+[i2v-landscape] image:./test-images/landscape-test.jpg The scene slowly comes to life with gentle wind moving through the grass
+
+# Test 4: I2V Portrait (single start frame)
+[i2v-portrait] image:./test-images/portrait-test.jpg The person slowly turns their head and smiles warmly at the camera

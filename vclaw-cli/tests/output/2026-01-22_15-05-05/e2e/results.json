@@ -1,0 +1,11 @@
+{
+  "category": "e2e",
+  "timestamp": "2026-01-22_15-05-05",
+  "passed": 0,
+  "failed": 0,
+  "skipped": 8,
+  "backend": "direct",
+  "dry_run": true,
+  "exit_code": 0,
+  "output_file": "output.log"
+}

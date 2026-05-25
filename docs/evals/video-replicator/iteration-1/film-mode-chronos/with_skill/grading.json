@@ -1,0 +1,40 @@
+{
+  "expectations": [
+    {
+      "text": "Selects FILM mode (not COPY or CREATE) based on 'make a film' / 'cinematic ad' / 'concept' context",
+      "passed": true,
+      "evidence": "Lines 1-12: 'Mode Selection: FILM MODE (Option 6)' with detailed reasoning about why CREATE/COPY/LONG-FORM don't fit"
+    },
+    {
+      "text": "References film_pipeline.py as the orchestrator",
+      "passed": true,
+      "evidence": "Line 46: 'python .claude/skills/video-replicator/scripts/film_pipeline.py' used as the main orchestration command"
+    },
+    {
+      "text": "Mentions screenplay generation step (screenplay_generator.py or concept -> screenplay flow)",
+      "passed": true,
+      "evidence": "Lines 69-98: Phase 1 is 'Screenplay Generation'. Line 74: 'python .claude/skills/video-replicator/scripts/screenplay_generator.py'. Full screenplay structure with 6 scenes and keyframes."
+    },
+    {
+      "text": "Specifies --backend seedance since user explicitly requested Seedance",
+      "passed": true,
+      "evidence": "Line 65: '--backend seedance' in the film_pipeline.py command. Line 286: '--backend seedance' in parallel_video_gen.py"
+    },
+    {
+      "text": "Uses model_id='gemini-pro-image' for first-frame image generation",
+      "passed": true,
+      "evidence": "Line 141: model_id='gemini-pro-image'. Lines 200-252: All 6 generate_image calls use model_id='gemini-pro-image'. Line 486: 'Always gemini-pro-image -- every single generate_image call uses the Pro model.'"
+    },
+    {
+      "text": "Follows FILM pipeline: concept -> screenplay -> characters -> scene breakdown -> images -> videos -> stitch",
+      "passed": true,
+      "evidence": "Phase 0 (concept/setup) -> Phase 1 (screenplay) -> Phase 2 (character setup) -> Phase 3 (scene breakdown) -> Phase 4 (image gen) -> Phase 5 (video gen) -> Phase 6 (audio) -> Phase 7 (stitch)"
+    }
+  ],
+  "summary": {
+    "passed": 6,
+    "failed": 0,
+    "total": 6,
+    "pass_rate": 1.0
+  }
+}

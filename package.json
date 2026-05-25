@@ -1,0 +1,107 @@
+{
+  "name": "videoclaw",
+  "version": "3.0.0-alpha.0",
+  "description": "Agent-friendly multi-provider AI video CLI (Veo, Seedance, Runway, Omni Flash) with on-disk JSON artifacts, approval gates, storyboard review UI, and portfolio ops. v3 — narrow, deterministic, agent-target CLI.",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "bin": {
+    "vclaw": "dist/cli/vclaw.js",
+    "vclaw-provider-adapter": "dist/cli/provider-adapter.js"
+  },
+  "keywords": [
+    "ai-video",
+    "video-generation",
+    "text-to-video",
+    "veo",
+    "veo-3",
+    "seedance",
+    "runway",
+    "kling",
+    "omni-flash",
+    "google-flow",
+    "useapi",
+    "cli",
+    "multi-provider",
+    "video-pipeline",
+    "storyboard",
+    "review-ui",
+    "workflow",
+    "obsidian"
+  ],
+  "author": "Davendra Patel",
+  "license": "SEE LICENSE IN LICENSE",
+  "homepage": "https://github.com/davendra/videoclaw-v3#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/davendra/videoclaw-v3.git"
+  },
+  "bugs": {
+    "url": "https://github.com/davendra/videoclaw-v3/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "node -e \"const fs=require('fs'); fs.rmSync('dist',{recursive:true,force:true});\" && tsc && node -e \"require('fs').chmodSync('dist/cli/vclaw.js', 0o755); require('fs').chmodSync('dist/cli/provider-adapter.js', 0o755)\"",
+    "dev": "tsc --watch",
+    "test:node": "node --test dist/tests/*.test.js",
+    "test": "npm run build && npm run test:node",
+    "demo": "npm run build && node scripts/demo-quickstart.mjs",
+    "demo:record": "bash scripts/record-demo.sh",
+    "smoke:runtime": "npm run build && node scripts/smoke-runtime.mjs",
+    "smoke:native-veo": "npm run build && node scripts/smoke-native-veo.mjs",
+    "smoke:character-hydration": "npm run build && node scripts/smoke-character-hydration.mjs",
+    "smoke:execution-cancel": "npm run build && node scripts/smoke-execution-cancel.mjs",
+    "smoke:portfolio": "npm run build && node scripts/smoke-portfolio.mjs",
+    "smoke:reference-sheets": "npm run build && node scripts/smoke-reference-sheets.mjs",
+    "smoke:scene-candidates": "npm run build && node scripts/smoke-scene-candidates.mjs",
+    "e2e:image-storyboard": "npm run build && node scripts/e2e-image-storyboard-workflow.mjs --verify-server",
+    "e2e:image-storyboard:examples": "npm run build && node scripts/e2e-image-storyboard-workflow.mjs --include-examples --verify-server",
+    "check:movie-director-wrappers": "bash scripts/check-movie-director-wrappers.sh",
+    "check:cleanroom-docs": "bash scripts/check-cleanroom-docs.sh",
+    "check:skill-frontdoor": "bash scripts/check-skill-frontdoor.sh",
+    "check:artifact-schema-coverage": "node scripts/check-artifact-schema-coverage.mjs",
+    "check:artifact-schema-coverage:strict": "node scripts/check-artifact-schema-coverage.mjs --strict",
+    "check:release-readiness-lite": "bash scripts/check-release-readiness-lite.sh",
+    "prepublishOnly": "npm test"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "files": [
+    "AGENTS.md",
+    "CLAUDE.md",
+    "LICENSE",
+    "README.md",
+    "tsconfig.json",
+    "docs/*.md",
+    "docs/assets/*",
+    "dist/cli/",
+    "dist/video/",
+    "dist/index.d.ts",
+    "dist/index.d.ts.map",
+    "dist/index.js",
+    "dist/index.js.map",
+    "schemas/",
+    "src/video/",
+    "playbooks/",
+    "references/",
+    "skills/README.md",
+    "skills/catalog.json",
+    "skills/*/assets/*",
+    "skills/*/README.md",
+    "skills/*/SKILL.md",
+    "tmp/review-station/index.html"
+  ],
+  "devDependencies": {
+    "@types/node": "^25.5.0",
+    "typescript": "^5.7.0"
+  }
+}

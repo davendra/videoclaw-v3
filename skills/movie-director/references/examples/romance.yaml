@@ -1,0 +1,81 @@
+# Example: Romance (Wes Anderson pastel-symmetric)
+# Meet-cute, obstacle, revelation, reconciliation.
+---
+project:
+  name: "The Bookshop Letter"
+  slug: "the-bookshop-letter"
+  genre: romance
+  runtime_target: "3:00"
+  scene_count: 12
+  clip_duration_sec: 15
+
+premise: |
+  Two strangers repeatedly reach for the same obscure book at a bookshop
+  and eventually find a letter one of them left inside, which sets up
+  their first real conversation at the bookshop's tiny café.
+
+style:
+  preset: wes-anderson
+  grading: pastel-dream
+  platform: youtube
+  aspect: 16:9
+
+tone: "soft, intimate, warm, bittersweet, light touch, quiet humor"
+
+cast:
+  - name: Mira
+    role: protagonist
+    library_id: null
+    description: "late 20s woman with shoulder-length auburn hair with a blunt fringe, pale skin with freckles, thoughtful hazel eyes behind round tortoiseshell glasses, wearing a mustard corduroy skirt, cream turtleneck, and oxblood leather satchel, slight literary-academic bearing, Wes Anderson symmetric pastel framing, pastel-dream color grading"
+    archetype: human-young-adult
+    create_on_first_run: true
+
+  - name: Nico
+    role: co-protagonist
+    library_id: null
+    description: "late 20s man with short curly black hair, warm brown skin, soft brown eyes with gentle smile lines, wearing a forest-green corduroy jacket over a cream shirt, dark jeans, carrying a worn leather journal, shy writerly bearing, Wes Anderson symmetric pastel framing, matching tonal palette"
+    archetype: human-young-adult
+    create_on_first_run: true
+
+adversaries:
+  type: none
+
+setting:
+  time_period: "contemporary, early autumn"
+  location: "small independent bookshop with attached café, large windows, wooden shelves, pastel decor — mint walls, coral accent armchairs, mustard rug"
+  world_notes: "Saturday morning light, quiet, fallen leaves visible outside window"
+
+act_structure:
+  - meet_cute: "Wide symmetric shot of the bookshop's poetry section. Mira and Nico simultaneously reach for the same slim volume from opposite sides. Hands meet on the spine."
+  - attraction: "Both pause, look up. Hold eye contact 2 seconds. Mira smiles first. Nico looks away, blushing."
+  - obstacle_introduced: "Mira says quietly, 'You go ahead.' Nico shakes his head. 'No, please, you.' Neither moves. They both step back simultaneously."
+  - first_connection: "Mira picks up the book. Notices Nico's gaze. Opens the book briefly — her expression changes. A letter is folded inside."
+  - deepening: "Over-the-shoulder of Mira reading the letter silently. It's tender, unfinished. She glances up at Nico across the aisle — recognition."
+  - misunderstanding: "Nico has walked toward the café register with his own book. He turns and sees Mira holding the letter, looking at him. His face flushes."
+  - separation: "Nico leaves the bookshop quickly without paying. The bell chimes. Mira stands holding the letter, frozen."
+  - revelation: "Close-up of Mira's hand opening the letter fully. It's addressed 'To whoever finds this book.' It's not personal to Nico — it's a general letter left by a stranger."
+  - resolution_attempt: "Mira runs out of the shop. Wide pastel street shot — Nico is half a block away, walking slowly with his head down."
+  - reconciliation: "Mira calls out 'Wait!' Nico stops. She walks up, holds up the letter. 'This wasn't yours. But — I think it was meant for both of us.'"
+  - payoff: "Both sit at the bookshop's café window. Coffee between them. Mira slides the book toward Nico. 'You wanted it first.' Nico slides it back. 'Split it?'"
+  - circular_ending: "Wide symmetric shot of the café window. Mira and Nico reading the same book from opposite sides, occasionally laughing. The bookshop owner in the background smiles. Soft bell chimes as another customer enters."
+
+content_filter_substitutions: []
+
+estimated_cost:
+  seedance_per_clip: 0.40
+  seedance_total: 4.80
+  gemini_batched: 0.02
+  go_bananas_new_characters: 0.10
+  elevenlabs_narration: 0.10
+  total: ~5.02
+
+estimated_wall_time: "~55min"
+
+audio_direction:
+  score: "Gentle acoustic piano, occasional clarinet accent, 60 BPM, warm and pastel"
+  sfx: "Bookshop ambience — coffee machine, pages turning, distant traffic, door bell"
+  dialogue: "3-4 short exchanges between Mira and Nico. Sparse. Warm."
+
+platform_optimization:
+  caption_zone: "Full frame — standard 16:9 YouTube"
+  pacing: "Medium — cuts every 4-6 seconds, allowing quiet beats to breathe"

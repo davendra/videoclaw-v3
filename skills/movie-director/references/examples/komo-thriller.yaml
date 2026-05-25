@@ -1,0 +1,101 @@
+# Example: Action thriller (Komo: Jade Cipher)
+# Concrete fully-filled project.yaml — what the interview produces.
+# Use as a template for other action-thriller projects or as a sanity check.
+---
+project:
+  name: "Komo: Jade Cipher"
+  slug: "story-fourteen-komo-jade-cipher-neo-tokyo"
+  genre: action-thriller
+  runtime_target: "3:30"
+  scene_count: 14
+  clip_duration_sec: 15
+
+premise: |
+  A 6-year-old Japanese girl with an ancestral jade pendant is hunted across
+  Neo-Tokyo rooftops. With her bunny Mochi she escapes to a shrine where
+  the pendant awakens the spectral samurai Hiro, who offers a choice: surrender
+  the pendant or accept his radiant staff. She chooses to fight.
+
+style:
+  preset: villeneuve
+  grading: neon-noir
+  platform: youtube
+  aspect: 16:9
+
+tone: "dark, tense, rain-slicked, propulsive, cinematic"
+
+cast:
+  - name: Komo
+    role: protagonist
+    library_id: 170
+    description: "6-year-old Japanese girl with shoulder-length brown hair, round black eyes, rosy pink cheeks, wearing a light blue dress, petite build, Villeneuve cinematic photograph with neon-noir color grading"
+    archetype: human-child
+
+  - name: Mochi
+    role: companion
+    library_id: 247
+    description: "small fluffy white rabbit with long soft ears, pink nose, intelligent dark eyes, loyal companion of a young girl. Organic living creature, NOT robotic, NOT metallic. Neon-noir aesthetic, rim lighting, photorealistic fur detail"
+    archetype: organic-animal
+
+  - name: Hiro
+    role: mentor
+    library_id: 206
+    description: "young samurai boy approximately 7-8 years old, fair skin, round face, appearing as translucent spectral figure flickering with soft neon-blue energy, traditional samurai armor, silent and stoic, Villeneuve cinematic photograph"
+    archetype: spectral-mentor
+
+# Plural adversaries — no library entries, Seedance generates fresh per clip.
+# Preflight coverage check correctly skips these.
+adversaries:
+  type: plural
+  description: "Three black-suited agents with glowing HUD visors"
+
+setting:
+  time_period: near-future
+  location: Neo-Tokyo
+  world_notes: "Rain-slicked neon-lit city, cybernetic enhancements common, ancestral mysticism hidden beneath"
+
+act_structure:
+  - hook: "Aerial Neo-Tokyo rooftops in heavy rain. Camera descends through Komo's window to her sleeping, pendant on chest."
+  - stakes_set: "Three agents with HUD visors target the pendant from an adjacent rooftop. Two rappel toward her window."
+  - wake: "Mochi nudges Komo awake. She grabs the pendant and a satchel."
+  - escape_begins: "Komo sprints down a neon hallway. An agent kicks the door off behind her."
+  - rooftop_chase: "Komo leaps a gap between skyscrapers in the rain."
+  - near_miss: "She slips, catches a balcony ledge one-handed. Drops two stories to a lower roof to escape."
+  - mochi_leads: "Mochi hops ahead, leading her through a neon alley toward a lantern-lit stairwell."
+  - hideout: "Back-alley shrine. Pendant pulses blue on old scrollwork carvings."
+  - awakening: "Hiro materialises translucent in front of the scrollwork. Offers empty hand — a choice."
+  - choice: "Komo closes her fist around the pendant. Chooses to fight. Hiro's hand fills with a radiant staff of light."
+  - cornered: "Komo and Hiro walk a neon market. Three agents at the far end with raised weapons."
+  - clash: "Radiant staff energies intertwine with agent weapons in slow motion. Rain droplets suspended."
+  - cost: "Last agent surrenders. Hiro kneels, bows, dissolves peacefully into starlight. Pendant dims — victory has a cost."
+  - resolution: "Dawn over Neo-Tokyo. Komo on a rooftop edge with Mochi in her arms, pendant quiet. A single ray of sun on her face."
+
+content_filter_substitutions:  # Applied by DIRECTOR_AUTO_FIX_CONTENT=1
+  - spectral blade → radiant staff of light
+  - katana clashes → energies intertwine
+  - body shatters → dissolves peacefully into starlight
+
+estimated_cost:
+  seedance_per_clip: 0.40
+  seedance_total: 5.60
+  gemini_batched: 0.02
+  elevenlabs_narration: 0.15
+  total: ~5.77
+
+estimated_wall_time:
+  script_gen: "~20s"
+  decomposition: "~15s"
+  seedance_per_clip: "~4min"
+  total_seedance: "~56min"
+  stitch_narration: "~3min"
+  total: "~1h00m"
+
+# CLI command this project maps to:
+# VIDEOCLAW_APPROVE_STORYBOARD=1 DIRECTOR_AUTO_FIX_CONTENT=1 \
+#   vclaw video create \
+#   "<premise + act_structure concatenated>" \
+#   --scenes 14 --production-mode director \
+#   --style villeneuve --color-grading neon-noir \
+#   --platform youtube \
+#   --gb-character "Komo:170" --gb-character "Mochi:247" --gb-character "Hiro:206" \
+#   --execute

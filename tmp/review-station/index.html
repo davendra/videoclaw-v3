@@ -1,0 +1,4194 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Video Claw Review Station</title>
+    <link rel="icon" href="data:,">
+    <style>
+      :root {
+        color-scheme: light;
+        --color-warm-canvas: #fbfaf9;
+        --color-stone-surface: #f2f0ed;
+        --color-parchment-card: #f8f7f4;
+        --color-graphite: #474645;
+        --color-charcoal-primary: #343433;
+        --color-midnight: #121212;
+        --color-ash: #848281;
+        --color-fog: #c6c6c6;
+        --color-smoke: #a7a7a7;
+        --color-ember-orange: #ff3e00;
+        --color-meadow-green: #00ca48;
+        --color-sky-blue: #0090ff;
+        --color-sunburst-yellow: #ffbb26;
+        --color-deep-amber: #d48f00;
+        --color-ice-blue: #64c6ff;
+        --color-flamingo: #ff58ae;
+        --shadow-subtle: color(display-p3 0.949 0.941 0.929) 0 0 0 1px inset;
+        --shadow-sm: rgba(0, 0, 0, 0.04) 0 1px 6px 0, rgba(0, 0, 0, 0.05) 0 0 24px 0;
+        --font-display: Fraunces, Georgia, "Times New Roman", serif;
+        --font-inter: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        --page-max-width: 1200px;
+      }
+
+      * { box-sizing: border-box; }
+
+      html,
+      body {
+        max-width: 100%;
+        overflow-x: hidden;
+      }
+
+      body {
+        margin: 0;
+        background: var(--color-warm-canvas);
+        color: var(--color-graphite);
+        font-family: var(--font-inter);
+        font-size: 15px;
+        line-height: 1.47;
+        letter-spacing: -0.2px;
+      }
+
+      button, input, select, textarea {
+        font: inherit;
+      }
+
+      button {
+        cursor: pointer;
+      }
+
+      code {
+        background: var(--color-stone-surface);
+        border-radius: 6px;
+        padding: 2px 5px;
+        overflow-wrap: anywhere;
+        word-break: break-word;
+      }
+
+      .shell {
+        width: min(var(--page-max-width), calc(100% - 40px));
+        margin: 0 auto;
+      }
+
+      .nav {
+        position: sticky;
+        top: 0;
+        z-index: 20;
+        background: rgba(251, 250, 249, 0.94);
+        backdrop-filter: blur(12px);
+        box-shadow: rgba(0, 0, 0, 0.04) 0 0 0 1px;
+      }
+
+      .nav-inner {
+        height: 64px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 20px;
+      }
+
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        color: var(--color-charcoal-primary);
+        font-weight: 600;
+        letter-spacing: -0.2px;
+      }
+
+      .brand-mark {
+        width: 34px;
+        height: 34px;
+        border-radius: 12px;
+        background: var(--color-sunburst-yellow);
+        box-shadow: var(--shadow-subtle);
+        display: grid;
+        place-items: center;
+        color: var(--color-midnight);
+        font-weight: 600;
+      }
+
+      .nav-links {
+        display: flex;
+        align-items: center;
+        gap: 18px;
+        color: var(--color-charcoal-primary);
+        font-size: 14px;
+        font-weight: 500;
+        letter-spacing: -0.18px;
+      }
+
+      .nav-link {
+        border: 0;
+        background: transparent;
+        color: inherit;
+        padding: 4px 0;
+      }
+
+      .nav-actions {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .btn {
+        min-height: 38px;
+        border-radius: 32px;
+        border: 0;
+        padding: 0 15px;
+        font-size: 14px;
+        font-weight: 600;
+        letter-spacing: -0.18px;
+        transition: transform 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
+      }
+
+      .btn:hover {
+        transform: translateY(-1px);
+      }
+
+      .btn:disabled {
+        cursor: not-allowed;
+        opacity: 0.46;
+        transform: none;
+      }
+
+      .btn-primary {
+        background: var(--color-midnight);
+        color: #fff;
+      }
+
+      .btn-primary:hover {
+        background: var(--color-charcoal-primary);
+      }
+
+      .btn-secondary {
+        background: #f6f4ef;
+        color: var(--color-midnight);
+      }
+
+      .btn-ghost {
+        background: transparent;
+        color: var(--color-ember-orange);
+        padding: 0;
+        min-height: auto;
+      }
+
+      .btn-outline {
+        background: transparent;
+        border: 1px solid var(--color-graphite);
+        color: var(--color-graphite);
+        border-radius: 12px;
+      }
+
+      .hero {
+        position: relative;
+        padding: 28px 0 18px;
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 24px;
+      }
+
+      .hero h1 {
+        max-width: 640px;
+        margin: 0;
+        color: var(--color-charcoal-primary);
+        font-family: var(--font-display);
+        font-size: 38px;
+        font-weight: 500;
+        letter-spacing: 0;
+        line-height: 1.08;
+      }
+
+      .hero p {
+        max-width: 690px;
+        margin: 10px 0 0;
+        color: var(--color-graphite);
+        font-size: 15px;
+        letter-spacing: 0;
+      }
+
+      .hero-actions {
+        margin-top: 0;
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+        flex-wrap: wrap;
+        min-width: 360px;
+      }
+
+      .stage-rail {
+        display: grid;
+        grid-template-columns: repeat(6, minmax(0, 1fr));
+        gap: 10px;
+        margin: 8px 0 28px;
+      }
+
+      .stage-button {
+        text-align: left;
+        background: #fff;
+        color: var(--color-charcoal-primary);
+        box-shadow: var(--shadow-subtle);
+        border: 0;
+        border-radius: 10px;
+        padding: 14px;
+        min-height: 104px;
+      }
+
+      .stage-button.active {
+        background: var(--color-parchment-card);
+        box-shadow: var(--shadow-subtle), var(--shadow-sm);
+      }
+
+      .stage-button.done .stage-number {
+        background: var(--color-meadow-green);
+        color: #fff;
+      }
+
+      .stage-number {
+        display: inline-grid;
+        place-items: center;
+        width: 28px;
+        height: 28px;
+        border-radius: 40px;
+        background: var(--color-stone-surface);
+        color: var(--color-graphite);
+        font-weight: 600;
+        margin-bottom: 10px;
+      }
+
+      .stage-title {
+        display: block;
+        font-weight: 600;
+        font-size: 14px;
+        letter-spacing: -0.18px;
+      }
+
+      .stage-sub {
+        display: block;
+        color: var(--color-ash);
+        font-size: 12px;
+        line-height: 1.35;
+        margin-top: 3px;
+      }
+
+      .layout {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 350px;
+        gap: 20px;
+        align-items: start;
+        padding-bottom: 80px;
+      }
+
+      .layout > *,
+      .main-card,
+      .side-card,
+      .item-card,
+      .stat-card,
+      .empty-state,
+      .quality-panel,
+      .details-panel,
+      .handoff,
+      .ledger,
+      .cards-grid,
+      .small-grid,
+      .role-grid,
+      .candidate-gallery,
+      .candidate-card,
+      .scene-row,
+      .still-form {
+        min-width: 0;
+      }
+
+      .main-card,
+      .side-card,
+      .item-card,
+      .stat-card,
+      .empty-state {
+        background: #fff;
+        box-shadow: var(--shadow-subtle);
+        border-radius: 10px;
+      }
+
+      .main-card,
+      .side-card {
+        padding: 32px;
+      }
+
+      .section-kicker {
+        color: var(--color-ember-orange);
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: -0.17px;
+        margin-bottom: 8px;
+      }
+
+      .step-meta {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 12px;
+        color: var(--color-ash);
+        font-size: 13px;
+        font-weight: 500;
+      }
+
+      .step-pill {
+        color: #fff;
+        background: var(--color-midnight);
+        border-radius: 32px;
+        padding: 5px 10px;
+      }
+
+      .section-title {
+        margin: 0;
+        color: var(--color-midnight);
+        font-size: 44px;
+        line-height: 1.09;
+        letter-spacing: -1.14px;
+        font-weight: 600;
+      }
+
+      .section-copy {
+        margin: 12px 0 0;
+        max-width: 760px;
+        color: var(--color-graphite);
+        font-size: 17px;
+        letter-spacing: -0.22px;
+      }
+
+      .now-box {
+        margin-top: 20px;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 18px;
+        align-items: center;
+        background: var(--color-parchment-card);
+        border-radius: 12px;
+        padding: 18px;
+      }
+
+      .now-box.blocked {
+        background: #fff4ec;
+        box-shadow: #ffd6c7 0 0 0 1px inset;
+      }
+
+      .now-box.ready {
+        background: #f0fff4;
+        box-shadow: #c7f4d2 0 0 0 1px inset;
+      }
+
+      .now-box strong {
+        display: block;
+        color: var(--color-midnight);
+        font-size: 19px;
+        letter-spacing: -0.25px;
+      }
+
+      .now-box span {
+        color: var(--color-graphite);
+      }
+
+      .action-feedback {
+        margin-top: 12px;
+        min-height: 42px;
+        display: flex;
+        align-items: center;
+        border-radius: 10px;
+        padding: 10px 14px;
+        background: #f6f4ef;
+        color: var(--color-graphite);
+        font-size: 14px;
+        font-weight: 500;
+        line-height: 1.35;
+      }
+
+      .action-feedback.ready {
+        background: #f0fff4;
+        box-shadow: #c7f4d2 0 0 0 1px inset;
+        color: var(--color-charcoal-primary);
+      }
+
+      .action-feedback.blocked {
+        background: #fff4ec;
+        box-shadow: #ffd6c7 0 0 0 1px inset;
+        color: var(--color-charcoal-primary);
+      }
+
+      .missing-list {
+        margin: 10px 0 0;
+        padding-left: 18px;
+        color: var(--color-graphite);
+      }
+
+      .missing-list li {
+        margin: 3px 0;
+      }
+
+      .controls {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 180px 120px;
+        gap: 10px;
+        margin: 24px 0;
+      }
+
+      input,
+      select,
+      textarea {
+        width: 100%;
+        background: var(--color-parchment-card);
+        border: 0;
+        box-shadow: var(--shadow-subtle);
+        border-radius: 10px;
+        color: var(--color-charcoal-primary);
+        padding: 12px 13px;
+        outline: none;
+      }
+
+      textarea {
+        min-height: 108px;
+        resize: vertical;
+      }
+
+      .stats-grid,
+      .cards-grid,
+      .small-grid,
+      .role-grid {
+        display: grid;
+        gap: 12px;
+      }
+
+      .stats-grid {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        margin-top: 20px;
+      }
+
+      .cards-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+
+      .small-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .role-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .stat-card {
+        padding: 18px;
+      }
+
+      .stat-card strong {
+        display: block;
+        color: var(--color-midnight);
+        font-size: 32px;
+        line-height: 1;
+        letter-spacing: -0.9px;
+      }
+
+      .stat-card span {
+        display: block;
+        margin-top: 8px;
+        color: var(--color-ash);
+        font-size: 13px;
+      }
+
+      .item-card {
+        overflow: hidden;
+      }
+
+      .item-card.selected {
+        outline: 3px solid var(--color-meadow-green);
+        outline-offset: -3px;
+      }
+
+      .media {
+        height: 172px;
+        background: var(--color-parchment-card);
+        overflow: hidden;
+        display: grid;
+        place-items: center;
+        border-radius: 10px 10px 0 0;
+      }
+
+      .media img,
+      .media video {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+      }
+
+      .paper-illustration {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        display: grid;
+        place-items: center;
+        background:
+          radial-gradient(circle at 22% 26%, rgba(255, 187, 38, .32), transparent 24%),
+          radial-gradient(circle at 76% 34%, rgba(0, 144, 255, .22), transparent 22%),
+          var(--color-parchment-card);
+      }
+
+      .mini-blob {
+        width: 76px;
+        height: 62px;
+        border-radius: 55% 45% 46% 54% / 62% 40% 60% 38%;
+        background: var(--fill, var(--color-sky-blue));
+        position: relative;
+        box-shadow: inset 0 -7px 0 rgba(0, 0, 0, 0.08);
+      }
+
+      .mini-blob::before,
+      .mini-blob::after {
+        content: "";
+        position: absolute;
+        background: var(--color-midnight);
+      }
+
+      .mini-blob::before {
+        width: 6px;
+        height: 6px;
+        border-radius: 999px;
+        left: 24px;
+        top: 22px;
+        box-shadow: 20px 0 0 var(--color-midnight);
+      }
+
+      .mini-blob::after {
+        width: 24px;
+        height: 10px;
+        border-radius: 0 0 999px 999px;
+        border: 3px solid var(--color-midnight);
+        border-top: 0;
+        background: transparent;
+        left: 26px;
+        top: 35px;
+      }
+
+      .item-body {
+        padding: 18px;
+      }
+
+      .item-body h3 {
+        margin: 0;
+        color: var(--color-charcoal-primary);
+        font-size: 19px;
+        line-height: 1.38;
+        letter-spacing: -0.25px;
+      }
+
+      .item-body p {
+        margin: 8px 0 14px;
+        color: var(--color-graphite);
+        font-size: 15px;
+      }
+
+      .chips {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+        margin-bottom: 14px;
+      }
+
+      .chip {
+        border-radius: 6px;
+        background: var(--color-stone-surface);
+        color: var(--color-graphite);
+        padding: 4px 8px;
+        font-size: 12px;
+        line-height: 1.3;
+      }
+
+      .card-actions {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+
+      .empty-state {
+        padding: 24px;
+        display: grid;
+        grid-template-columns: 86px minmax(0, 1fr);
+        gap: 18px;
+        align-items: center;
+        background: var(--color-parchment-card);
+      }
+
+      .empty-state strong {
+        display: block;
+        color: var(--color-midnight);
+        font-size: 23px;
+        line-height: 1.2;
+        letter-spacing: -0.44px;
+      }
+
+      .empty-state p {
+        margin: 6px 0 14px;
+      }
+
+      .scene-list {
+        display: grid;
+        gap: 10px;
+      }
+
+      .scene-row {
+        display: grid;
+        grid-template-columns: 86px minmax(0, 1fr) auto;
+        gap: 14px;
+        align-items: center;
+        padding: 16px;
+        border-radius: 10px;
+        background: var(--color-parchment-card);
+      }
+
+      .scene-row.blocked {
+        background: #fff;
+        box-shadow: var(--shadow-subtle);
+      }
+
+      .scene-row strong {
+        color: var(--color-midnight);
+      }
+
+      .scene-row span {
+        color: var(--color-ash);
+        font-size: 13px;
+      }
+
+      .storyboard-scene {
+        display: grid;
+        gap: 16px;
+      }
+
+      .storyboard-dashboard-wrap {
+        margin: 22px 0;
+        background: #fff;
+        box-shadow: var(--shadow-subtle);
+        border-radius: 10px;
+        padding: 16px;
+      }
+
+      .storyboard-dashboard-head {
+        display: flex;
+        justify-content: space-between;
+        gap: 14px;
+        align-items: flex-start;
+        margin-bottom: 14px;
+      }
+
+      .storyboard-dashboard-head h3 {
+        margin: 0;
+        color: var(--color-midnight);
+        font-size: 23px;
+        line-height: 1.2;
+        letter-spacing: -0.44px;
+      }
+
+      .storyboard-dashboard-head p {
+        margin: 6px 0 0;
+        color: var(--color-graphite);
+      }
+
+      .storyboard-dashboard {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 12px;
+      }
+
+      .storyboard-shot-card {
+        display: grid;
+        gap: 10px;
+        text-align: left;
+        border: 0;
+        border-radius: 10px;
+        background: #fff;
+        box-shadow: var(--shadow-subtle);
+        padding: 10px;
+        cursor: pointer;
+        color: var(--color-charcoal-primary);
+      }
+
+      .storyboard-shot-card.active {
+        outline: 3px solid var(--color-midnight);
+        outline-offset: -3px;
+      }
+
+      .storyboard-shot-card.done {
+        background: var(--color-parchment-card);
+      }
+
+      .storyboard-shot-thumb,
+      .scene-switch-thumb {
+        overflow: hidden;
+        border-radius: 8px;
+        background: var(--color-parchment-card);
+        aspect-ratio: 16 / 9;
+      }
+
+      .storyboard-shot-thumb img,
+      .scene-switch-thumb img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+      }
+
+      .storyboard-shot-thumb .media,
+      .scene-switch-thumb .media {
+        height: 100%;
+        border-radius: 0;
+      }
+
+      .storyboard-shot-card strong {
+        color: var(--color-midnight);
+        font-size: 14px;
+      }
+
+      .storyboard-shot-card span {
+        color: var(--color-ash);
+        font-size: 12px;
+        line-height: 1.35;
+      }
+
+      .shot-card-footer {
+        display: flex;
+        justify-content: space-between;
+        gap: 8px;
+        align-items: center;
+      }
+
+      .shot-card-footer b {
+        color: var(--color-midnight);
+        font-size: 12px;
+      }
+
+      .selected-still-panel {
+        display: grid;
+        grid-template-columns: 260px minmax(0, 1fr);
+        gap: 16px;
+        align-items: start;
+        margin: 14px 0;
+        padding: 14px;
+        border-radius: 10px;
+        background: var(--color-parchment-card);
+      }
+
+      .selected-still-panel .storyboard-shot-thumb {
+        background: #fff;
+      }
+
+      .selected-still-panel h4 {
+        margin: 0;
+        color: var(--color-midnight);
+        font-size: 19px;
+        line-height: 1.25;
+        letter-spacing: -0.25px;
+      }
+
+      .selected-still-panel p {
+        margin: 6px 0 12px;
+        color: var(--color-graphite);
+      }
+
+      .scene-review-switcher {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 10px;
+        margin: 18px 0;
+      }
+
+      .scene-switch {
+        text-align: left;
+        border: 0;
+        border-radius: 10px;
+        background: #fff;
+        box-shadow: var(--shadow-subtle);
+        padding: 14px;
+        cursor: pointer;
+        color: var(--color-charcoal-primary);
+      }
+
+      .scene-switch-thumb {
+        margin-bottom: 10px;
+      }
+
+      .scene-switch.active {
+        outline: 3px solid var(--color-midnight);
+        outline-offset: -3px;
+      }
+
+      .scene-switch.done {
+        background: var(--color-parchment-card);
+      }
+
+      .scene-switch strong,
+      .scene-switch span {
+        display: block;
+      }
+
+      .scene-switch strong {
+        color: var(--color-midnight);
+        font-size: 14px;
+        margin-bottom: 4px;
+      }
+
+      .scene-switch span {
+        color: var(--color-ash);
+        font-size: 12px;
+        line-height: 1.35;
+      }
+
+      .operator-steps {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 10px;
+        margin: 18px 0;
+      }
+
+      .operator-step {
+        background: #fff;
+        box-shadow: var(--shadow-subtle);
+        border-radius: 10px;
+        padding: 14px;
+      }
+
+      .operator-step strong {
+        display: block;
+        color: var(--color-midnight);
+        font-size: 14px;
+        margin-bottom: 4px;
+      }
+
+      .operator-step span {
+        color: var(--color-ash);
+        font-size: 12px;
+        line-height: 1.35;
+      }
+
+      .scene-review-card {
+        background: #fff;
+        box-shadow: var(--shadow-subtle);
+        border-radius: 10px;
+        padding: 16px;
+      }
+
+      .scene-review-header {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 14px;
+        align-items: start;
+        margin-bottom: 12px;
+      }
+
+      .scene-review-header h3 {
+        margin: 0;
+        color: var(--color-midnight);
+        font-size: 23px;
+        line-height: 1.2;
+        letter-spacing: -0.44px;
+      }
+
+      .scene-review-header p {
+        margin: 6px 0 0;
+        color: var(--color-graphite);
+      }
+
+      .candidate-section {
+        margin-top: 14px;
+        padding-top: 14px;
+        border-top: 1px solid var(--color-stone-surface);
+      }
+
+      .candidate-section-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 10px;
+      }
+
+      .candidate-section-header strong {
+        color: var(--color-midnight);
+        font-size: 15px;
+      }
+
+      .candidate-section-header span {
+        color: var(--color-ash);
+        font-size: 12px;
+      }
+
+      .candidate-gallery {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+      }
+
+      .candidate-card {
+        display: grid;
+        grid-template-columns: 132px minmax(0, 1fr);
+        gap: 12px;
+        background: #fff;
+        border-radius: 10px;
+        box-shadow: var(--shadow-subtle);
+        padding: 10px;
+      }
+
+      .candidate-card.selected {
+        outline: 3px solid var(--color-meadow-green);
+        outline-offset: -3px;
+      }
+
+      .candidate-card.rejected {
+        opacity: 0.62;
+        background: var(--color-parchment-card);
+      }
+
+      .candidate-card.pending {
+        background: var(--color-parchment-card);
+      }
+
+      .candidate-card.needs-review {
+        outline: 3px solid var(--color-ember-orange);
+        outline-offset: -3px;
+      }
+
+      .candidate-thumb {
+        min-height: 86px;
+        border-radius: 8px;
+        background: var(--color-parchment-card);
+        overflow: hidden;
+      }
+
+      .candidate-thumb img,
+      .candidate-thumb video {
+        width: 100%;
+        height: 100%;
+        min-height: 86px;
+        object-fit: cover;
+        display: block;
+      }
+
+      .candidate-video-placeholder {
+        min-height: 86px;
+        display: grid;
+        place-items: center;
+        padding: 10px;
+        border-radius: 8px;
+        background: var(--color-midnight);
+        color: #fff;
+        font-size: 12px;
+        text-align: center;
+      }
+
+      .candidate-video-placeholder a {
+        color: #fff;
+        font-weight: 600;
+      }
+
+      .candidate-body strong {
+        display: block;
+        color: var(--color-midnight);
+        font-size: 14px;
+      }
+
+      .candidate-body p {
+        margin: 4px 0 10px;
+        color: var(--color-graphite);
+        font-size: 13px;
+        line-height: 1.35;
+      }
+
+      .candidate-warning {
+        margin: 8px 0 10px;
+        color: var(--color-ember-orange);
+        font-size: 12px;
+        line-height: 1.35;
+      }
+
+      .empty-inline {
+        border-radius: 10px;
+        background: #fff;
+        box-shadow: var(--shadow-subtle);
+        padding: 12px 14px;
+        color: var(--color-ash);
+        font-size: 13px;
+      }
+
+      .still-form {
+        display: grid;
+        grid-template-columns: minmax(0, 1.2fr) 120px;
+        gap: 10px;
+        padding: 12px;
+        border-radius: 10px;
+        background: #fff;
+        box-shadow: var(--shadow-subtle);
+      }
+
+      .still-form textarea {
+        grid-column: 1 / -1;
+        min-height: 76px;
+      }
+
+      .still-form .card-actions {
+        grid-column: 1 / -1;
+      }
+
+      .still-form label {
+        display: block;
+      }
+
+      .still-workbench {
+        margin-top: 14px;
+        background: #fff;
+        box-shadow: var(--shadow-subtle);
+        border-radius: 10px;
+        padding: 12px;
+      }
+
+      .still-workbench summary {
+        cursor: pointer;
+        color: var(--color-midnight);
+        font-weight: 600;
+      }
+
+      .still-workbench .still-form {
+        margin-top: 12px;
+        box-shadow: none;
+        padding: 0;
+      }
+
+      .form-label {
+        display: block;
+        color: var(--color-midnight);
+        font-size: 13px;
+        font-weight: 600;
+        margin-bottom: 6px;
+      }
+
+      .role-card {
+        padding: 16px;
+        border-radius: 10px;
+        background: var(--color-parchment-card);
+      }
+
+      .role-card strong {
+        display: block;
+        color: var(--color-sky-blue);
+        margin-bottom: 6px;
+      }
+
+      .side-card {
+        position: sticky;
+        top: 88px;
+      }
+
+      .side-card h3 {
+        margin: 0;
+        color: var(--color-midnight);
+        font-size: 23px;
+        line-height: 1.2;
+        letter-spacing: -0.44px;
+      }
+
+      .side-card p {
+        color: var(--color-graphite);
+      }
+
+      .ledger {
+        margin-top: 18px;
+        background: var(--color-parchment-card);
+        border-radius: 12px;
+        padding: 14px;
+        max-height: 360px;
+        overflow: auto;
+      }
+
+      .ledger summary {
+        cursor: pointer;
+        color: var(--color-midnight);
+        font-size: 13px;
+        font-weight: 600;
+      }
+
+      .ledger pre {
+        margin-top: 12px;
+      }
+
+      .gate-checks {
+        display: grid;
+        gap: 8px;
+        margin: 16px 0;
+      }
+
+      .gate-check {
+        display: grid;
+        grid-template-columns: 26px minmax(0, 1fr);
+        gap: 10px;
+        align-items: center;
+        background: var(--color-parchment-card);
+        border-radius: 10px;
+        padding: 10px;
+      }
+
+      .gate-dot {
+        width: 26px;
+        height: 26px;
+        display: grid;
+        place-items: center;
+        border-radius: 40px;
+        background: var(--color-stone-surface);
+        color: var(--color-ash);
+        font-weight: 600;
+        font-size: 12px;
+      }
+
+      .gate-check.done .gate-dot {
+        background: var(--color-meadow-green);
+        color: #fff;
+      }
+
+      .gate-check span {
+        color: var(--color-charcoal-primary);
+        font-size: 13px;
+        font-weight: 500;
+      }
+
+      .handoff {
+        margin: 16px 0;
+        background: var(--color-parchment-card);
+        border-radius: 12px;
+        padding: 14px;
+        box-shadow: var(--shadow-subtle);
+        overflow-wrap: anywhere;
+      }
+
+      .handoff strong {
+        display: block;
+        color: var(--color-midnight);
+        font-size: 14px;
+        margin-bottom: 6px;
+      }
+
+      .handoff p {
+        margin: 0 0 10px;
+        color: var(--color-graphite);
+        font-size: 13px;
+      }
+
+      .handoff code {
+        display: block;
+        white-space: pre-wrap;
+        word-break: break-word;
+        font-size: 12px;
+        line-height: 1.45;
+      }
+
+      .handoff details {
+        margin: 10px 0;
+      }
+
+      .handoff summary {
+        cursor: pointer;
+        color: var(--color-midnight);
+        font-size: 13px;
+        font-weight: 600;
+      }
+
+      .visual-handoff-strip,
+      .handoff-mini-strip {
+        display: grid;
+        gap: 10px;
+      }
+
+      .visual-handoff-strip {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        margin-top: 14px;
+      }
+
+      .visual-handoff-shot,
+      .handoff-mini-shot {
+        display: grid;
+        gap: 8px;
+        text-align: left;
+        border: 0;
+        border-radius: 10px;
+        background: var(--color-parchment-card);
+        box-shadow: var(--shadow-subtle);
+        color: var(--color-charcoal-primary);
+        cursor: pointer;
+      }
+
+      .visual-handoff-shot {
+        padding: 10px;
+      }
+
+      .handoff-mini-strip {
+        margin: 12px 0;
+      }
+
+      .handoff-mini-shot {
+        grid-template-columns: 74px minmax(0, 1fr);
+        align-items: center;
+        padding: 8px;
+      }
+
+      .handoff-shot-thumb,
+      .handoff-mini-thumb {
+        overflow: hidden;
+        border-radius: 8px;
+        background: #fff;
+        aspect-ratio: 16 / 9;
+      }
+
+      .handoff-mini-thumb {
+        width: 74px;
+      }
+
+      .handoff-shot-thumb img,
+      .handoff-mini-thumb img {
+        display: block;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+
+      .visual-handoff-shot strong,
+      .handoff-mini-shot strong {
+        display: block;
+        color: var(--color-midnight);
+        font-size: 13px;
+        line-height: 1.25;
+      }
+
+      .visual-handoff-shot span,
+      .handoff-mini-shot span {
+        display: block;
+        color: var(--color-ash);
+        font-size: 12px;
+        line-height: 1.35;
+      }
+
+      .handoff-video {
+        margin: 12px 0;
+        overflow: hidden;
+        border-radius: 10px;
+        background: var(--color-midnight);
+        box-shadow: var(--shadow-subtle);
+      }
+
+      .handoff-video video {
+        width: 100%;
+        display: block;
+        aspect-ratio: 16 / 9;
+        background: var(--color-midnight);
+      }
+
+      .handoff-summary {
+        margin: 18px 0 24px;
+        display: grid;
+        gap: 12px;
+      }
+
+      .summary-panel {
+        background: #fff;
+        box-shadow: var(--shadow-subtle);
+        border-radius: 10px;
+        padding: 18px;
+      }
+
+      .summary-panel h3,
+      .scene-brief h3 {
+        margin: 0;
+        color: var(--color-midnight);
+        font-size: 23px;
+        line-height: 1.2;
+        letter-spacing: -0.44px;
+      }
+
+      .summary-panel p,
+      .scene-brief p {
+        margin: 8px 0 0;
+        color: var(--color-graphite);
+      }
+
+      .lesson-list {
+        margin: 12px 0 0;
+        padding-left: 18px;
+      }
+
+      .lesson-list li {
+        margin: 6px 0;
+      }
+
+      .scene-brief-grid {
+        display: grid;
+        gap: 12px;
+      }
+
+      .scene-brief {
+        display: grid;
+        grid-template-columns: 180px minmax(0, 1fr);
+        gap: 14px;
+        align-items: start;
+        background: var(--color-parchment-card);
+        border-radius: 10px;
+        padding: 12px;
+      }
+
+      .scene-brief .media {
+        height: 102px;
+        border-radius: 8px;
+      }
+
+      .scene-brief .chips {
+        margin: 10px 0 0;
+      }
+
+      .details-panel {
+        margin: 16px 0;
+        background: #fff;
+        border-radius: 10px;
+        box-shadow: var(--shadow-subtle);
+        padding: 14px;
+      }
+
+      .details-panel.empty {
+        background: var(--color-parchment-card);
+      }
+
+      .details-panel h4 {
+        margin: 0;
+        color: var(--color-midnight);
+        font-size: 19px;
+        line-height: 1.25;
+        letter-spacing: -0.25px;
+      }
+
+      .details-panel p {
+        margin: 8px 0 12px;
+        color: var(--color-graphite);
+        font-size: 13px;
+      }
+
+      .details-list {
+        display: grid;
+        gap: 8px;
+        margin: 12px 0;
+      }
+
+      .details-row {
+        display: grid;
+        grid-template-columns: 96px minmax(0, 1fr);
+        gap: 10px;
+        padding: 8px;
+        border-radius: 8px;
+        background: var(--color-parchment-card);
+        font-size: 12px;
+      }
+
+      .details-row span:first-child {
+        color: var(--color-ash);
+        font-weight: 600;
+      }
+
+      .details-row span:last-child {
+        color: var(--color-charcoal-primary);
+        word-break: break-word;
+      }
+
+      .quality-panel {
+        margin-top: 18px;
+        background: #fff;
+        border-radius: 10px;
+        box-shadow: var(--shadow-subtle);
+        padding: 18px;
+      }
+
+      .quality-panel h3 {
+        margin: 0;
+        color: var(--color-midnight);
+        font-size: 23px;
+        line-height: 1.2;
+        letter-spacing: -0.44px;
+      }
+
+      .quality-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+        margin-top: 12px;
+      }
+
+      .quality-item {
+        display: grid;
+        grid-template-columns: 28px minmax(0, 1fr);
+        gap: 10px;
+        align-items: start;
+        background: var(--color-parchment-card);
+        border-radius: 10px;
+        padding: 12px;
+      }
+
+      .quality-item.done .gate-dot {
+        background: var(--color-meadow-green);
+        color: #fff;
+      }
+
+      .quality-item strong {
+        display: block;
+        color: var(--color-charcoal-primary);
+        font-size: 13px;
+      }
+
+      .quality-item span {
+        color: var(--color-ash);
+        font-size: 12px;
+        line-height: 1.35;
+      }
+
+      pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+        overflow-wrap: anywhere;
+        margin: 0;
+        color: var(--color-graphite);
+        font-size: 12px;
+        line-height: 1.58;
+        letter-spacing: -0.14px;
+      }
+
+      .side-stats {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        margin: 16px 0;
+      }
+
+      .side-stat {
+        background: var(--color-parchment-card);
+        border-radius: 10px;
+        padding: 14px;
+      }
+
+      .side-stat strong {
+        display: block;
+        color: var(--color-midnight);
+        font-size: 28px;
+        line-height: 1;
+      }
+
+      .side-stat span {
+        color: var(--color-ash);
+        font-size: 12px;
+      }
+
+      .next-footer {
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+        margin-top: 24px;
+        padding-top: 20px;
+        border-top: 1px solid var(--color-stone-surface);
+      }
+
+      .next-footer .btn-primary.needs-work {
+        background: var(--color-ember-orange);
+      }
+
+      .footer-status {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--color-ash);
+        font-size: 13px;
+        text-align: center;
+      }
+
+      @media (max-width: 1100px) {
+        .stage-rail { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+        .layout { grid-template-columns: 1fr; }
+        .side-card { position: static; }
+        .cards-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      }
+
+      @media (max-width: 760px) {
+        .shell { width: min(100% - 24px, var(--page-max-width)); }
+        .nav-links { display: none; }
+        .hero {
+          display: grid;
+          padding: 22px 0 14px;
+          gap: 14px;
+        }
+        .hero h1 { font-size: 30px; }
+        .hero-actions {
+          justify-content: flex-start;
+          min-width: 0;
+        }
+        .stage-rail,
+        .stats-grid,
+        .cards-grid,
+        .small-grid,
+        .role-grid,
+        .operator-steps,
+        .storyboard-dashboard,
+        .visual-handoff-strip,
+        .scene-review-switcher,
+        .quality-grid,
+        .candidate-gallery,
+        .candidate-card,
+        .selected-still-panel,
+        .controls,
+        .empty-state,
+        .scene-review-header,
+        .scene-row,
+        .scene-brief,
+        .now-box {
+          grid-template-columns: 1fr;
+        }
+        .main-card,
+        .side-card {
+          padding: 20px;
+        }
+        .storyboard-dashboard-head {
+          display: grid;
+        }
+        .storyboard-dashboard-head .chips {
+          justify-content: flex-start;
+        }
+        .next-footer,
+        .nav-actions {
+          flex-wrap: wrap;
+        }
+        .still-form {
+          grid-template-columns: 1fr;
+          margin-left: 0;
+        }
+        .section-title { font-size: 34px; }
+      }
+    </style>
+  </head>
+  <body>
+    <nav class="nav">
+      <div class="shell nav-inner">
+        <div class="brand">
+          <div class="brand-mark">V</div>
+          <span>Video Claw Review</span>
+        </div>
+        <div class="nav-links">
+          <button class="nav-link" data-stage-jump="inventory">Inventory</button>
+          <button class="nav-link" data-stage-jump="characters">Characters</button>
+          <button class="nav-link" data-stage-jump="storyboard">Storyboard</button>
+          <button class="nav-link" data-stage-jump="motion">Motion plan</button>
+        </div>
+        <div class="nav-actions">
+          <button class="btn btn-secondary" data-action="reset">Reset</button>
+          <button class="btn btn-primary" data-action="next">Next</button>
+        </div>
+      </div>
+    </nav>
+
+    <header class="shell hero">
+      <div>
+        <h1>Review the video project and fix the next blocking step.</h1>
+        <p>One operator flow for characters, references, storyboard stills, artifact-backed 4K assets, motion plans, and final assembly. The handoff is ready only when the saved review report passes and publish readiness is true.</p>
+      </div>
+      <div class="hero-actions">
+        <button class="btn btn-primary" data-action="recommend">Show next fix</button>
+        <button class="btn btn-secondary" data-stage-jump="storyboard">Review images</button>
+        <button class="btn btn-secondary" data-action="applyDirectorDefaults">Apply defaults</button>
+      </div>
+    </header>
+
+    <section class="shell">
+      <div class="stage-rail" id="stageRail"></div>
+      <div class="layout">
+        <main class="main-card">
+          <div class="step-meta" id="stepMeta"></div>
+          <div class="section-kicker" id="kicker"></div>
+          <h2 class="section-title" id="title"></h2>
+          <p class="section-copy" id="description"></p>
+          <div class="now-box">
+            <div>
+              <strong id="nowTitle"></strong>
+              <span id="nowCopy"></span>
+            </div>
+            <button class="btn btn-primary" data-action="recommendedAction" id="nowButton"></button>
+          </div>
+          <div class="action-feedback" id="actionFeedback" role="status" aria-live="polite"></div>
+          <div id="qualityPanel"></div>
+          <div id="content"></div>
+          <div class="next-footer">
+            <button class="btn btn-secondary" data-action="prev">Back</button>
+            <div class="footer-status" id="footerStatus"></div>
+            <button class="btn btn-primary" data-action="next" id="continueButton">Continue</button>
+          </div>
+        </main>
+
+        <aside class="side-card">
+          <h3>Project state</h3>
+          <p>Selections update this ledger immediately. In the real app these become project artifacts.</p>
+          <label for="projectSelect">Project</label>
+          <select id="projectSelect"></select>
+          <div class="side-stats">
+            <div class="side-stat"><strong id="choiceCount">0</strong><span>choices made</span></div>
+            <div class="side-stat"><strong id="gateCount">6</strong><span>open gates</span></div>
+          </div>
+          <div class="gate-checks" id="gateChecks"></div>
+          <div id="handoff"></div>
+          <div id="detailsPanel"></div>
+          <button class="btn btn-primary" data-action="saveProgress">Save progress</button>
+          <button class="btn btn-outline" data-action="downloadLedger">Download JSON</button>
+          <details class="ledger">
+            <summary>Advanced: raw JSON ledger</summary>
+            <pre id="ledger"></pre>
+          </details>
+        </aside>
+      </div>
+    </section>
+
+    <script>
+      const repoRoot = new URL("../../", window.location.href);
+      const asset = (path) => {
+        const raw = String(path || "");
+        if (!raw) return "";
+        if (/^https?:\/\//.test(raw)) return `/api/media-proxy?url=${encodeURIComponent(raw)}`;
+        let normalized = raw;
+        if (inventory.root && normalized.startsWith(inventory.root)) {
+          normalized = normalized.slice(inventory.root.length).replace(/^\/+/, "");
+        }
+        const projectPathIndex = normalized.indexOf("/projects/");
+        if (normalized.startsWith("/") && projectPathIndex >= 0) {
+          normalized = normalized.slice(projectPathIndex + 1);
+        }
+        normalized = normalized.replace(/^\/+/, "");
+        return new URL(normalized, repoRoot).href;
+      };
+
+      function escapeHtml(value) {
+        return String(value ?? "")
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;")
+          .replace(/'/g, "&#39;");
+      }
+
+      const seedanceWorkflow = {
+        source: "docs/REFERENCE_VIDEO_SEEDANCE_MOTION_DESIGN_WORKFLOW.md",
+        qualityBar: "award-winning director cinematic video with minimal operator work",
+        method: [
+          "idea and voiceover first",
+          "role-tagged reference canvas before prompting",
+          "still storyboard locked before motion",
+          "focused edit prompts before animation",
+          "upscale locked frames before Seedance",
+          "Seedance start/end frame chaining",
+          "long control prompt plus short variant prompt",
+          "bridge poses for hard hand/object/logo motion",
+          "continuity end-frame extraction between shots",
+          "planned post retiming and voiceover fit"
+        ],
+        promptPatterns: {
+          stillCreate: "Use reference roles as source truth. Create one visual beat. Preserve identity, materials, colors, lighting, and camera. Avoid readable text, logos, clutter, extra objects, and real people.",
+          stillEdit: "Edit only the named defect or layout issue. Keep identity, pose, camera, lighting, composition, and background unchanged.",
+          motionControl: "Use image 1 as start and image 2 as end. Preserve identity, style, background, lighting, and camera. Animate one readable action with easing, anticipation, overshoot, and soft settle. End exactly matching target.",
+          shortVariant: "Static camera. Same start and target. Faster playful single-action alternate while preserving character, background, composition, and style.",
+          bridgePose: "Create intermediate pose stills for catches, throws, hand-object contact, object escapes, transformations, and logo morphs before video generation.",
+          postPolish: "Retiming, voiceover fit, opacity, and final logo reveal are planned before publish."
+        },
+        bridgeTriggers: ["catch", "throw", "hand-object contact", "escaping card", "character transformation", "logo morph", "multi-object choreography"],
+        negativeGuidance: ["no readable UI text unless required", "no random logos", "no clutter", "no extra objects", "no real humans", "no distorted anatomy", "no unwanted camera change"]
+      };
+
+      const inventory = {
+        root: "",
+        projects: [
+          { id: "fresh-proof", name: "fresh-proof", path: "projects/fresh-proof", status: "empty scaffold" }
+        ],
+        characters: [],
+        presenterPacks: [
+          {
+            id: "davendra-presenter",
+            name: "Davendra Presenter",
+            assets: [
+              "skills/davendra-presenter/assets/davendra_intro_1.jpg",
+              "skills/davendra-presenter/assets/davendra_intro_2.jpg",
+              "skills/davendra-presenter/assets/davendra_outro_1.jpg",
+              "skills/davendra-presenter/assets/davendra_outro_2.jpg"
+            ],
+            notes: "Existing intro and outro presenter image pack."
+          },
+          {
+            id: "nex-presenter",
+            name: "Nex Presenter",
+            assets: [
+              "skills/nex-presenter/assets/nex_intro_1.jpg",
+              "skills/nex-presenter/assets/nex_intro_2.jpg",
+              "skills/nex-presenter/assets/nex_outro_1.jpg",
+              "skills/nex-presenter/assets/nex_outro_2.jpg",
+              "skills/nex-presenter/assets/logo_source.jpg",
+              "skills/nex-presenter/assets/text_overlay.png",
+              "skills/nex-presenter/assets/nex_brief_intro.mp4"
+            ],
+            notes: "Brand presenter pack with stills, logo source, overlay, and intro video."
+          }
+        ],
+        mediaAssets: [
+          "docs/assets/logo.jpg",
+          "docs/assets/diagram-lifecycle.jpg",
+          "docs/assets/diagram-architecture.jpg",
+          "docs/assets/diagram-routing.jpg",
+          "docs/assets/diagram-skills-ecosystem.jpg",
+          "docs/assets/diagram-obsidian-vault.jpg",
+          "docs/assets/diagram-obsidian-loop.jpg",
+          "docs/assets/demo-quickstart.gif"
+        ],
+        playbooks: [
+          { id: "seedance-ugc", name: "Seedance UGC", provider: "seedance", desc: "Best for stylized, character-led short clips with strong image anchors." },
+          { id: "veo-generic", name: "Veo Generic", provider: "veo", desc: "Best for general motion-led scenes and realistic continuity." }
+        ],
+        references: [
+          ["seedance-ugc-formulas", "Seedance prompt formulas, image-import guidance, camera vocabulary."],
+          ["character-reference-sheet", "Character continuity and reference-sheet rules."],
+          ["clone-ad-template-workflow", "Reference video analysis into reusable structure."],
+          ["dialogue-duration-preflight", "Dialogue timing checks before generation."],
+          ["generation-telemetry", "Route, timing, cost, and output telemetry."],
+          ["stage-directors", "Stage-specific operator guidance."],
+          ["style-template-schema", "Style layer structure."],
+          ["veo-prompting-guide", "Veo route prompting notes."],
+          ["checkpoint-protocol", "Lifecycle checkpoint discipline."]
+        ],
+        templates: [
+          ["product-commercial-4", "Problem, reveal, proof, payoff.", 4],
+          ["food-tutorial-6", "Ingredients, prep, transformation, plate, taste.", 6],
+          ["dance-social-6", "Hook pose, choreography beats, loopable finish.", 6],
+          ["dramatic-short-6", "Reveal, choice, confrontation, aftermath.", 6],
+          ["action-short-6", "Threat, obstacle, impact, near miss, release.", 6],
+          ["beat-structure-3", "Establish, develop, payoff.", 3],
+          ["beat-structure-6", "Two shots per establish, develop, payoff.", 6],
+          ["dialogue-confrontation", "Conversation with reaction and counter-reaction close-ups.", 6],
+          ["chase-pursuit", "Pursuit geography and near-catch beats.", 8],
+          ["discovery-reveal", "Discovery and reveal sequence.", 6],
+          ["product-story", "Product problem through satisfaction.", 7]
+        ],
+        schemas: ["storyboard", "asset-manifest", "scene-candidates", "scene-selection", "reference-sheets", "execution-plan", "execution-report", "review-report", "publish-report", "brief", "clone-plan", "analyze-output"],
+        brief: null,
+        storyboard: null,
+        assetManifest: null,
+        executionReport: null,
+        publishReport: null,
+        reviewReport: null,
+        generationQueue: { schemaVersion: 1, projectSlug: "fresh-proof", updatedAt: "", requests: [] },
+        characterQueue: { schemaVersion: 1, projectSlug: "fresh-proof", updatedAt: "", requests: [] },
+        roles: {
+          identity: ["identity", "wardrobe", "silhouette", "age-reference"],
+          "outfit-material": ["outfit", "material", "accessory", "texture", "product-hero", "product-variant", "product-in-use", "packaging"],
+          environment: ["location", "set-dressing", "weather", "time-of-day"],
+          "motion-camera": ["motion-rhythm", "camera-behavior", "blocking", "shot-framing"],
+          "palette-mood": ["palette", "composition", "mood", "lighting-reference"]
+        }
+      };
+
+      function prettyName(value) {
+        return String(value || "")
+          .replace(/[-_]+/g, " ")
+          .replace(/\b\w/g, (letter) => letter.toUpperCase());
+      }
+
+      function validProjectSlug(value) {
+        return /^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/.test(String(value || ""));
+      }
+
+      function visibleProjects() {
+        const seen = new Set();
+        return (inventory.projects || []).filter((project) => {
+          const id = project?.id || "";
+          if (!validProjectSlug(id) || seen.has(id)) return false;
+          seen.add(id);
+          return true;
+        });
+      }
+
+      function normalizeApiInventory(api) {
+        const next = {};
+        next.root = api.root || "";
+        const projects = Array.isArray(api.projects) && api.projects.length
+          ? api.projects
+          : [api.projectSlug].filter(Boolean);
+        const orderedProjects = [
+          api.projectSlug,
+          ...projects.filter((id) => id !== api.projectSlug)
+        ].filter((id, index, list) => Boolean(id) && validProjectSlug(id) && list.indexOf(id) === index);
+        next.projects = orderedProjects.map((id) => ({
+          id,
+          name: id,
+          path: `projects/${id}`,
+          status: id === api.projectSlug ? (api.projectExists ? "current project" : "selected missing") : "existing project"
+        }));
+        next.characters = Array.isArray(api.characters) ? api.characters : [];
+        next.playbooks = Array.isArray(api.playbooks)
+          ? api.playbooks.map((name) => ({
+              id: name,
+              name: prettyName(name),
+              provider: String(name).includes("seedance") ? "seedance" : "veo",
+              desc: "Provider playbook available in this repo."
+            }))
+          : inventory.playbooks;
+        next.references = Array.isArray(api.promptReferences)
+          ? api.promptReferences.map((reference) => [reference.name, reference.summary])
+          : inventory.references;
+        next.templates = Array.isArray(api.storyboardTemplates)
+          ? api.storyboardTemplates.map((template) => [template.id, template.description, template.panels?.length || 0])
+          : inventory.templates;
+        next.schemas = Array.isArray(api.schemas) ? api.schemas : inventory.schemas;
+        next.mediaAssets = Array.isArray(api.mediaAssets)
+          ? api.mediaAssets.map((item) => item.path)
+          : inventory.mediaAssets;
+        next.referenceSheets = api.referenceSheets || { sheets: [] };
+        next.sceneCandidates = api.sceneCandidates || { scenes: [] };
+        next.sceneSelection = api.sceneSelection || { scenes: [] };
+        next.reviewLedger = api.reviewLedger || null;
+        next.reviewReport = api.reviewReport || null;
+        next.brief = api.brief || null;
+        next.storyboard = api.storyboard || null;
+        next.assetManifest = api.assetManifest || null;
+        next.executionReport = api.executionReport || null;
+        next.publishReport = api.publishReport || null;
+        next.generationQueue = api.generationQueue || { schemaVersion: 1, projectSlug: api.projectSlug || "", updatedAt: "", requests: [] };
+        next.characterQueue = api.characterQueue || { schemaVersion: 1, projectSlug: api.projectSlug || "", updatedAt: "", requests: [] };
+        return next;
+      }
+
+      async function loadInventoryFromApi() {
+        if (window.location.protocol === "file:") return;
+        const params = new URLSearchParams(window.location.search);
+        const project = params.get("project") || state.project || inventory.projects[0]?.id || "";
+        try {
+          const response = await fetch(`/api/review-inventory?project=${encodeURIComponent(project)}`);
+          if (!response.ok) throw new Error(await response.text());
+          const apiInventory = await response.json();
+          Object.assign(inventory, normalizeApiInventory(apiInventory));
+          state.project = apiInventory.projectSlug || project;
+          const candidateScenes = apiInventory.sceneCandidates?.scenes || [];
+          const savedDecision = apiInventory.reviewLedger?.decision;
+          if (savedDecision?.selections && typeof savedDecision.selections === "object") {
+            state.selected = { ...savedDecision.selections };
+            state.statusMessage = "Loaded saved project ledger from disk.";
+            state.inspected = null;
+          }
+          if (savedDecision?.notes && typeof savedDecision.notes === "object") {
+            state.notes = { ...savedDecision.notes };
+          }
+          if (savedDecision?.savedArtifact && typeof savedDecision.savedArtifact === "object") {
+            state.savedArtifact = savedDecision.savedArtifact;
+          }
+          if (savedDecision?.reviewCompleteAt) {
+            state.selected.reviewCompleteAt = savedDecision.reviewCompleteAt;
+          }
+          if (savedReviewPassed() && state.savedArtifact && !state.savedArtifact.lifecycle) {
+            state.savedArtifact.lifecycle = {
+              status: "completed",
+              currentStage: "publish",
+              lastCompletedStage: "review",
+              manifestUpdated: true
+            };
+          }
+          if (apiInventory.publishReport?.status === "ready" && savedReviewPassed()) {
+            state.stage = "assembly";
+            state.savedArtifact = {
+              ...(state.savedArtifact || {}),
+              lifecycle: {
+                status: "completed",
+                currentStage: "publish",
+                lastCompletedStage: "review",
+                manifestUpdated: true
+              }
+            };
+            state.statusMessage = "Loaded published project handoff and final video.";
+          }
+          if (reviewComplete()) {
+            state.stage = "assembly";
+          } else if (savedDecision?.activeGate && stages.some((stage) => stage.id === savedDecision.activeGate)) {
+            state.stage = savedDecision.activeGate;
+          }
+          reconcileSelectionsWithInventory();
+          state.scenes = buildSceneRows(candidateScenes, apiInventory.sceneSelection?.scenes || []);
+          snapStageToFirstIncomplete();
+        } catch (error) {
+          state.blockedMessage = `Live inventory failed, showing fallback data: ${error.message}`;
+        }
+      }
+
+      function selectedTemplateSceneCount() {
+        const templateId = state.selected.template || "product-commercial-4";
+        const template = inventory.templates.find(([id]) => id === templateId);
+        return Number(template?.[2]) || 4;
+      }
+
+      function defaultSceneTitle(index) {
+        return ["Problem hook", "Solution reveal", "Proof beat", "Payoff and CTA"][index] || `Scene ${index}`;
+      }
+
+      function buildSceneRows(candidateScenes = [], selectionScenes = []) {
+        const count = Math.max(selectedTemplateSceneCount(), 1);
+        return Array.from({ length: count }, (_, index) => {
+          const scene = candidateScenes.find((entry) => entry.sceneIndex === index) || { candidates: [] };
+          const selected = selectionScenes.find((entry) => entry.sceneIndex === index);
+          const candidateCount = scene.candidates?.length || 0;
+          const status = selected?.selectedCandidateId
+            ? `selected ${selected.selectedCandidateId}`
+            : candidateCount
+              ? `${candidateCount} candidate${candidateCount === 1 ? "" : "s"} awaiting review`
+              : "needs GoBananas still";
+          return [
+            `scene-${String(index).padStart(2, "0")}`,
+            defaultSceneTitle(index),
+            status,
+            index > 0
+          ];
+        });
+      }
+
+      const stages = [
+        {
+          id: "inventory",
+          label: "Inventory",
+          sub: "See what exists",
+          kicker: "Repo inventory",
+          title: "Everything available to choose from",
+          desc: "This is the pantry. It lists current project folders, saved characters, presenter packs, media assets, playbooks, prompt references, templates, and schemas.",
+          now: "Start by checking character availability.",
+          help: "There are no saved project characters yet, so the safest next step is the character gate."
+        },
+        {
+          id: "characters",
+          label: "Characters",
+          sub: "Lock identity",
+          kicker: "GoBananas lane",
+          title: "Choose or create the character source",
+          desc: "If saved characters exist, pick one. If not, select an existing presenter pack or request GoBananas character iterations before storyboard work starts.",
+          now: "No saved project characters were found.",
+          help: "Pick a presenter pack for now, or mark the ledger to generate GoBananas character iterations."
+        },
+        {
+          id: "references",
+          label: "References",
+          sub: "Assign roles",
+          kicker: "Reference board",
+          title: "Give every reference one job",
+          desc: "Reference images should not all influence everything. Assign identity, wardrobe, texture, camera, motion, location, palette, and mood deliberately.",
+          now: "Attach the references that should guide generation.",
+          help: "Use role tags to prevent pose references from rewriting character identity."
+        },
+        {
+          id: "storyboard",
+          label: "Storyboard",
+          sub: "Lock stills",
+          kicker: "Still-frame review",
+          title: "Approve the still storyboard in order",
+          desc: "This mirrors the reference video: generate still frames first, edit them, and only move to Seedance after the sequence is visually locked.",
+          now: "Pick a template, then lock each scene still.",
+          help: "Scene 00 starts the chain; later scenes should use previous end frames."
+        },
+        {
+          id: "motion",
+          label: "Motion plan",
+          sub: "Prepare clips",
+          kicker: "Seedance review",
+          title: "Prepare the Seedance motion plan",
+          desc: "Videos are not generated in this review pass. This step records the control-pass, variant, bridge-pose, and continuity instructions that the next agent will use after the still storyboard is locked.",
+          now: "Confirm the image-to-video recipe.",
+          help: "The next agent should use each locked 4k still as the start frame, then generate motion and extract end frames."
+        },
+        {
+          id: "assembly",
+          label: "Assembly",
+          sub: "Finish",
+          kicker: "Post plan",
+          title: "Approve pacing and final assembly",
+          desc: "Confirm time remapping, voiceover fit, final logo reveal, and publish readiness.",
+          now: "Select the final assembly plan.",
+          help: "This writes the post plan and final review report."
+        }
+      ];
+
+      const state = {
+        stage: "inventory",
+        project: inventory.projects[0]?.id || "",
+        filter: "",
+        tab: "all",
+        selected: {},
+        notes: {},
+        blockedMessage: "",
+        statusMessage: "",
+        savedArtifact: null,
+        inspected: null,
+        activeSceneIndex: 0,
+        scenes: [
+          ["scene-00", "Problem hook", "needs locked still", false],
+          ["scene-01", "Solution reveal", "needs locked still", true],
+          ["scene-02", "Proof beat", "needs bridge-pose check", true],
+          ["scene-03", "Payoff and CTA", "needs locked still", true]
+        ]
+      };
+
+      let hydrationComplete = false;
+
+      function initialProjectFromLocation() {
+        if (window.location.protocol === "file:") return "";
+        return new URLSearchParams(window.location.search).get("project") || "";
+      }
+
+      function storageKey() {
+        return `vclaw-review-station:${state.project || "default"}`;
+      }
+
+      function loadLocalProgress() {
+        try {
+          const raw = localStorage.getItem(storageKey());
+          if (!raw) return;
+          const saved = JSON.parse(raw);
+          if (saved.stage && stages.some((stage) => stage.id === saved.stage)) state.stage = saved.stage;
+          if (saved.selected && typeof saved.selected === "object") state.selected = saved.selected;
+          if (saved.notes && typeof saved.notes === "object") state.notes = saved.notes;
+          if (saved.savedArtifact) state.savedArtifact = saved.savedArtifact;
+          if (saved.inspected) state.inspected = saved.inspected;
+          if (Number.isInteger(saved.activeSceneIndex)) state.activeSceneIndex = saved.activeSceneIndex;
+          state.statusMessage = "Restored saved progress from this browser.";
+        } catch (error) {
+          state.blockedMessage = `Could not restore saved browser progress: ${error.message}`;
+        }
+      }
+
+      function persistLocalProgress() {
+        if (!hydrationComplete || !state.project) return;
+        localStorage.setItem(storageKey(), JSON.stringify({
+          stage: state.stage,
+          selected: state.selected,
+          notes: state.notes,
+          savedArtifact: state.savedArtifact,
+          inspected: state.inspected,
+          activeSceneIndex: state.activeSceneIndex
+        }));
+      }
+
+      function hasLiveInventory() {
+        return Boolean(inventory.root || inventory.reviewLedger || inventory.reviewReport || inventory.sceneCandidates?.scenes?.length);
+      }
+
+      function inventoryReady() {
+        return Boolean(
+          state.project
+          && visibleProjects().some((project) => project.id === state.project)
+          && inventory.templates.length
+          && inventory.references.length
+          && inventory.schemas.length
+          && (window.location.protocol === "file:" || hasLiveInventory())
+        );
+      }
+
+      function findSceneCandidate(sceneIndex, candidateId) {
+        return inventory.sceneCandidates?.scenes
+          ?.find((scene) => scene.sceneIndex === sceneIndex)
+          ?.candidates?.find((candidate) => candidate.id === candidateId) || null;
+      }
+
+      function reconcileSelectionsWithInventory() {
+        const removed = [];
+        for (const [key, value] of Object.entries({ ...state.selected })) {
+          const match = /^(draftStill|lockedStill|upscaledStill)-(\d+)$/.exec(key);
+          if (!match || !value) continue;
+          const sceneIndex = Number(match[2]);
+          if (!findSceneCandidate(sceneIndex, String(value))) {
+            delete state.selected[key];
+            removed.push(key);
+          }
+        }
+        if (removed.length) {
+          state.statusMessage = `Removed stale saved choices that no longer exist in scene candidates: ${removed.join(", ")}.`;
+        }
+      }
+
+      function stageIndex() {
+        return stages.findIndex((stage) => stage.id === state.stage);
+      }
+
+      function clampSceneIndex(value) {
+        const index = Number(value);
+        if (!Number.isFinite(index)) return 0;
+        return Math.max(0, Math.min(state.scenes.length - 1, Math.trunc(index)));
+      }
+
+      function currentStage() {
+        return stages[stageIndex()] || stages[0];
+      }
+
+      function setStage(id) {
+        state.stage = id;
+        if (id === "storyboard") state.activeSceneIndex = clampSceneIndex(state.activeSceneIndex);
+        state.blockedMessage = "";
+        state.statusMessage = `Moved to ${currentStage().label}.`;
+        render();
+      }
+
+      function shouldAutosaveSelection(key) {
+        return /^(?:lockedStill|upscaledStill|continuity)-\d+$/.test(key)
+          || /^assemblyCheck-/.test(key)
+          || ["bridgePosePlan", "motionCandidate", "variantStrategy", "assemblyPlan"].includes(key);
+      }
+
+      async function choose(key, value) {
+        const sceneSelectionMatch = /^(?:draftStill|editStill|lockedStill|upscaledStill)-(\d+)$/.exec(key);
+        if (sceneSelectionMatch) {
+          const sceneIndex = Number(sceneSelectionMatch[1]);
+          if (!isSceneWorkflowEnabled(sceneIndex)) {
+            state.blockedMessage = sceneWorkflowMessage(sceneIndex);
+            state.statusMessage = "";
+            render();
+            return;
+          }
+          if (/^upscaledStill-/.test(key) && !isCandidateBackedLock(sceneIndex)) {
+            state.blockedMessage = "Lock one real generated candidate before marking the upscale.";
+            state.statusMessage = "";
+            render();
+            return;
+          }
+        }
+        state.selected[key] = value;
+        if (key === "template") {
+          state.scenes = buildSceneRows(inventory.sceneCandidates?.scenes || [], inventory.sceneSelection?.scenes || []);
+        }
+          const lockMatch = /^lockedStill-(\d+)$/.exec(key);
+          if (lockMatch) {
+            const sceneIndex = lockMatch[1];
+            const candidate = candidateScene(Number(sceneIndex)).candidates?.find((entry) => entry.id === value);
+            if (!candidateMatchesSelectedCharacter(candidate)) {
+              state.blockedMessage = `${value} does not match the selected character. Generate or choose a ${selectedCharacterLabel()} candidate before locking.`;
+              state.statusMessage = "";
+              render();
+              return;
+            }
+            if (!state.selected[`draftStill-${sceneIndex}`]) {
+              state.selected[`draftStill-${sceneIndex}`] = value;
+            }
+          const upscaledKey = `upscaledStill-${sceneIndex}`;
+          if (state.selected[upscaledKey] && !String(state.selected[upscaledKey]).startsWith(`${value}-`)) {
+            delete state.selected[upscaledKey];
+          }
+        }
+        state.blockedMessage = "";
+        state.statusMessage = shouldAutosaveSelection(key) ? "Saving storyboard selection..." : selectionFeedback(key, value);
+        render();
+        if (!shouldAutosaveSelection(key)) return;
+        try {
+          state.savedArtifact = await saveLedgerToProject();
+          state.statusMessage = /^upscaledStill-\d+$/.test(key)
+            ? `${value} upscale marker saved.`
+            : /^continuity-\d+$/.test(key)
+              ? `${value} continuity marker saved.`
+              : key === "bridgePosePlan"
+                ? "Bridge-pose plan saved."
+                : key === "motionCandidate"
+                  ? `${value} motion strategy saved.`
+                  : key === "assemblyPlan"
+                    ? `${value} assembly plan saved.`
+                    : /^assemblyCheck-/.test(key)
+                      ? `${value} assembly approval saved.`
+                      : `${value} locked and saved.`;
+        } catch (error) {
+          state.blockedMessage = `Selection made locally, but could not save: ${error.message}`;
+          state.statusMessage = "";
+        }
+        render();
+      }
+
+      function selectionFeedback(key, value) {
+        if (/^characterCheck-\d+$/.test(key)) return "Character checklist item marked done.";
+        if (/^referenceRole-/.test(key)) return `${key.replace("referenceRole-", "")} reference role marked assigned.`;
+        if (/^draftStill-\d+$/.test(key)) return `${value} saved as the draft still for this scene.`;
+        if (/^editStill-\d+$/.test(key)) return "Prompt edit note saved for this scene.";
+        const labels = {
+          character: "Character selected.",
+          characterPlan: "Character workflow choice selected.",
+          characterSource: "Character source selected.",
+          reference: "Reference attached.",
+          asset: "Asset attached.",
+          playbook: "Playbook selected.",
+          template: "Storyboard template selected.",
+          variantStrategy: "Variant strategy selected.",
+        };
+        return labels[key] || `${value} selected.`;
+      }
+
+      function selected(key, value) {
+        return state.selected[key] === value;
+      }
+
+      function ext(path) {
+        return path.split(".").pop().toLowerCase();
+      }
+
+      function candidateScene(sceneIndex) {
+        return inventory.sceneCandidates?.scenes?.find((scene) => scene.sceneIndex === sceneIndex) || { sceneIndex, candidates: [] };
+      }
+
+      function candidateSelection(sceneIndex) {
+        return inventory.sceneSelection?.scenes?.find((scene) => scene.sceneIndex === sceneIndex) || null;
+      }
+
+      function isCandidateBackedLock(sceneIndex) {
+        const selectedId = state.selected[`lockedStill-${sceneIndex}`];
+        return Boolean(selectedId && !candidateRejected(selectedId) && (candidateScene(sceneIndex).candidates || []).some((candidate) => candidate.id === selectedId));
+      }
+
+      function isSceneUpscaled(sceneIndex) {
+        return hasArtifactBackedUpscale(sceneIndex);
+      }
+
+      function hasArtifactBackedUpscale(sceneIndex) {
+        const upscaledStill = state.selected[`upscaledStill-${sceneIndex}`];
+        return Boolean(upscaledStill && (candidateScene(sceneIndex).candidates || []).some((candidate) => candidate.id === upscaledStill));
+      }
+
+      function isContinuityConfirmed(sceneIndex) {
+        return Boolean(state.selected[`continuity-${sceneIndex}`]);
+      }
+
+      function disabledAttr(disabled) {
+        return disabled ? "disabled aria-disabled=\"true\"" : "";
+      }
+
+      function isSceneWorkflowEnabled(sceneIndex) {
+        if (!state.selected.template) return false;
+        if (sceneIndex === 0) return true;
+        return isCandidateBackedLock(sceneIndex - 1) && isSceneUpscaled(sceneIndex - 1);
+      }
+
+      function sceneWorkflowMessage(sceneIndex) {
+        if (!state.selected.template) return "Choose the storyboard template first.";
+        if (!isSceneWorkflowEnabled(sceneIndex)) {
+          return `Finish scene-${String(sceneIndex - 1).padStart(2, "0")} lock and upscale before this scene opens.`;
+        }
+        if (!candidateScene(sceneIndex).candidates?.length) return "Paste a real GoBananas image URL below.";
+        if (!state.selected[`draftStill-${sceneIndex}`]) return "Choose the first real candidate as draft.";
+        if (!isCandidateBackedLock(sceneIndex)) return "Review the candidate cards and lock one real image.";
+        if (!isSceneUpscaled(sceneIndex)) return "Attach the artifact-backed 4K/upscaled version of the locked image.";
+        return "Scene is locked and ready for the next one.";
+      }
+
+      function assemblyChecks() {
+        return [
+          ["voiceover-fit", "Voiceover timing fits", "Scene pacing has been checked against the spoken script."],
+          ["continuity-cuts", "Continuity cuts reviewed", "Frame handoffs and transitions are planned before final render."],
+          ["retiming-polish", "Retiming polish approved", "Slow clips will be tightened without losing readable action."],
+          ["logo-payoff", "Logo/payoff reveal approved", "Final reveal has a clean hold and readable composition."],
+          ["review-report", "Review report ready", "The next agent has enough saved evidence to render or continue."]
+        ];
+      }
+
+      function isAssemblyCheckDone(id) {
+        return Boolean(state.selected[`assemblyCheck-${id}`]);
+      }
+
+      function missingAssemblyChecks() {
+        return assemblyChecks().filter(([id]) => !isAssemblyCheckDone(id));
+      }
+
+      function imageOutput(candidate) {
+        if (!candidate) return null;
+        return candidate.outputs?.find((output) => output.kind === "image") || candidate.outputs?.[0] || null;
+      }
+
+      function rejectedStillCandidateIds() {
+        return Array.isArray(state.selected.rejectedStillCandidates) ? state.selected.rejectedStillCandidates : [];
+      }
+
+              function candidateRejected(id) {
+                return rejectedStillCandidateIds().includes(id);
+              }
+
+              function candidateRejectedForScene(sceneIndex, id) {
+                const sceneRejected = candidateSelection(sceneIndex)?.rejectedCandidateIds || [];
+                return candidateRejected(id) || sceneRejected.includes(id);
+              }
+
+              function candidatePendingForScene(sceneIndex, id) {
+                return (candidateSelection(sceneIndex)?.pendingCandidateIds || []).includes(id);
+              }
+
+              function candidateReviewOrder(sceneIndex, selectedId) {
+                return (candidate) => {
+                  if (candidate.id === selectedId) return 0;
+                  if (candidateRejectedForScene(sceneIndex, candidate.id) || candidatePendingForScene(sceneIndex, candidate.id)) return 2;
+                  return 1;
+                };
+              }
+
+      function candidateQuality(output) {
+        if (!output?.path) return { ok: false, label: "missing output", detail: "This candidate has no image output to review." };
+        try {
+          const parsed = new URL(output.path, window.location.href);
+          const host = parsed.hostname.toLowerCase();
+          if (["example.com", "example.net", "example.org"].includes(host)) {
+            return { ok: false, label: "placeholder URL", detail: "Reject this candidate or replace it with a real GoBananas render URL." };
+          }
+          if (!/\.(jpg|jpeg|png|webp|gif)(?:$|\?)/.test(`${parsed.pathname.toLowerCase()}${parsed.search}`)) {
+            return { ok: false, label: "not an image URL", detail: "Storyboard still candidates must point to a jpg, png, webp, or gif image." };
+          }
+        } catch (error) {
+          return { ok: false, label: "invalid URL", detail: "The output path cannot be opened as a reviewable image." };
+        }
+        return { ok: true, label: "renderable image", detail: "Image URL is suitable for review and lock selection." };
+      }
+
+      function selectedCharacterLabel() {
+        return state.selected.character
+          || "";
+      }
+
+      function selectedCharacterToken() {
+        const label = String(selectedCharacterLabel() || "").trim().toLowerCase();
+        if (!label || label === "generate-gobananas-iterations" || label.startsWith("gobananas://character/")) return "";
+        return label;
+      }
+
+      function candidateMatchesSelectedCharacter(candidate) {
+        const token = selectedCharacterToken();
+        if (!token) return true;
+        if (!candidate) return false;
+        const outputText = (candidate.outputs || []).map((output) => output.path || "").join(" ");
+        const text = `${candidate.prompt || ""} ${candidate.route || ""} ${candidate.source?.externalJobId || ""} ${outputText}`.toLowerCase();
+        return text.includes(token);
+      }
+
+      function compactPrompt(prompt) {
+        const text = String(prompt || "").replace(/\s+/g, " ").trim();
+        return text.length > 150 ? `${text.slice(0, 147)}...` : text;
+      }
+
+      function candidatePreview(output) {
+        if (!output?.path) return illustration("var(--color-ice-blue)");
+        const type = ext(output.path);
+        const url = asset(output.path);
+        if (["jpg", "jpeg", "png", "gif", "webp"].includes(type)) {
+          if (!candidateQuality(output).ok) return illustration("var(--color-stone-surface)");
+          return `<div class="candidate-thumb"><img src="${url}" alt=""></div>`;
+        }
+        if (["mp4", "webm", "mov"].includes(type)) {
+          if (/^https?:\/\//.test(String(output.path || ""))) {
+            return `<div class="candidate-thumb"><div class="candidate-video-placeholder">Remote video candidate<br><a href="${asset(output.path)}" target="_blank" rel="noreferrer">Open link</a></div></div>`;
+          }
+          return `<div class="candidate-thumb"><video src="${url}" muted playsinline controls></video></div>`;
+        }
+        return `<div class="candidate-thumb">${illustration("var(--color-ice-blue)")}</div>`;
+      }
+
+      function stillThumb(output, className = "storyboard-shot-thumb") {
+        if (!output?.path) return `<div class="${className}">${illustration("var(--color-ice-blue)")}</div>`;
+        const type = ext(output.path);
+        if (!["jpg", "jpeg", "png", "gif", "webp"].includes(type) || !candidateQuality(output).ok) {
+          return `<div class="${className}">${illustration("var(--color-ice-blue)")}</div>`;
+        }
+        return `<div class="${className}"><img src="${asset(output.path)}" alt=""></div>`;
+      }
+
+      function outputKind(candidate) {
+        return imageOutput(candidate)?.kind || "missing";
+      }
+
+      function isGoBananasStill(candidate) {
+        return candidate.route === "gobananas-storyboard-still" && outputKind(candidate) === "image";
+      }
+
+      function isUpscaledStill(candidate) {
+        return candidate.route === "upscaled-storyboard-still" && outputKind(candidate) === "image";
+      }
+
+      function isGeneratedVideo(candidate) {
+        return outputKind(candidate) === "video";
+      }
+
+      function approvedStoryboardStillId(sceneIndex) {
+        const locked = state.selected[`lockedStill-${sceneIndex}`];
+        const lockedCandidate = locked ? findCandidateById(locked)?.candidate : null;
+        if (lockedCandidate && isGoBananasStill(lockedCandidate)) return locked;
+        const upscaled = (candidateScene(sceneIndex).candidates || [])
+          .find((candidate) => isUpscaledStill(candidate) && candidate.source?.chainedFromCandidateId);
+        return upscaled?.source?.chainedFromCandidateId || null;
+      }
+
+      function primarySceneCandidate(sceneIndex) {
+        const candidates = candidateScene(sceneIndex).candidates || [];
+        const selectedId = approvedStoryboardStillId(sceneIndex) || candidateSelection(sceneIndex)?.selectedCandidateId;
+        if (selectedId) {
+          const selectedCandidate = candidates.find((candidate) => candidate.id === selectedId);
+          if (selectedCandidate) return selectedCandidate;
+        }
+        return candidates.find((candidate) => isGoBananasStill(candidate) && !candidateRejectedForScene(sceneIndex, candidate.id)) || candidates[0] || null;
+      }
+
+      function renderCandidateCards(sceneIndex, candidates, mode) {
+        const sceneEnabled = isSceneWorkflowEnabled(sceneIndex);
+        const selectedId = mode === "stills"
+          ? approvedStoryboardStillId(sceneIndex)
+          : candidateSelection(sceneIndex)?.selectedCandidateId;
+                const orderedCandidates = [...candidates].sort((left, right) => {
+                  const leftOrder = candidateReviewOrder(sceneIndex, selectedId)(left);
+                  const rightOrder = candidateReviewOrder(sceneIndex, selectedId)(right);
+                  if (leftOrder !== rightOrder) return leftOrder - rightOrder;
+                  return String(left.id).localeCompare(String(right.id));
+                });
+                const rejectedCount = candidates.filter((candidate) => candidateRejectedForScene(sceneIndex, candidate.id)).length;
+                if (!candidates.length) return "";
+                return `<div class="candidate-gallery">${orderedCandidates.map((candidate) => {
+          const output = imageOutput(candidate);
+          const quality = mode === "video"
+            ? { ok: Boolean(output?.path), label: output?.path ? "renderable video" : "missing output", detail: output?.path ? "Video output is available for playback." : "This video candidate has no output path." }
+            : candidateQuality(output);
+                  const characterMatch = candidateMatchesSelectedCharacter(candidate);
+                  const isRejected = candidateRejectedForScene(sceneIndex, candidate.id);
+                  const isPending = candidatePendingForScene(sceneIndex, candidate.id);
+                  const isSelected = selectedId === candidate.id && !isRejected;
+          const canLockStill = mode === "stills";
+          const lockDisabled = !canLockStill || isRejected || !sceneEnabled || !quality.ok || !characterMatch;
+          const secondaryDisabled = isRejected || !sceneEnabled;
+                  return `<article class="candidate-card ${isSelected ? "selected" : ""} ${isRejected ? "rejected" : ""} ${isPending ? "pending" : ""} ${quality.ok ? "" : "needs-review"}">
+            ${candidatePreview(output)}
+            <div class="candidate-body">
+              <strong>${candidate.id}</strong>
+              <p>${compactPrompt(candidate.prompt)}</p>
+              <div class="chips">
+                <span class="chip">${candidate.route}</span>
+                <span class="chip">${candidate.status}</span>
+                <span class="chip">${output?.kind || "no output"}</span>
+                        <span class="chip">${quality.label}</span>
+                        <span class="chip">${characterMatch ? `${selectedCharacterLabel() || "character"} match` : "identity mismatch"}</span>
+                        ${isRejected ? `<span class="chip">rejected</span>` : ""}
+                        ${isPending ? `<span class="chip">alternate</span>` : ""}
+              </div>
+              ${quality.ok ? "" : `<div class="candidate-warning">${quality.detail}</div>`}
+              ${characterMatch ? "" : `<div class="candidate-warning">This candidate does not look tied to ${selectedCharacterLabel()}. Keep it rejected or regenerate the scene with the saved character.</div>`}
+              <div class="card-actions">
+                ${canLockStill && !isRejected ? `<button class="btn btn-primary" data-select-key="lockedStill-${sceneIndex}" data-select-value="${candidate.id}" ${disabledAttr(lockDisabled)}>${isSelected ? "Approved image" : !characterMatch ? "Wrong character" : quality.ok ? "Approve image" : "Fix URL first"}</button>` : ""}
+                ${canLockStill ? `<button class="btn btn-secondary" data-select-key="draftStill-${sceneIndex}" data-select-value="${candidate.id}" ${disabledAttr(secondaryDisabled)}>Use as draft</button>` : ""}
+                ${canLockStill ? `<button class="btn btn-secondary" data-select-key="editStill-${sceneIndex}" data-select-value="${candidate.id}-edit-needed" ${disabledAttr(secondaryDisabled)}>Needs prompt edit</button>` : ""}
+                <button class="btn btn-secondary" data-inspect-key="candidate" data-inspect="${candidate.id}">Details</button>
+                <button class="btn btn-secondary" data-action="${isRejected ? "restoreCandidate" : "rejectCandidate"}" data-candidate-id="${candidate.id}" data-scene-index="${sceneIndex}">${isRejected ? "Restore" : "Reject"}</button>
+              </div>
+            </div>
+          </article>`;
+        }).join("")}</div>${rejectedCount ? `<div class="empty-inline">${rejectedCount} rejected candidate${rejectedCount === 1 ? "" : "s"} will be excluded from lock checks and saved handoff selections.</div>` : ""}`;
+      }
+
+      function candidateSection(title, hint, sceneIndex, candidates, mode) {
+        if (!candidates.length) return "";
+        return `<div class="candidate-section">
+          <div class="candidate-section-header">
+            <div><strong>${title}</strong><br><span>${hint}</span></div>
+            <span class="chip">${candidates.length} item${candidates.length === 1 ? "" : "s"}</span>
+          </div>
+          ${renderCandidateCards(sceneIndex, candidates, mode)}
+        </div>`;
+      }
+
+      function renderCandidateGallery(sceneIndex) {
+        const scene = candidateScene(sceneIndex);
+        const candidates = scene.candidates || [];
+        const stills = candidates.filter(isGoBananasStill);
+        const upscaled = candidates.filter(isUpscaledStill);
+        const videos = candidates.filter(isGeneratedVideo);
+        const other = candidates.filter((candidate) => !isGoBananasStill(candidate) && !isUpscaledStill(candidate) && !isGeneratedVideo(candidate));
+        const empty = !stills.length
+          ? `<div class="empty-inline">No Go Bananas images are recorded for this scene yet. Edit the prompt, queue regeneration, then add the returned image URL.</div>`
+          : "";
+        return `${empty}
+          ${candidateSection("Generated Go Bananas images", "Review these first. Approve one image or reject/regenerate before motion.", sceneIndex, stills, "stills")}
+          ${candidateSection("4K / upscaled stills", "These are the approved stills prepared for Seedance. Attach one after approving a Go Bananas image.", sceneIndex, upscaled, "upscale")}
+          ${candidateSection("Seedance video outputs", "These are motion results generated after image approval. They are for final video review, not still approval.", sceneIndex, videos, "video")}
+          ${candidateSection("Other candidates", "Unclassified candidates are shown for provenance only.", sceneIndex, other, "other")}
+          ${renderStillCandidateForm(sceneIndex, Boolean(stills.length))}`;
+      }
+
+      function renderStillCandidateForm(sceneIndex, collapsed = false) {
+        const queued = latestGenerationRequest(sceneIndex);
+        const prompt = state.notes[`stillPrompt-${sceneIndex}`] || defaultStillPrompt(sceneIndex);
+        const negativePrompt = state.notes[`stillNegative-${sceneIndex}`] || seedanceWorkflow.negativeGuidance.join(", ");
+        return `<details class="still-workbench" ${collapsed ? "" : "open"}>
+          <summary>Regenerate or add a Go Bananas image</summary>
+          <div class="still-form">
+          <div style="grid-column:1 / -1" class="empty-inline">
+            <strong>Go Bananas prompt workbench</strong><br>
+            ${queued ? `Queued Go Bananas request ${queued.id}. The agent can run it, then paste the returned image URL below.` : "Edit the prompt, queue a Go Bananas image, then paste the returned image URL to add it to the review board."}
+          </div>
+          <label><span class="form-label">Returned image URL</span>
+          <input id="stillUrl-${sceneIndex}" placeholder="Paste GoBananas image URL for scene ${sceneIndex}" value="">
+          </label>
+          <label><span class="form-label">Go Bananas image id</span>
+          <input id="stillImageId-${sceneIndex}" placeholder="GB id">
+          </label>
+          <label style="grid-column:1 / -1"><span class="form-label">Prompt to regenerate this scene</span>
+          <textarea id="stillPrompt-${sceneIndex}" placeholder="Prompt or notes for this still">${prompt}</textarea>
+          </label>
+          <label style="grid-column:1 / -1"><span class="form-label">Negative prompt</span>
+          <textarea id="stillNegative-${sceneIndex}" placeholder="Negative prompt">${negativePrompt}</textarea>
+          </label>
+          <label><span class="form-label">Upscaled / 4K image URL</span>
+          <input id="upscaleUrl-${sceneIndex}" placeholder="Paste 4k/upscaled image URL after locking scene ${sceneIndex}" value="">
+          </label>
+          <label><span class="form-label">Upscale id</span>
+          <input id="upscaleImageId-${sceneIndex}" placeholder="4k/upscale id">
+          </label>
+          <div class="card-actions">
+            <button class="btn btn-secondary" data-action="queueStillRequest" data-scene-index="${sceneIndex}" ${disabledAttr(!isSceneWorkflowEnabled(sceneIndex))}>Regenerate with this prompt</button>
+            <button class="btn btn-primary" data-action="recordStillCandidate" data-scene-index="${sceneIndex}" ${disabledAttr(!isSceneWorkflowEnabled(sceneIndex))}>Add candidate</button>
+            <button class="btn btn-secondary" data-action="recordUpscaledStill" data-scene-index="${sceneIndex}" ${disabledAttr(!isCandidateBackedLock(sceneIndex))}>Attach 4k asset</button>
+          </div>
+          </div>
+        </details>`;
+      }
+
+      function defaultStillPrompt(sceneIndex) {
+        const row = state.scenes[sceneIndex] || [];
+        const title = row[1] || `Scene ${sceneIndex}`;
+        const anchor = sceneIndex === 0
+          ? "opening anchor"
+          : `continue from scene-${String(sceneIndex - 1).padStart(2, "0")} locked end frame`;
+        return `Scene ${String(sceneIndex).padStart(2, "0")} storyboard still for ${state.project}: ${title}. ${anchor}. ${seedanceWorkflow.promptPatterns.stillCreate} Warm cream paper, playful illustrated characters, vivid primary accents, clean cinematic composition, no readable text, no logos.`;
+      }
+
+      function latestGenerationRequest(sceneIndex) {
+        const requests = inventory.generationQueue?.requests || [];
+        return [...requests].reverse().find((request) => request.sceneIndex === sceneIndex && request.status === "queued") || null;
+      }
+
+              function media(path, fallbackColor = "var(--color-sky-blue)") {
+                if (!path) return illustration(fallbackColor);
+                const url = asset(path);
+                const type = ext(path);
+                if (["jpg", "jpeg", "png", "gif", "webp"].includes(type)) {
+                  return `<div class="media"><img src="${url}" alt=""></div>`;
+                }
+                if (["mp4", "webm", "mov"].includes(type)) {
+                  if (/^https?:\/\//.test(String(path || ""))) return illustration(fallbackColor);
+                  return `<div class="media"><video src="${url}" controls muted playsinline></video></div>`;
+                }
+                return illustration(fallbackColor);
+              }
+
+      function finalVideoPath() {
+        const fromPublish = inventory.publishReport?.finalOutputPath;
+        if (fromPublish) return fromPublish;
+        const finalAsset = (inventory.assetManifest?.assets || [])
+          .find((item) => item.kind === "video" && /final/i.test(String(item.id || item.path || "")));
+        return finalAsset?.path || "";
+      }
+
+      function sceneVideoAsset(sceneIndex) {
+        return (inventory.assetManifest?.assets || [])
+          .find((item) => item.sceneIndex === sceneIndex && item.kind === "video") || null;
+      }
+
+      function storyboardScenes() {
+        const fromArtifact = Array.isArray(inventory.storyboard?.scenes) ? inventory.storyboard.scenes : [];
+        if (fromArtifact.length) return fromArtifact;
+        return state.scenes.map(([, title], sceneIndex) => ({
+          sceneIndex,
+          description: title,
+          characters: [],
+        }));
+      }
+
+      function storySummaryText() {
+        const title = inventory.brief?.title || state.project || "this project";
+                const scenes = storyboardScenes();
+                const characters = [...new Set(scenes.flatMap((scene) => Array.isArray(scene.characters) ? scene.characters : []))];
+                const characterText = characters.length ? ` starring ${characters.map(prettyName).join(", ")}` : "";
+                const firstBeat = restoreCharacterCase(cleanBeatDescription(scenes[0]?.description || "a clear problem hook"), characters);
+                const finalBeat = restoreCharacterCase(cleanBeatDescription(scenes[scenes.length - 1]?.description || "a confident payoff"), characters);
+                return `${prettyName(title)} is a ${scenes.length}-scene director storyboard${characterText}. It opens as ${firstBeat} and resolves with ${finalBeat}.`;
+              }
+
+      function cleanBeatDescription(value) {
+        return String(value || "")
+                  .replace(/^\s*(problem hook|solution reveal|proof beat|payoff(?: and cta)?|payoff hero)\s*:\s*/i, "")
+                  .replace(/\s+/g, " ")
+                  .replace(/[.。]+$/g, "")
+                  .trim();
+              }
+
+              function restoreCharacterCase(text, characters) {
+                return characters.reduce((next, character) => {
+                  const source = String(character || "").trim();
+                  if (!source) return next;
+                  const escaped = source.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+                  return next.replace(new RegExp(`\\b${escaped}\\b`, "gi"), prettyName(source));
+                }, String(text || ""));
+              }
+
+      function renderFinalVideoBlock(compact = false) {
+        const path = finalVideoPath();
+        if (!path) return "";
+        const url = asset(path);
+        return `<div class="handoff-video">
+          <video src="${url}" controls playsinline preload="metadata"></video>
+        </div>
+        ${compact ? "" : `<div class="card-actions">
+          <a class="btn btn-primary" href="${url}" target="_blank" rel="noreferrer">Open final video</a>
+          <a class="btn btn-secondary" href="${url}" download>Download MP4</a>
+        </div>`}`;
+      }
+
+      function sceneBriefsMarkup() {
+        const scenes = storyboardScenes();
+        return `<div class="scene-brief-grid">${scenes.map((scene) => {
+          const sceneIndex = Number(scene.sceneIndex) || 0;
+          const selected = candidateSelection(sceneIndex);
+          const videoAsset = sceneVideoAsset(sceneIndex);
+          const candidate = selected?.selectedCandidateId ? findCandidateById(selected.selectedCandidateId)?.candidate : null;
+                  const mediaPath = imageOutput(candidate)?.path || videoAsset?.path;
+          const characters = Array.isArray(scene.characters) ? scene.characters.join(", ") : "";
+          return `<article class="scene-brief">
+            ${mediaPath ? media(mediaPath, "var(--color-ice-blue)") : illustration("var(--color-ice-blue)")}
+            <div>
+              <h3>Scene ${String(sceneIndex).padStart(2, "0")}</h3>
+              <p>${escapeHtml(scene.description || defaultSceneTitle(sceneIndex))}</p>
+              <div class="chips">
+                <span class="chip">${selected?.selectedCandidateId || "no selection"}</span>
+                <span class="chip">${videoAsset ? "video ready" : candidate ? "candidate ready" : "needs media"}</span>
+                <span class="chip">${sceneIndex > 0 ? "chained from previous scene" : "opening anchor"}</span>
+                ${characters ? `<span class="chip">${escapeHtml(characters)}</span>` : ""}
+              </div>
+            </div>
+          </article>`;
+        }).join("")}</div>`;
+      }
+
+      function visualStoryboardStrip(compact = false) {
+        const scenes = storyboardScenes();
+        const stripClass = compact ? "handoff-mini-strip" : "visual-handoff-strip";
+        const shotClass = compact ? "handoff-mini-shot" : "visual-handoff-shot";
+        const thumbClass = compact ? "handoff-mini-thumb" : "handoff-shot-thumb";
+        return `<div class="${stripClass}">${scenes.map((scene) => {
+          const sceneIndex = Number(scene.sceneIndex) || 0;
+          const candidate = primarySceneCandidate(sceneIndex);
+          const candidateId = candidate?.id || "needs image";
+          const label = `Scene ${String(sceneIndex).padStart(2, "0")}`;
+          const description = cleanBeatDescription(scene.description || defaultSceneTitle(sceneIndex));
+          return `<button class="${shotClass}" data-action="selectStoryboardScene" data-scene-index="${sceneIndex}">
+            ${stillThumb(imageOutput(candidate), thumbClass)}
+            <div>
+              <strong>${label}</strong>
+              <span>${escapeHtml(compactPrompt(description))}</span>
+              <span>${escapeHtml(candidateId)}</span>
+            </div>
+          </button>`;
+        }).join("")}</div>`;
+      }
+
+      function lessonsMarkup() {
+        return `<ul class="lesson-list">
+          <li><strong>Show the story before the JSON.</strong> Operators need the project purpose, scene beats, and final media in plain English.</li>
+          <li><strong>Make final output first-class.</strong> If a publish report has an MP4, the review handoff should embed it immediately.</li>
+          <li><strong>Separate still review from motion review.</strong> Still candidates, upscaled locks, chained videos, and final assembly need different labels and gates.</li>
+          <li><strong>Preserve provider lessons.</strong> Seedance chaining works when images and previous MP4s are classified into the right reference fields.</li>
+        </ul>`;
+      }
+
+      function renderHandoffSummary() {
+        const publish = inventory.publishReport;
+        const report = inventory.reviewReport;
+        const metrics = report?.metrics || {};
+        const statusText = publish?.status
+          ? `Publish artifact status: ${publish.status}.`
+          : report?.verdict
+            ? `Review verdict: ${report.verdict}.`
+            : "Review handoff is still in progress.";
+        return `<div class="handoff-summary">
+                  <div class="summary-panel">
+                    <h3>What this video is about</h3>
+                    <p>${escapeHtml(storySummaryText())}</p>
+                    <div class="chips" style="margin-top:12px">
+              <span class="chip">${statusText}</span>
+              <span class="chip">${storyboardScenes().length} scenes</span>
+              <span class="chip">${savedReviewPassed() ? "publish ready" : "reviewing"}</span>
+                      <span class="chip">Seedance director workflow</span>
+                    </div>
+                    <div class="card-actions" style="margin-top:14px">
+                      <button class="btn btn-primary" data-stage-jump="storyboard">Review Go Bananas images</button>
+                      <button class="btn btn-secondary" data-stage-jump="motion">Review motion handoff</button>
+                    </div>
+                  </div>
+          <div class="summary-panel">
+            <h3>Visual storyboard</h3>
+            <p>These are the selected Go Bananas stills. Click any frame to reopen that scene's human review loop.</p>
+            ${visualStoryboardStrip()}
+          </div>
+          ${finalVideoPath() ? `<div class="summary-panel">
+            <h3>Final video</h3>
+            <p>${escapeHtml((publish?.notes || [])[0] || "Final MP4 is available for review.")}</p>
+            ${renderFinalVideoBlock()}
+          </div>` : ""}
+          <div class="summary-panel">
+            <h3>Scene-by-scene handover</h3>
+            <p>Each beat below shows what the scene is doing and whether it has a selected video or still.</p>
+            ${sceneBriefsMarkup()}
+          </div>
+          <div class="summary-panel">
+            <h3>Lessons learned from this run</h3>
+            ${lessonsMarkup()}
+          </div>
+        </div>`;
+      }
+
+      function illustration(color) {
+        return `<div class="media"><div class="paper-illustration"><div class="mini-blob" style="--fill:${color}"></div></div></div>`;
+      }
+
+      function card({ key, id, title, desc, chips = [], image, color, action = "Select" }) {
+        const active = selected(key, id);
+        return `<article class="item-card ${active ? "selected" : ""}">
+          ${media(image, color)}
+          <div class="item-body">
+            <h3>${title}</h3>
+            <p>${desc}</p>
+            <div class="chips">${chips.map((chip) => `<span class="chip">${chip}</span>`).join("")}</div>
+            <div class="card-actions">
+              <button class="btn btn-primary" data-select-key="${key}" data-select-value="${id}">${active ? "Selected" : action}</button>
+              <button class="btn btn-secondary" data-inspect-key="${key}" data-inspect="${id}">Details</button>
+            </div>
+          </div>
+        </article>`;
+      }
+
+      function emptyCharacterState() {
+        return `<div class="empty-state">
+          <div class="mini-blob" style="--fill:var(--color-ember-orange)"></div>
+          <div>
+            <strong>No saved project characters yet.</strong>
+            <p>The repo has project folders, but no <code>projects/&lt;slug&gt;/characters/characters.json</code> entries. The real flow should call GoBananas MCP here, generate iterations, then save the chosen character with GB id and reference assets.</p>
+            <div class="card-actions">
+              <button class="btn btn-primary" data-select-key="characterPlan" data-select-value="generate-gobananas-iterations">Generate GoBananas iterations</button>
+              <button class="btn btn-secondary" data-select-key="characterPlan" data-select-value="import-gobananas-library">Import from GB library</button>
+            </div>
+          </div>
+        </div>`;
+      }
+
+      function renderInventory() {
+        const stillCandidateCount = (inventory.sceneCandidates?.scenes || [])
+          .reduce((count, scene) => count + (scene.candidates?.filter((candidate) => candidate.outputs?.some((output) => output.kind === "image")).length || 0), 0);
+        const stats = [
+          ["Projects", inventory.projects.length],
+          ["Saved characters", inventory.characters.length],
+          ["Still candidates", stillCandidateCount],
+          ["Presenter packs", inventory.presenterPacks.length],
+          ["Media assets", inventory.mediaAssets.length],
+          ["Playbooks", inventory.playbooks.length],
+          ["Prompt refs", inventory.references.length],
+          ["Templates", inventory.templates.length],
+          ["Schemas", inventory.schemas.length]
+        ];
+        return `<div class="stats-grid">${stats.map(([label, count]) => `<div class="stat-card"><strong>${count}</strong><span>${label}</span></div>`).join("")}</div>
+          <div class="controls">
+            <input id="filter" placeholder="Search assets, templates, playbooks" value="${state.filter}">
+            <select id="tab">
+              ${["all", "characters", "assets", "playbooks", "templates", "schemas"].map((tab) => `<option value="${tab}" ${state.tab === tab ? "selected" : ""}>${tab}</option>`).join("")}
+            </select>
+            <button class="btn btn-secondary" data-action="clearFilter">Clear</button>
+          </div>
+          ${inventorySection()}`;
+      }
+
+      function inventorySection() {
+        const show = (tab) => state.tab === "all" || state.tab === tab;
+        let html = "";
+        if (show("characters")) {
+          html += `<h3>Saved project characters</h3>${inventory.characters.length ? `<div class="cards-grid">${characterCards()}</div>` : emptyCharacterState()}`;
+        }
+        if (show("assets")) {
+          html += `<h3 style="margin-top:28px">Existing selectable assets</h3><div class="cards-grid">${assetCards().join("")}</div>`;
+        }
+        if (show("playbooks")) {
+          html += `<h3 style="margin-top:28px">Provider playbooks</h3><div class="cards-grid">${inventory.playbooks.map((item) => card({ key: "playbook", id: item.id, title: item.name, desc: item.desc, chips: [item.provider, "playbook"], color: "var(--color-meadow-green)", action: "Use" })).join("")}</div>`;
+        }
+        if (show("templates")) {
+          html += `<h3 style="margin-top:28px">Storyboard templates</h3><div class="cards-grid">${templateCards()}</div>`;
+        }
+        if (show("schemas")) {
+          html += `<h3 style="margin-top:28px">Artifact schemas</h3><div class="small-grid">${inventory.schemas.map((schema) => card({ key: "schema", id: schema, title: schema, desc: `schemas/video/artifacts/${schema}.schema.json`, chips: ["JSON", "artifact"], color: "var(--color-sunburst-yellow)", action: "Inspect" })).join("")}</div>`;
+        }
+        return html;
+      }
+
+      function assetCards() {
+        const packAssets = inventory.presenterPacks.flatMap((pack) => pack.assets.map((path) => ({ path, label: pack.name })));
+        const packPaths = new Set(packAssets.map((item) => item.path));
+        const mediaAssets = inventory.mediaAssets
+          .filter((path) => !packPaths.has(path))
+          .map((path) => ({ path, label: path.split("/").slice(0, -1).join("/") || "asset" }));
+        const query = state.filter.trim().toLowerCase();
+        return [...packAssets, ...mediaAssets]
+          .filter((item) => !query || `${item.path} ${item.label}`.toLowerCase().includes(query))
+          .map((item) => card({
+            key: "asset",
+            id: item.path,
+            title: item.path.split("/").pop(),
+            desc: item.path,
+            chips: [item.label, ext(item.path)],
+            image: item.path,
+            action: "Attach"
+          }));
+      }
+
+      function templateCards() {
+        return inventory.templates.map(([id, desc, count]) => card({
+          key: "template",
+          id,
+          title: id,
+          desc,
+          chips: [`${count} scenes`, "template"],
+          color: "var(--color-ice-blue)",
+          action: "Use"
+        })).join("");
+      }
+
+      function characterCards() {
+        return inventory.characters.map((character, index) => card({
+          key: "character",
+          id: character.id,
+          title: character.name,
+          desc: character.description || "Saved project character profile.",
+          chips: [
+            character.goBananasId ? `GB ${character.goBananasId}` : "local",
+            `${character.referenceAssets?.length || 0} refs`
+          ],
+          image: character.referenceAssets?.find((path) => !path.startsWith("gobananas://")),
+          color: index % 3 === 0 ? "var(--color-ember-orange)" : index % 3 === 1 ? "var(--color-meadow-green)" : "var(--color-sky-blue)",
+          action: "Use character"
+        })).join("");
+      }
+
+      function renderCharacters() {
+        const queued = inventory.characterQueue?.requests || [];
+        const characterPrompt = state.notes.characterPrompt || defaultCharacterPrompt();
+        const negativePrompt = state.notes.characterNegative || "inconsistent identity, realistic human photo, readable text, logos, clutter, distorted anatomy, extra limbs";
+        return `${inventory.characters.length ? `<h3>Saved project characters</h3><div class="cards-grid">${characterCards()}</div>` : emptyCharacterState()}
+          <div class="quality-panel" style="margin-top:28px">
+            <h3>GoBananas character iterations</h3>
+            <p>${queued.length ? `${queued.length} character iteration request${queued.length === 1 ? "" : "s"} queued. Generate the options, then save the chosen character profile before storyboard work continues.` : "Queue a concrete character iteration prompt so the agent can generate options without guessing."}</p>
+            <div class="still-form">
+              <input id="characterName" placeholder="Character name" value="${state.notes.characterName || "Komo"}">
+              <input id="characterCount" placeholder="Iterations" value="${state.notes.characterCount || "4"}">
+              <textarea id="characterPrompt" placeholder="Character generation prompt">${characterPrompt}</textarea>
+              <textarea id="characterNegative" placeholder="Negative prompt">${negativePrompt}</textarea>
+              <div class="card-actions">
+                <button class="btn btn-primary" data-action="queueCharacterRequest">Queue character iterations</button>
+              </div>
+            </div>
+            ${queued.length ? `<div class="details-list">${queued.slice(-3).reverse().map((request) => `<div class="details-row"><span>${request.id}</span><span>${request.characterName} · ${request.count} option${request.count === 1 ? "" : "s"} · ${request.aspectRatio} · ${request.status}${request.goBananasId ? ` · GB ${request.goBananasId}` : ""}${request.error ? ` · ${request.error}` : ""}</span></div>`).join("")}</div>` : ""}
+          </div>
+          <h3 style="margin-top:28px">Existing presenter packs</h3>
+          <div class="cards-grid">${inventory.presenterPacks.map((pack, index) => card({
+            key: "characterSource",
+            id: pack.id,
+            title: pack.name,
+            desc: pack.notes,
+            chips: [`${pack.assets.length} assets`, "existing pack"],
+            image: pack.assets[0],
+            color: index ? "var(--color-sky-blue)" : "var(--color-ember-orange)",
+            action: "Use pack"
+          })).join("")}</div>
+          <h3 style="margin-top:28px">Character lock checklist</h3>
+          <div class="scene-list">${["Canonical identity", "Full-body reference", "Close-up texture reference", "Expression variants", "Action bridge poses", "Negative identity constraints"].map((label, index) => `
+            <div class="scene-row"><strong>${String(index + 1).padStart(2, "0")}</strong><div>${label}<br><span>Required before stable multi-scene generation</span></div><button class="btn btn-secondary" data-select-key="characterCheck-${index}" data-select-value="done">Mark done</button></div>
+          `).join("")}</div>`;
+      }
+
+      function defaultCharacterPrompt() {
+        return "Create 4 consistent character design iterations for Komo, a playful flat illustrated fintech adventure mascot on warm cream paper. Organic blob silhouette, expressive dot eyes, simple smile, stick limbs, vivid primary accent color, clean full-body view plus identity consistency. Pixar storyboard charm without photorealism. No readable text, no logos, no clutter.";
+      }
+
+              function renderReferences() {
+                const mustHaveRoles = ["identity", "pose", "lookdev", "background", "ui-structure", "prop", "start-frame", "end-frame", "texture"];
+                return `<div class="now-box ready" style="margin-bottom:18px">
+          <div>
+            <strong>One reference, one job.</strong>
+            <span>Assign roles before any image influences prompts. This prevents pose references from changing identity, UI references from creating readable text, and lookdev references from rewriting the scene.</span>
+          </div>
+          <div class="card-actions">
+            <button class="btn btn-primary" data-action="autoRoleReferences">Auto-role essentials</button>
+            <button class="btn btn-secondary" data-action="assignSelectedReferenceRoles">Use selected reference</button>
+          </div>
+        </div>
+        <h3>Required reference roles</h3>
+        <div class="quality-grid">${mustHaveRoles.map((role) => {
+          const done = state.selected[`referenceRole-${role}`];
+          return `<div class="quality-item ${done ? "done" : ""}">
+            <span class="gate-dot">${done ? "✓" : "!"}</span>
+            <div>
+              <strong>${role}</strong>
+              <span>${done ? `Assigned to ${done}` : "Assign or confirm before generation."}</span>
+              <div style="margin-top:8px"><button class="btn btn-secondary" data-select-key="referenceRole-${role}" data-select-value="${role}-assigned">Mark assigned</button></div>
+            </div>
+          </div>`;
+        }).join("")}</div>
+        <h3 style="margin-top:28px">Reference vocabulary</h3>
+        <div class="role-grid">${Object.entries(inventory.roles).map(([type, roles]) => `
+          <div class="role-card"><strong>${type}</strong>${roles.join(", ")}</div>
+        `).join("")}</div>
+        <h3 style="margin-top:28px">Prompt and guidance references</h3>
+        <div class="cards-grid">${inventory.references.map(([id, desc]) => card({ key: "reference", id, title: id, desc, chips: ["guidance", "markdown"], color: "var(--color-meadow-green)", action: "Attach" })).join("")}</div>
+        <h3 style="margin-top:28px">Reference note</h3>
+        <textarea id="referenceNote" placeholder="Example: use this image only for identity, not wardrobe or background.">${state.notes.reference || ""}</textarea>
+                <div style="margin-top:12px"><button class="btn btn-primary" data-save-note="reference">Save note</button></div>`;
+              }
+
+              function sceneReviewStatus(sceneIndex) {
+                const scene = candidateScene(sceneIndex);
+                const candidates = scene.candidates || [];
+                const generated = candidates.filter(isGoBananasStill).length;
+                const upscaled = candidates.filter(isUpscaledStill).length;
+                const videos = candidates.filter(isGeneratedVideo).length;
+                const approved = approvedStoryboardStillId(sceneIndex);
+                const has4k = hasArtifactBackedUpscale(sceneIndex);
+                const ready = Boolean(approved && has4k);
+                return {
+                  generated,
+                  upscaled,
+                  videos,
+                  approved,
+                  has4k,
+                  ready,
+                  label: ready ? "ready for motion" : approved ? "attach 4K still" : generated ? "choose Go Bananas image" : "generate image"
+                };
+              }
+
+              function renderStoryboardScenePicker() {
+                return `<div class="scene-review-switcher">${state.scenes.map(([id, title], index) => {
+                  const status = sceneReviewStatus(index);
+                  const active = clampSceneIndex(state.activeSceneIndex) === index;
+                  const candidate = primarySceneCandidate(index);
+                  return `<button class="scene-switch ${active ? "active" : ""} ${status.ready ? "done" : ""}" data-action="selectStoryboardScene" data-scene-index="${index}">
+                    ${stillThumb(imageOutput(candidate), "scene-switch-thumb")}
+                    <strong>${id}: ${title}</strong>
+                    <span>${status.label}</span>
+                    <span>${status.generated} GB image${status.generated === 1 ? "" : "s"} · ${status.upscaled} 4K · ${status.videos} video${status.videos === 1 ? "" : "s"}</span>
+                  </button>`;
+                }).join("")}</div>`;
+              }
+
+              function renderStoryboardDashboard() {
+                const completed = state.scenes.filter((_, index) => sceneReviewStatus(index).ready).length;
+                return `<section class="storyboard-dashboard-wrap">
+                  <div class="storyboard-dashboard-head">
+                    <div>
+                      <h3>Storyboard dashboard</h3>
+                      <p>Human-in-the-loop review: click a frame, inspect the selected image, then approve, reject, regenerate, or attach the 4K still.</p>
+                    </div>
+                    <div class="chips">
+                      <span class="chip">${completed}/${state.scenes.length} motion-ready</span>
+                      <span class="chip">Go Bananas image-first</span>
+                    </div>
+                  </div>
+                  <div class="storyboard-dashboard">${state.scenes.map(([id, title], index) => {
+                  const status = sceneReviewStatus(index);
+                  const active = clampSceneIndex(state.activeSceneIndex) === index;
+                  const candidate = primarySceneCandidate(index);
+                  const candidateId = candidate?.id || "no image yet";
+                  return `<button class="storyboard-shot-card ${active ? "active" : ""} ${status.ready ? "done" : ""}" data-action="selectStoryboardScene" data-scene-index="${index}">
+                    ${stillThumb(imageOutput(candidate))}
+                    <strong>${id}: ${title}</strong>
+                    <span>${candidateId}</span>
+                    <div class="shot-card-footer"><span>${status.label}</span><b>${active ? "Open" : "Review"}</b></div>
+                  </button>`;
+                }).join("")}</div>
+                </section>`;
+              }
+
+              function renderTemplateChooser() {
+                if (!state.selected.template) {
+                  return `<h3>Storyboard template</h3><div class="cards-grid">${templateCards()}</div>`;
+                }
+                const selectedTemplate = inventory.templates.find(([id]) => id === state.selected.template);
+                return `<details class="details-panel">
+                  <summary><strong>Storyboard template:</strong> ${state.selected.template}</summary>
+                  <p>${selectedTemplate?.[1] || "Template selected for this project."}</p>
+                  <div class="cards-grid">${templateCards()}</div>
+                </details>`;
+              }
+
+              function renderSceneReviewCard(index) {
+                const [id, title, status, chain] = state.scenes[index] || state.scenes[0];
+                const lockedReady = isCandidateBackedLock(index);
+                const sceneEnabled = isSceneWorkflowEnabled(index);
+                const hasPlaceholderLock = state.selected[`lockedStill-${index}`] && !lockedReady;
+                const lockedStill = state.selected[`lockedStill-${index}`];
+                const upscaleValue = lockedStill ? `${lockedStill}-4k` : "";
+                const upscaleMarked = isSceneUpscaled(index);
+                const upscaleBacked = hasArtifactBackedUpscale(index);
+                const approvedStill = approvedStoryboardStillId(index);
+                const reviewStatus = sceneReviewStatus(index);
+                const selectedCandidate = primarySceneCandidate(index);
+                return `<section class="scene-review-card" id="scene-review-${index}">
+                  <div class="scene-review-header">
+                    <div>
+                      <div class="section-kicker">Review scene ${index + 1} of ${state.scenes.length}</div>
+                      <h3>${id}: ${title}</h3>
+                      <p>${status} · ${chain ? "chain from previous approved image" : "opening anchor"}</p>
+                      <div class="chips" style="margin-top:8px">
+                        <span class="chip">${reviewStatus.generated} Go Bananas image${reviewStatus.generated === 1 ? "" : "s"}</span>
+                        <span class="chip">${approvedStill ? `approved ${approvedStill}` : lockedReady ? "locked" : hasPlaceholderLock ? "needs real candidate" : "needs approval"}</span>
+                        <span class="chip">${upscaleBacked ? "4K attached" : upscaleMarked ? "4K marker only" : "needs 4K"}</span>
+                        <span class="chip">${reviewStatus.videos ? `${reviewStatus.videos} motion output${reviewStatus.videos === 1 ? "" : "s"}` : "no motion yet"}</span>
+                      </div>
+                      <div class="empty-inline" style="margin-top:8px">${sceneWorkflowMessage(index)}${upscaleMarked && !upscaleBacked ? " Upscale is currently an operator marker; attach the actual 4K still before video generation." : ""}</div>
+                    </div>
+                    <div class="card-actions">
+                      <button class="btn btn-secondary" data-action="queueStillRequest" data-scene-index="${index}" ${disabledAttr(!sceneEnabled)}>Regenerate</button>
+                      <button class="btn btn-primary" data-action="explainCandidateLock">Approve image below</button>
+                      <button class="btn btn-secondary" data-select-key="upscaledStill-${index}" data-select-value="${upscaleValue}" ${disabledAttr(!upscaleBacked)}>${upscaleBacked ? "4K attached" : "Use attach form"}</button>
+                    </div>
+                  </div>
+                  <div class="selected-still-panel">
+                    ${stillThumb(imageOutput(selectedCandidate))}
+                    <div>
+                      <h4>${selectedCandidate ? `Selected still: ${selectedCandidate.id}` : "No selected still yet"}</h4>
+                      <p>${selectedCandidate ? compactPrompt(selectedCandidate.prompt) : "Generate or add a Go Bananas image, then approve it here before motion."}</p>
+                      <div class="chips">
+                        <span class="chip">${selectedCandidate?.source?.externalJobId ? `GB ${selectedCandidate.source.externalJobId}` : "no GB id"}</span>
+                        <span class="chip">${approvedStill ? "approved image" : "needs approval"}</span>
+                        <span class="chip">${upscaleBacked ? "4K attached" : "4K still needed"}</span>
+                      </div>
+                    </div>
+                  </div>
+                  ${renderCandidateGallery(index)}
+                </section>`;
+              }
+
+              function renderStoryboard() {
+                const activeSceneIndex = clampSceneIndex(state.activeSceneIndex);
+                return `<div class="now-box ready" style="margin-bottom:18px">
+                  <div>
+                    <strong>Storyboard image review is where Go Bananas outputs live.</strong>
+                    <span>For each scene: edit the prompt, regenerate if needed, compare the generated images, approve one image, then attach the 4K/upscaled version before Seedance motion.</span>
+                  </div>
+                  <button class="btn btn-primary" data-action="recommendStoryboardScene">Show next scene</button>
+                </div>
+                ${renderStoryboardDashboard()}
+                <div class="operator-steps">
+          <div class="operator-step"><strong>1. Pick scene</strong><span>Work top-to-bottom. Later scenes stay chained to the previous approved image.</span></div>
+          <div class="operator-step"><strong>2. Edit prompt</strong><span>Change only what is wrong: pose, framing, identity, clutter, or composition.</span></div>
+                  <div class="operator-step"><strong>3. Review images</strong><span>Generated Go Bananas images appear as cards. Approve, reject, or inspect details.</span></div>
+                  <div class="operator-step"><strong>4. Regenerate or lock</strong><span>If it is wrong, regenerate. If it is right, approve it and attach the 4K still.</span></div>
+                </div>
+                ${renderTemplateChooser()}
+                  <div class="quality-panel">
+                    <h3>Still image recipe</h3>
+                    <p>Each scene must pass draft, narrow edit, lock, and upscale before motion. The create and edit prompt recipes below come from the Seedance reference workflow.</p>
+                    <div class="small-grid">
+                      <div class="role-card"><strong>Create prompt</strong>${seedanceWorkflow.promptPatterns.stillCreate}</div>
+                      <div class="role-card"><strong>Edit prompt</strong>${seedanceWorkflow.promptPatterns.stillEdit}</div>
+                    </div>
+                  </div>
+                  <h3 style="margin-top:28px">Go Bananas image review board</h3>
+                  <div class="storyboard-scene">${renderSceneReviewCard(activeSceneIndex)}</div>
+                  <h3 style="margin-top:28px">Edit instruction for next still pass</h3>
+                  <textarea id="storyboardNote" placeholder="Example: same character, wider shot, cleaner board layout, no readable UI text.">${state.notes.storyboard || ""}</textarea>
+          <div style="margin-top:12px"><button class="btn btn-primary" data-save-note="storyboard">Save instruction</button></div>`;
+      }
+
+      function renderMotion() {
+        const candidates = [
+          ["control-pass", "Detailed control pass", "Precise action, more control, slower pacing.", "long prompt"],
+          ["short-variant", "Short variant pass", "More variety and cleaner timing from the same inputs.", "short prompt"],
+          ["bridge-pose-pass", "Bridge pose pass", "Best for hands, throws, catches, transformations, and logo morphs.", "bridge poses"]
+        ];
+        return `<div class="quality-panel">
+          <h3>Continuity chain</h3>
+          <p>Motion is only allowed after locked stills exist. Each shot uses a start frame and target frame, then the generated end frame becomes the next shot's start frame.</p>
+                  <div class="scene-list">${state.scenes.map(([id], index) => `
+                    <div class="scene-row">
+                      <strong>${id}</strong>
+                      <div>${index === 0 ? "locked still -> first motion start frame" : `scene-${String(index - 1).padStart(2, "0")} end frame -> ${id} start frame`}<br><span>${seedanceWorkflow.promptPatterns.motionControl}</span></div>
+                      <button class="btn btn-secondary" data-select-key="continuity-${index}" data-select-value="${index === 0 ? "start-frame-confirmed" : "extract-end-frame"}">${isContinuityConfirmed(index) ? "Confirmed" : "Confirm"}</button>
+                    </div>
+                  `).join("")}</div>
+                </div>
+        <div class="now-box blocked" style="margin-bottom:18px">
+          <div>
+            <strong>Bridge-pose warning</strong>
+            <span>Use bridge poses for ${seedanceWorkflow.bridgeTriggers.join(", ")}. This is what keeps hard action from looking random.</span>
+          </div>
+                  <button class="btn btn-primary" data-select-key="bridgePosePlan" data-select-value="bridge-hard-actions">${state.selected.bridgePosePlan ? "Bridge plan saved" : "Require bridge poses"}</button>
+        </div>
+        <div class="cards-grid">${candidates.map(([id, title, desc, chip], index) => card({
+          key: "motionCandidate",
+          id,
+          title,
+          desc,
+          chips: [chip, "Seedance"],
+          color: index === 0 ? "var(--color-sky-blue)" : index === 1 ? "var(--color-meadow-green)" : "var(--color-sunburst-yellow)",
+          action: "Choose"
+        })).join("")}</div>
+        `;
+      }
+
+      function renderAssembly() {
+        const plans = [
+          ["social-fast", "Social fast cut", "Fast retiming and strongest short-form retention."],
+          ["balanced", "Balanced story cut", "Best voiceover fit and readable transitions."],
+          ["cinematic", "Cinematic polish", "Slower timing and stronger logo reveal."]
+        ];
+        return `${renderHandoffSummary()}
+        <h3 style="margin-top:28px">Assembly plan</h3>
+        <div class="cards-grid">${plans.map(([id, title, desc], index) => card({
+          key: "assemblyPlan",
+          id,
+          title,
+          desc,
+          chips: ["postPlan", "time remap"],
+          color: index === 0 ? "var(--color-ember-orange)" : index === 1 ? "var(--color-meadow-green)" : "var(--color-sky-blue)",
+          action: "Approve"
+        })).join("")}</div>
+        <h3 style="margin-top:28px">Publish approvals</h3>
+        <div class="scene-list">${assemblyChecks().map(([id, title, desc], index) => {
+          const done = isAssemblyCheckDone(id);
+          return `<div class="scene-row">
+            <strong>${String(index + 1).padStart(2, "0")}</strong>
+            <div>${title}<br><span>${desc}</span></div>
+            <button class="btn btn-secondary" data-select-key="assemblyCheck-${id}" data-select-value="${id}-approved">${done ? "Approved" : "Approve"}</button>
+          </div>`;
+        }).join("")}</div>`;
+      }
+
+      function content() {
+        if (state.stage === "inventory") return renderInventory();
+        if (state.stage === "characters") return renderCharacters();
+        if (state.stage === "references") return renderReferences();
+        if (state.stage === "storyboard") return renderStoryboard();
+        if (state.stage === "motion") return renderMotion();
+        return renderAssembly();
+      }
+
+      function qualityChecks() {
+        const selected = state.selected;
+        return [
+          ["Script/voiceover anchor", Boolean(state.notes.voiceover || state.notes.storyboard), "Every visual beat should map to story timing."],
+          ["Role-tagged reference board", Boolean(selected.reference || state.notes.reference), "References must have jobs: identity, pose, lookdev, UI, prop, start/end frame."],
+          ["Still-frame lock before motion", Boolean(selected.template && isCandidateBackedLock(0)), "Storyboard stills are refined and locked before Seedance."],
+          ["Upscale readiness", state.scenes.every((_, index) => isSceneUpscaled(index)), "Every locked still needs an artifact-backed 4K/upscaled asset before image-to-video."],
+          ["Start/end continuity chain", state.scenes.every((_, index) => isContinuityConfirmed(index)), "Use current start frame and next locked still as target frame."],
+          ["Control plus short variant plan", Boolean(selected.motionCandidate), "Record the detailed control pass and short rerun variant before video generation."],
+          ["Bridge hard actions", Boolean(selected.bridgePosePlan), "Add in-between poses for catches, throws, transformations, and logo morphs."],
+          ["Post polish plan", Boolean(selected.assemblyPlan && missingAssemblyChecks().length === 0), "Time remap, voiceover fit, opacity, and logo reveal are planned before publish."]
+        ];
+      }
+
+      function qualityScore() {
+        const checks = qualityChecks();
+        return checks.filter(([, done]) => done).length;
+      }
+
+      function renderQualityPanel() {
+        const checks = qualityChecks();
+        return `<div class="quality-panel">
+          <h3>Seedance director system</h3>
+          <p>This is the production recipe from <code>${seedanceWorkflow.source}</code>. The ledger records these checks so the next agent can produce a cinematic, continuity-safe video without rethinking the workflow.</p>
+          <div class="quality-grid">${checks.map(([label, done, detail], index) => `
+            <div class="quality-item ${done ? "done" : ""}">
+              <span class="gate-dot">${done ? "✓" : index + 1}</span>
+              <div><strong>${label}</strong><span>${detail}</span></div>
+            </div>
+          `).join("")}</div>
+        </div>`;
+      }
+
+      function findCandidateById(id) {
+        for (const scene of inventory.sceneCandidates?.scenes || []) {
+          const candidate = scene.candidates?.find((item) => item.id === id);
+          if (candidate) return { sceneIndex: scene.sceneIndex, candidate };
+        }
+        return null;
+      }
+
+      function roleAssignmentsForSelection(id) {
+        return Object.entries(state.selected)
+          .filter(([key, value]) => key.startsWith("referenceRole-") && value === id)
+          .map(([key]) => key.replace(/^referenceRole-/, ""));
+      }
+
+      function detailRows(rows) {
+        return `<div class="details-list">${rows
+          .filter(([, value]) => value !== undefined && value !== null && value !== "")
+          .map(([label, value]) => `<div class="details-row"><span>${label}</span><span>${value}</span></div>`)
+          .join("")}</div>`;
+      }
+
+      function selectedDetail() {
+        if (!state.inspected?.id) return null;
+        const { key, id } = state.inspected;
+        if (key === "candidate") {
+          const found = findCandidateById(id);
+          if (!found) return null;
+          const output = imageOutput(found.candidate);
+          const quality = candidateQuality(output);
+                  const rejected = candidateRejectedForScene(found.sceneIndex, id);
+          const locked = state.selected[`lockedStill-${found.sceneIndex}`] === id && !rejected;
+          return {
+            title: found.candidate.id,
+            desc: compactPrompt(found.candidate.prompt),
+            chips: [found.candidate.route, found.candidate.status, output?.kind || "no output", quality.label, rejected ? "rejected" : "active"],
+            rows: [
+              ["Type", "storyboard still candidate"],
+              ["Scene", found.sceneIndex],
+              ["Locked", locked ? "yes" : "no"],
+              ["Rejected", rejected ? "yes" : "no"],
+              ["Review health", quality.detail],
+              ["Output", output?.path],
+              ["Prompt", found.candidate.prompt],
+              ["Route", found.candidate.route],
+              ["Round", found.candidate.generationRound],
+              ["Adapter", found.candidate.source?.adapter],
+              ["External job", found.candidate.source?.externalJobId],
+              ["Submitted", found.candidate.submittedAt],
+              ["Completed", found.candidate.completedAt],
+            ],
+          };
+        }
+        if (key === "character") {
+          const item = inventory.characters.find((character) => character.id === id);
+          if (!item) return null;
+          return {
+            title: item.name,
+            desc: item.description || "Saved character profile.",
+            chips: [item.goBananasId ? `GB ${item.goBananasId}` : "local", "identity"],
+            rows: [
+              ["Type", "character"],
+              ["ID", item.id],
+              ["GoBananas ID", item.goBananasId],
+              ["Refs", item.referenceAssets?.join("\n")],
+              ["Roles", roleAssignmentsForSelection(id).join(", ")],
+            ],
+          };
+        }
+        if (key === "characterSource") {
+          const item = inventory.presenterPacks.find((pack) => pack.id === id);
+          if (!item) return null;
+          return {
+            title: item.name,
+            desc: item.notes,
+            chips: ["presenter pack", `${item.assets.length} assets`],
+            rows: [
+              ["Type", "presenter pack"],
+              ["ID", item.id],
+              ["Assets", item.assets.join("\n")],
+              ["Roles", roleAssignmentsForSelection(id).join(", ")],
+            ],
+          };
+        }
+        if (key === "asset") {
+          return {
+            title: id.split("/").pop(),
+            desc: id,
+            chips: [ext(id), "asset"],
+            rows: [
+              ["Type", "media asset"],
+              ["Path", id],
+              ["Role use", roleAssignmentsForSelection(id).join(", ") || "not role-tagged yet"],
+            ],
+          };
+        }
+        if (key === "playbook") {
+          const item = inventory.playbooks.find((playbook) => playbook.id === id);
+          if (!item) return null;
+          return {
+            title: item.name,
+            desc: item.desc,
+            chips: [item.provider, "playbook"],
+            rows: [["Type", "provider playbook"], ["ID", item.id], ["Provider", item.provider]],
+          };
+        }
+        if (key === "reference") {
+          const item = inventory.references.find(([referenceId]) => referenceId === id);
+          if (!item) return null;
+          return {
+            title: item[0],
+            desc: item[1],
+            chips: ["prompt reference", "guidance"],
+            rows: [
+              ["Type", "prompt/reference guide"],
+              ["ID", item[0]],
+              ["Role use", roleAssignmentsForSelection(id).join(", ") || "workflow guidance"],
+              ["Source", `references/video/${item[0]}.md or docs/reference`],
+            ],
+          };
+        }
+        if (key === "template") {
+          const item = inventory.templates.find(([templateId]) => templateId === id);
+          if (!item) return null;
+          return {
+            title: item[0],
+            desc: item[1],
+            chips: [`${item[2]} scenes`, "storyboard template"],
+            rows: [["Type", "storyboard template"], ["ID", item[0]], ["Scenes", item[2]]],
+          };
+        }
+        if (key === "schema") {
+          return {
+            title: id,
+            desc: `schemas/video/artifacts/${id}.schema.json`,
+            chips: ["JSON schema", "contract"],
+            rows: [["Type", "artifact schema"], ["Name", id], ["Path", `schemas/video/artifacts/${id}.schema.json`]],
+          };
+        }
+        return {
+          title: id,
+          desc: "Selected item.",
+          chips: [key || "item"],
+          rows: [["Type", key || "item"], ["ID", id]],
+        };
+      }
+
+      function detailsMarkup() {
+        const detail = selectedDetail();
+        if (!detail) {
+          return `<div class="details-panel empty">
+            <h4>Details</h4>
+            <p>Select Details on a character, reference, asset, template, or generated still to inspect source, prompt, role use, and output provenance here.</p>
+          </div>`;
+        }
+        return `<div class="details-panel">
+          <h4>${detail.title}</h4>
+          <p>${detail.desc}</p>
+          <div class="chips">${detail.chips.map((chip) => `<span class="chip">${chip}</span>`).join("")}</div>
+          ${detailRows(detail.rows)}
+          <div class="card-actions">
+            <button class="btn btn-secondary" data-action="clearDetails">Close details</button>
+          </div>
+        </div>`;
+      }
+
+      function ledger() {
+        return {
+          project: state.project,
+          activeGate: reviewComplete() ? "assembly" : state.stage,
+          seedanceWorkflow,
+          qualityScore: `${qualityScore()}/${qualityChecks().length}`,
+          qualityChecks: qualityChecks().map(([label, done, detail]) => ({ label, done, detail })),
+          recommendedNextAction: nextAction(),
+          existingInventory: {
+            savedProjectCharacters: inventory.characters.length,
+            presenterPacks: inventory.presenterPacks.map((pack) => pack.id),
+            mediaAssets: inventory.mediaAssets.length,
+            playbooks: inventory.playbooks.map((playbook) => playbook.id),
+            templates: inventory.templates.map(([id]) => id),
+            queuedGoBananasCharacterRequests: (inventory.characterQueue?.requests || []).filter((request) => request.status === "queued").length,
+            fulfilledGoBananasCharacterRequests: (inventory.characterQueue?.requests || []).filter((request) => request.status === "fulfilled").length,
+            failedGoBananasCharacterRequests: (inventory.characterQueue?.requests || []).filter((request) => request.status === "failed").length,
+            queuedGoBananasStillRequests: (inventory.generationQueue?.requests || []).filter((request) => request.status === "queued").length,
+            fulfilledGoBananasStillRequests: (inventory.generationQueue?.requests || []).filter((request) => request.status === "fulfilled").length
+          },
+          selections: state.selected,
+          notes: state.notes,
+          inspected: state.inspected,
+          savedArtifact: state.savedArtifact,
+          artifactsToWrite: [
+            "characters/characters.json",
+            "gobananas-character-iteration-requests.json",
+            "reference-board.json",
+            "reference-sheets.json",
+            "scene-candidates.json",
+            "scene-selection.json",
+            "storyboard-still-generation-requests.json",
+            "director-seedance-plan.json",
+            "storyboard-stills-plan.json",
+            "gobananas-character-brief.json",
+            "post-plan.json",
+            "review-report.json"
+          ]
+        };
+      }
+
+      function handoffMarkup() {
+        const savedPath = state.savedArtifact?.path || `projects/${state.project}/artifacts/review-ui-ledger.json`;
+        const rootArg = inventory.root || "<repo-root>";
+        const launchCommand = `vclaw video review-ui --project ${state.project} --root ${rootArg}`;
+        const lifecycle = state.savedArtifact?.lifecycle || null;
+        const report = currentReviewReport();
+        const metrics = report?.metrics || {};
+        const reportSummary = report
+          ? `<p style="margin-top:10px">Review report</p><code>${report.verdict || "unknown"} · locked ${metrics.lockedSceneCount ?? "?"}/${metrics.expectedSceneCount ?? "?"} · character mismatches ${metrics.characterMismatchCount ?? "?"} · 4k assets ${metrics.artifactBackedUpscaleCount ?? 0}/${metrics.upscaleMarkerCount ?? 0} · publish ${metrics.publishReady ? "ready" : "not ready"}</code>`
+          : "";
+        const derived = state.savedArtifact?.derivedArtifacts || [
+          { name: "reference-board.json", path: `projects/${state.project}/artifacts/reference-board.json` },
+          { name: "director-seedance-plan.json", path: `projects/${state.project}/artifacts/director-seedance-plan.json` },
+          { name: "storyboard-stills-plan.json", path: `projects/${state.project}/artifacts/storyboard-stills-plan.json` },
+          { name: "scene-selection.json", path: `projects/${state.project}/artifacts/scene-selection.json` },
+          { name: "gobananas-character-brief.json", path: `projects/${state.project}/artifacts/gobananas-character-brief.json` },
+          { name: "post-plan.json", path: `projects/${state.project}/artifacts/post-plan.json` },
+          { name: "review-report.json", path: `projects/${state.project}/artifacts/review-report.json` }
+        ];
+                return `<div class="handoff">
+                  <strong>Agent handoff</strong>
+                  <p>${handoffSummaryText()}</p>
+                  <div class="card-actions">
+                    <button class="btn btn-primary" data-stage-jump="storyboard">Review Go Bananas images</button>
+                    <button class="btn btn-secondary" data-stage-jump="motion">Check motion plan</button>
+                  </div>
+                  ${visualStoryboardStrip(true)}
+                  <p style="margin-top:10px">Plain-English summary</p>
+                  <code>${storySummaryText()}</code>
+                  ${finalVideoPath() ? `<p style="margin-top:10px">Final video</p>${renderFinalVideoBlock(true)}<code>${finalVideoPath()}</code>` : ""}
+                  ${lifecycle ? `<p style="margin-top:10px">Lifecycle</p><code>${lifecycle.status} · current stage ${lifecycle.currentStage} · last completed ${lifecycle.lastCompletedStage}</code>` : ""}
+                  ${reportSummary}
+                  <details>
+                    <summary>Operator command and artifact paths</summary>
+                    <code>${launchCommand}</code>
+                    <p style="margin-top:10px">Ledger artifact</p>
+                    <code>${savedPath}</code>
+                    <p style="margin-top:10px">Derived artifacts</p>
+                    <code>${derived.map((artifact) => artifact.path || artifact.name).join("\n")}</code>
+                  </details>
+                  <p style="margin-top:10px">Next decision</p>
+                  <code>${nextAction()}</code>
+                </div>`;
+      }
+
+      function nextAction() {
+        const selected = state.selected;
+        if (savedReviewPassed()) return "Ready for publish handoff.";
+        if (!selected.character && !selected.characterSource && !selected.characterPlan) return "Choose a saved character, presenter pack, or generate GoBananas character iterations.";
+        if (!selected.reference) return "Attach role-tagged references for identity, motion, and lookdev.";
+        if (!selected["referenceRole-identity"]) return "Assign the identity reference role before image prompting.";
+        if (!selected.template) return "Choose a storyboard template.";
+        if (!selected["draftStill-0"]) return "Draft the first storyboard still image.";
+        const nextUnlockedScene = state.scenes.findIndex((_, index) => !isCandidateBackedLock(index));
+        if (nextUnlockedScene >= 0) return `Lock a generated scene-${String(nextUnlockedScene).padStart(2, "0")} candidate before generating motion.`;
+        const nextNotUpscaledScene = state.scenes.findIndex((_, index) => !isSceneUpscaled(index));
+        if (nextNotUpscaledScene >= 0) return `Attach the artifact-backed 4K scene-${String(nextNotUpscaledScene).padStart(2, "0")} still before Seedance.`;
+        const nextUnconfirmedContinuityScene = state.scenes.findIndex((_, index) => !isContinuityConfirmed(index));
+        if (nextUnconfirmedContinuityScene >= 0) return `Confirm continuity frame chaining for scene-${String(nextUnconfirmedContinuityScene).padStart(2, "0")}.`;
+        if (!selected.bridgePosePlan) return "Require bridge poses for hard actions before Seedance motion.";
+        if (!selected.motionCandidate) return "Choose the Seedance motion plan.";
+        if (!selected.assemblyPlan) return "Approve a final assembly plan.";
+        const nextMissingAssembly = missingAssemblyChecks()[0];
+        if (nextMissingAssembly) return `Approve final assembly check: ${nextMissingAssembly[1]}.`;
+        return "Ready to finish review and write artifacts.";
+      }
+
+      function savedReviewPassed() {
+        const report = currentReviewReport();
+        return Boolean(report?.verdict === "pass" && report?.metrics?.publishReady === true);
+      }
+
+      function currentReviewReport() {
+        return state.savedArtifact?.reviewReport || inventory.reviewReport || null;
+      }
+
+      function handoffSummaryText() {
+        if (savedReviewPassed()) {
+          return "Review is complete. Canonical checkpoints are hydrated and the project is ready for publish.";
+        }
+        const report = currentReviewReport();
+        if (report?.verdict === "retry") {
+          return "Review evidence is saved, but the handoff still needs fixes before publish.";
+        }
+        if (state.savedArtifact?.path) {
+          return "Saved review ledger and derived director artifacts are ready for the next agent step.";
+        }
+        return "Save progress or finish review to write the ledger and director artifacts.";
+      }
+
+      function recommendedButtonLabel() {
+        if (state.stage === "inventory") return "Go to characters";
+        if (state.stage === "characters") return "Request iterations";
+        if (state.stage === "references") return "Attach Seedance guide";
+        if (state.stage === "storyboard") return "Use product template";
+        if (state.stage === "motion") return "Choose control pass";
+        return "Approve balanced cut";
+      }
+
+      function recommendedAction() {
+        if (state.stage === "inventory") return setStage("characters");
+        if (state.stage === "characters") return choose("characterPlan", "generate-gobananas-iterations");
+        if (state.stage === "references") return choose("reference", "seedance-ugc-formulas");
+        if (state.stage === "storyboard") return choose("template", "product-commercial-4");
+        if (state.stage === "motion") return choose("motionCandidate", "control-pass");
+        return choose("assemblyPlan", "balanced");
+      }
+
+      function nextStoryboardSceneIndex() {
+        const nextWithoutPrompt = state.scenes.findIndex((_, index) => !state.selected[`draftStill-${index}`]);
+        if (nextWithoutPrompt >= 0) return nextWithoutPrompt;
+        const nextWithoutApprovedImage = state.scenes.findIndex((_, index) => !approvedStoryboardStillId(index) && !isCandidateBackedLock(index));
+        if (nextWithoutApprovedImage >= 0) return nextWithoutApprovedImage;
+        const nextWithoutUpscale = state.scenes.findIndex((_, index) => !isSceneUpscaled(index));
+        return nextWithoutUpscale >= 0 ? nextWithoutUpscale : 0;
+      }
+
+              function jumpToNextStoryboardScene() {
+                state.stage = "storyboard";
+                const sceneIndex = nextStoryboardSceneIndex();
+                state.activeSceneIndex = sceneIndex;
+                state.statusMessage = `Scene ${String(sceneIndex).padStart(2, "0")} is the next storyboard image decision.`;
+                render();
+        const node = document.getElementById(`scene-review-${sceneIndex}`);
+        if (node) node.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+
+      function applyDirectorDefaults() {
+        state.selected = {
+          ...state.selected,
+          characterPlan: state.selected.character || state.selected.characterSource ? state.selected.characterPlan : "generate-gobananas-iterations",
+          reference: state.selected.reference || "seedance-ugc-formulas",
+          "referenceRole-identity": state.selected["referenceRole-identity"] || "identity-assigned",
+          "referenceRole-pose": state.selected["referenceRole-pose"] || "pose-assigned",
+          "referenceRole-lookdev": state.selected["referenceRole-lookdev"] || "lookdev-assigned",
+          "referenceRole-background": state.selected["referenceRole-background"] || "background-assigned",
+          template: state.selected.template || "product-commercial-4",
+          "draftStill-0": state.selected["draftStill-0"],
+          "editStill-0": state.selected["editStill-0"],
+          "lockedStill-0": state.selected["lockedStill-0"],
+          "upscaledStill-0": state.selected["upscaledStill-0"],
+          continuityPlan: state.selected.continuityPlan || "start-end-frame-chain",
+          bridgePosePlan: state.selected.bridgePosePlan || "bridge-hard-actions",
+          motionCandidate: state.selected.motionCandidate || "control-pass",
+          variantStrategy: state.selected.variantStrategy || "control-plus-short-variant",
+          assemblyPlan: state.selected.assemblyPlan || "balanced"
+        };
+        state.notes.reference = state.notes.reference || "Use references by role only: identity for character, pose for body language, lookdev for material/lighting, UI screenshots for structure, and previous frames for continuity.";
+        state.notes.storyboard = state.notes.storyboard || "Create and refine still frames first. Preserve identity, camera, lighting, composition, and background during edits. Lock stills before motion.";
+        state.notes.motion = state.notes.motion || "Seedance: use image 1 as start and image 2 as target. Static camera unless the scene demands movement. Generate a detailed control pass, then a short variant. Add bridge poses for difficult motion.";
+        state.notes.voiceover = state.notes.voiceover || "Map each scene to voiceover timing before final assembly; use post retiming for slow generated clips.";
+        state.stage = "assembly";
+        state.blockedMessage = "";
+        state.statusMessage = "Director defaults applied from the Seedance workflow. Save progress to hand this to the agent.";
+        render();
+      }
+
+      function missingForStage(id = state.stage) {
+        if (reviewComplete()) return [];
+        const currentIndex = stages.findIndex((stage) => stage.id === id);
+        const prerequisiteMissing = stages
+          .slice(0, Math.max(0, currentIndex))
+          .filter((stage) => stage.id !== "inventory" && !gateDone(stage.id))
+          .map((stage) => `Finish ${stage.label} first: ${ownMissingForStage(stage.id)[0] || gateRequirement(stage.id)}`);
+        return [...prerequisiteMissing, ...ownMissingForStage(id)];
+      }
+
+      function ownMissingForStage(id = state.stage) {
+        const selected = state.selected;
+        if (id === "inventory") {
+          const missing = [];
+          if (!state.project || !visibleProjects().some((project) => project.id === state.project)) missing.push("Select a valid project.");
+          if (!inventory.templates.length) missing.push("Load storyboard templates from the project inventory.");
+          if (!inventory.references.length) missing.push("Load prompt/reference guides from the project inventory.");
+          if (!inventory.schemas.length) missing.push("Load artifact schemas from the project inventory.");
+          if (window.location.protocol !== "file:" && !hasLiveInventory()) missing.push("Wait for the localhost API inventory to load.");
+          return missing;
+        }
+        if (id === "characters") {
+          return selected.character || selected.characterSource || selected.characterPlan
+            ? []
+            : ["Choose a saved character, existing presenter pack, or request GoBananas character iterations."];
+        }
+        if (id === "references") {
+          const hasReference = selected.reference || state.notes.reference;
+          const hasIdentityRole = selected["referenceRole-identity"];
+          return hasReference && hasIdentityRole
+            ? []
+            : [
+                ...(!hasReference ? ["Attach at least one prompt/reference guide or save a reference note."] : []),
+                ...(!hasIdentityRole ? ["Assign at least the identity reference role."] : []),
+              ];
+        }
+        if (id === "storyboard") {
+          const missing = [];
+          if (!selected.template) missing.push("Choose a storyboard template.");
+          const undraftedScenes = state.scenes
+            .map((_, index) => index)
+            .filter((sceneIndex) => !selected[`draftStill-${sceneIndex}`]);
+          if (undraftedScenes.length) {
+            missing.push(`Choose a draft candidate for scene ${undraftedScenes.map((sceneIndex) => String(sceneIndex).padStart(2, "0")).join(", ")}.`);
+          }
+          const unlockedScenes = state.scenes
+            .map((_, index) => index)
+            .filter((sceneIndex) => !isCandidateBackedLock(sceneIndex));
+          if (unlockedScenes.length) {
+            missing.push(`Lock real generated candidates for scene ${unlockedScenes.map((sceneIndex) => String(sceneIndex).padStart(2, "0")).join(", ")}.`);
+          }
+          const notUpscaledScenes = state.scenes
+            .map((_, index) => index)
+            .filter((sceneIndex) => !isSceneUpscaled(sceneIndex));
+          if (notUpscaledScenes.length) {
+            missing.push(`Attach artifact-backed 4K/upscaled stills for scene ${notUpscaledScenes.map((sceneIndex) => String(sceneIndex).padStart(2, "0")).join(", ")}.`);
+          }
+          return missing;
+        }
+        if (id === "motion") {
+          const missing = [];
+          const unconfirmedContinuityScenes = state.scenes
+            .map((_, index) => index)
+            .filter((sceneIndex) => !isContinuityConfirmed(sceneIndex));
+          if (unconfirmedContinuityScenes.length) {
+            missing.push(`Confirm continuity chaining for scene ${unconfirmedContinuityScenes.map((sceneIndex) => String(sceneIndex).padStart(2, "0")).join(", ")}.`);
+          }
+          if (!selected.bridgePosePlan) missing.push("Require bridge poses for hard actions.");
+          if (!selected.motionCandidate) missing.push("Choose the Seedance motion plan to run after storyboard stills are approved.");
+          return missing;
+        }
+        const missing = [];
+        if (!selected.assemblyPlan) missing.push("Approve a final assembly plan.");
+        const openChecks = missingAssemblyChecks();
+        if (openChecks.length) {
+          missing.push(`Approve publish checks: ${openChecks.map(([, title]) => title).join(", ")}.`);
+        }
+        return missing;
+      }
+
+      function missingMarkup() {
+        const missing = missingForStage();
+        if (!missing.length && !state.blockedMessage) return "";
+        const title = state.blockedMessage || "Before continuing, finish this gate:";
+        return `<ul class="missing-list"><li><strong>${title}</strong></li>${missing.map((item) => `<li>${item}</li>`).join("")}</ul>`;
+      }
+
+      function gateRequirement(id = state.stage) {
+        if (id === "inventory") return "Review the pantry, then start with characters.";
+        if (id === "characters") return "Choose a saved character, presenter pack, or request GoBananas iterations.";
+        if (id === "references") return "Attach references and assign identity role.";
+        if (id === "storyboard") return "Draft, edit, lock, and upscale scene-00 still.";
+        if (id === "motion") return "Prepare the Seedance motion plan.";
+        return "Approve one assembly plan.";
+      }
+
+      function canContinue() {
+        return missingForStage().length === 0;
+      }
+
+      function reviewComplete() {
+        return savedReviewPassed();
+      }
+
+      function firstIncompleteStage() {
+        if (reviewComplete()) return stages[stages.length - 1];
+        return stages.find((stage) => !gateSelfDone(stage.id)) || stages[stages.length - 1];
+      }
+
+      function snapStageToFirstIncomplete() {
+        const firstIncomplete = firstIncompleteStage();
+        if (!firstIncomplete) return;
+        const currentIndex = stageIndex();
+        const firstIncompleteIndex = stages.findIndex((stage) => stage.id === firstIncomplete.id);
+        if (currentIndex < 0 || currentIndex > firstIncompleteIndex) {
+          state.stage = firstIncomplete.id;
+          if (state.stage === "storyboard") state.activeSceneIndex = clampSceneIndex(state.activeSceneIndex);
+          if (!reviewComplete()) {
+            state.statusMessage = `Showing first blocking gate: ${firstIncomplete.label}.`;
+          }
+        }
+      }
+
+      function stageNowTitle(stage) {
+        if (stage.id === "characters" && inventory.characters.length) {
+          return "Saved project character is available.";
+        }
+        return stage.now;
+      }
+
+      function stageHelpText(stage) {
+        if (stage.id === "characters" && inventory.characters.length) {
+          return "Select Proofy or another saved character, then continue with role-tagged references and storyboard stills.";
+        }
+        return stage.help;
+      }
+
+      function render() {
+        const projects = visibleProjects();
+        if ((!state.project || !projects.some((project) => project.id === state.project)) && projects[0]) {
+          state.project = projects[0].id;
+        }
+        snapStageToFirstIncomplete();
+        const stage = currentStage();
+        const missing = missingForStage();
+        const ready = canContinue();
+        document.getElementById("stepMeta").innerHTML = `<span class="step-pill">Step ${stageIndex() + 1} of ${stages.length}</span><span>${gateRequirement()}</span>`;
+        document.getElementById("kicker").textContent = stage.kicker;
+        document.getElementById("title").textContent = stage.title;
+        document.getElementById("description").textContent = stage.desc;
+        document.getElementById("nowTitle").textContent = stageNowTitle(stage);
+        document.getElementById("nowCopy").innerHTML = `${stageHelpText(stage)}${missingMarkup()}`;
+        document.getElementById("nowButton").textContent = recommendedButtonLabel();
+        const nowBox = document.querySelector(".now-box");
+        nowBox.classList.toggle("blocked", Boolean(state.blockedMessage));
+        nowBox.classList.toggle("ready", ready && state.stage !== "inventory");
+        const feedback = document.getElementById("actionFeedback");
+        const feedbackText = state.blockedMessage || state.statusMessage || (ready ? "This step is ready. Continue when you are finished reviewing it." : missing[0] || "Use the recommended action above.");
+        feedback.textContent = feedbackText;
+        feedback.classList.toggle("blocked", Boolean(state.blockedMessage));
+        feedback.classList.toggle("ready", !state.blockedMessage && (Boolean(state.statusMessage) || ready));
+        document.getElementById("qualityPanel").innerHTML = renderQualityPanel();
+        document.getElementById("content").innerHTML = content();
+        document.getElementById("stageRail").innerHTML = stages.map((item, index) => {
+          const done = gateDone(item.id);
+          return `<button class="stage-button ${state.stage === item.id ? "active" : ""} ${done ? "done" : ""}" data-stage-jump="${item.id}">
+            <span class="stage-number">${done ? "✓" : index + 1}</span>
+            <span class="stage-title">${item.label}</span>
+            <span class="stage-sub">${item.sub}</span>
+          </button>`;
+        }).join("");
+        document.getElementById("projectSelect").innerHTML = projects.map((project) => `<option value="${project.id}" ${state.project === project.id ? "selected" : ""}>${project.name} — ${project.status}</option>`).join("");
+        const choices = Object.keys(state.selected).length;
+        document.getElementById("choiceCount").textContent = choices;
+        const completeGates = stages.filter((item) => gateDone(item.id)).length;
+        document.getElementById("gateCount").textContent = Math.max(0, stages.length - completeGates);
+        document.getElementById("gateChecks").innerHTML = stages.map((item, index) => {
+          const done = gateDone(item.id);
+          return `<div class="gate-check ${done ? "done" : ""}"><span class="gate-dot">${done ? "✓" : index + 1}</span><span>${item.label}</span></div>`;
+        }).join("");
+        document.getElementById("handoff").innerHTML = handoffMarkup();
+        document.getElementById("detailsPanel").innerHTML = detailsMarkup();
+        document.getElementById("ledger").textContent = JSON.stringify(ledger(), null, 2);
+        const continueButton = document.getElementById("continueButton");
+        continueButton.textContent = reviewComplete() ? "Review complete" : ready ? (stageIndex() === stages.length - 1 ? "Finish review" : "Continue") : "Show what is missing";
+        continueButton.classList.toggle("needs-work", !ready);
+        document.getElementById("footerStatus").textContent = state.statusMessage || (reviewComplete() ? "Review artifacts saved. Ready for publish handoff." : ready ? "This gate is ready." : missing[0] || "Use the recommended action above.");
+        bind();
+        persistLocalProgress();
+      }
+
+      function gateDone(id) {
+        if (reviewComplete()) return true;
+        const currentIndex = stages.findIndex((stage) => stage.id === id);
+        if (currentIndex > 0) {
+          const previousIncomplete = stages
+            .slice(0, currentIndex)
+            .some((stage) => !gateSelfDone(stage.id));
+          if (previousIncomplete) return false;
+        }
+        return gateSelfDone(id);
+      }
+
+      function gateSelfDone(id) {
+        if (id === "inventory") return inventoryReady();
+        if (id === "characters") return Boolean(state.selected.character || state.selected.characterSource || state.selected.characterPlan);
+        if (id === "references") return Boolean((state.selected.reference || state.notes.reference) && state.selected["referenceRole-identity"]);
+        if (id === "storyboard") return Boolean(
+          state.selected.template
+          && state.scenes.every((_, index) => state.selected[`draftStill-${index}`])
+          && state.scenes.every((_, index) => isCandidateBackedLock(index))
+          && state.scenes.every((_, index) => isSceneUpscaled(index))
+        );
+        if (id === "motion") return Boolean(
+          state.selected.motionCandidate
+          && state.selected.bridgePosePlan
+          && state.scenes.every((_, index) => isContinuityConfirmed(index))
+        );
+        return Boolean(state.selected.assemblyPlan && missingAssemblyChecks().length === 0);
+      }
+
+      function bind() {
+        document.querySelectorAll("[data-stage-jump]").forEach((el) => {
+          el.addEventListener("click", () => setStage(el.dataset.stageJump));
+        });
+        document.querySelectorAll("[data-select-key]").forEach((el) => {
+          el.addEventListener("click", () => choose(el.dataset.selectKey, el.dataset.selectValue));
+        });
+        document.querySelectorAll("[data-save-note]").forEach((el) => {
+          el.addEventListener("click", () => {
+            const key = el.dataset.saveNote;
+            const input = document.getElementById(`${key}Note`);
+            if (input) state.notes[key] = input.value;
+            state.statusMessage = "Note saved in this browser. Use Save progress to write the project ledger.";
+            render();
+          });
+        });
+        document.querySelectorAll("[data-inspect]").forEach((el) => {
+          el.addEventListener("click", () => {
+            state.inspected = {
+              key: el.dataset.inspectKey || "item",
+              id: el.dataset.inspect,
+            };
+            state.statusMessage = "Details loaded in the project state panel.";
+            render();
+          });
+        });
+        document.querySelectorAll("[data-action]").forEach((el) => {
+          el.addEventListener("click", () => handleAction(el.dataset.action, el.dataset));
+        });
+        const project = document.getElementById("projectSelect");
+        if (project) project.addEventListener("change", () => {
+          state.project = project.value;
+          if (window.location.protocol === "file:") {
+            render();
+            return;
+          }
+          window.location.href = `/review-ui?project=${encodeURIComponent(project.value)}`;
+        });
+        const filter = document.getElementById("filter");
+        if (filter) filter.addEventListener("input", () => { state.filter = filter.value; render(); });
+        const tab = document.getElementById("tab");
+        if (tab) tab.addEventListener("change", () => { state.tab = tab.value; render(); });
+      }
+
+      async function saveLedgerToProject() {
+        if (window.location.protocol === "file:") {
+          return { skipped: true, reason: "file preview" };
+        }
+        const response = await fetch(`/api/review-decision?project=${encodeURIComponent(state.project)}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(ledger())
+        });
+        if (!response.ok) throw new Error(await response.text());
+        return response.json();
+      }
+
+      async function recordStillCandidateFromForm(sceneIndex) {
+        if (window.location.protocol === "file:") {
+          throw new Error("Open the localhost review UI to record candidates.");
+        }
+        if (!isSceneWorkflowEnabled(sceneIndex)) {
+          throw new Error(sceneWorkflowMessage(sceneIndex));
+        }
+        const imageUrl = document.getElementById(`stillUrl-${sceneIndex}`)?.value.trim();
+        const imageId = document.getElementById(`stillImageId-${sceneIndex}`)?.value.trim();
+        const prompt = document.getElementById(`stillPrompt-${sceneIndex}`)?.value.trim();
+        if (!imageUrl) throw new Error("Paste a generated image URL first.");
+        const response = await fetch(`/api/storyboard-still-candidate?project=${encodeURIComponent(state.project)}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            sceneIndex,
+            imageUrl,
+            ...(imageId ? { imageId } : {}),
+            ...(prompt ? { prompt } : {}),
+            notes: "Recorded from review UI storyboard paste form."
+          })
+        });
+        if (!response.ok) throw new Error(await response.text());
+        const result = await response.json();
+        const scene = candidateScene(sceneIndex);
+        if (!(scene.candidates || []).some((candidate) => candidate.id === result.candidate.id)) {
+          scene.candidates = [...(scene.candidates || []), result.candidate];
+        }
+        if (!inventory.sceneCandidates.scenes.some((entry) => entry.sceneIndex === sceneIndex)) {
+          inventory.sceneCandidates.scenes = [...(inventory.sceneCandidates.scenes || []), scene];
+        }
+        state.selected[`draftStill-${sceneIndex}`] = result.candidate.id;
+        state.inspected = { key: "candidate", id: result.candidate.id };
+        state.savedArtifact = await saveLedgerToProject();
+        state.statusMessage = `${result.reused ? "Reused existing" : "Recorded"} ${result.candidate.id}. Review the card, request edits if needed, then lock it.`;
+        return result;
+      }
+
+      async function recordUpscaledStillFromForm(sceneIndex) {
+        if (window.location.protocol === "file:") {
+          throw new Error("Open the localhost review UI to attach upscaled stills.");
+        }
+        const sourceCandidateId = state.selected[`lockedStill-${sceneIndex}`];
+        if (!sourceCandidateId || !isCandidateBackedLock(sceneIndex)) {
+          throw new Error("Lock a real storyboard candidate before attaching the 4k asset.");
+        }
+        const imageUrl = document.getElementById(`upscaleUrl-${sceneIndex}`)?.value.trim();
+        const imageId = document.getElementById(`upscaleImageId-${sceneIndex}`)?.value.trim();
+        if (!imageUrl) throw new Error("Paste the 4k/upscaled image URL first.");
+        const response = await fetch(`/api/upscaled-still-candidate?project=${encodeURIComponent(state.project)}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            sceneIndex,
+            sourceCandidateId,
+            imageUrl,
+            ...(imageId ? { imageId } : {}),
+            prompt: `Artifact-backed 4k/upscaled still for ${sourceCandidateId}.`
+          })
+        });
+        if (!response.ok) throw new Error(await response.text());
+        const result = await response.json();
+        const scene = candidateScene(sceneIndex);
+        if (!(scene.candidates || []).some((candidate) => candidate.id === result.candidate.id)) {
+          scene.candidates = [...(scene.candidates || []), result.candidate];
+        }
+        if (!inventory.sceneCandidates.scenes.some((entry) => entry.sceneIndex === sceneIndex)) {
+          inventory.sceneCandidates.scenes = [...(inventory.sceneCandidates.scenes || []), scene];
+        }
+        state.selected[`upscaledStill-${sceneIndex}`] = result.candidate.id;
+        state.inspected = { key: "candidate", id: result.candidate.id };
+        state.savedArtifact = await saveLedgerToProject();
+        state.statusMessage = `${result.reused ? "Reused existing" : "Attached"} ${result.candidate.id} as the artifact-backed 4k still.`;
+        return result;
+      }
+
+      async function queueStillGenerationRequest(sceneIndex) {
+        if (window.location.protocol === "file:") {
+          throw new Error("Open the localhost review UI to queue GoBananas requests.");
+        }
+        if (!isSceneWorkflowEnabled(sceneIndex)) {
+          throw new Error(sceneWorkflowMessage(sceneIndex));
+        }
+        const prompt = document.getElementById(`stillPrompt-${sceneIndex}`)?.value.trim() || defaultStillPrompt(sceneIndex);
+        const negativePrompt = document.getElementById(`stillNegative-${sceneIndex}`)?.value.trim() || seedanceWorkflow.negativeGuidance.join(", ");
+        const response = await fetch(`/api/storyboard-still-request?project=${encodeURIComponent(state.project)}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            sceneIndex,
+            prompt,
+            negativePrompt,
+            aspectRatio: "16:9",
+            notes: "Queued from review UI. Agent should run Go Bananas MCP generate_image, then record the returned image URL as a storyboard still candidate."
+          })
+        });
+        if (!response.ok) throw new Error(await response.text());
+        const result = await response.json();
+        inventory.generationQueue = result.queue;
+        state.notes[`stillPrompt-${sceneIndex}`] = prompt;
+        state.notes[`stillNegative-${sceneIndex}`] = negativePrompt;
+        state.statusMessage = `${result.request.id} queued for GoBananas.`;
+        return result;
+      }
+
+      async function queueCharacterIterationRequest() {
+        if (window.location.protocol === "file:") {
+          throw new Error("Open the localhost review UI to queue character iterations.");
+        }
+        const characterName = document.getElementById("characterName")?.value.trim() || "Komo";
+        const prompt = document.getElementById("characterPrompt")?.value.trim() || defaultCharacterPrompt();
+        const negativePrompt = document.getElementById("characterNegative")?.value.trim() || "inconsistent identity, realistic human photo, readable text, logos, clutter, distorted anatomy, extra limbs";
+        const count = Number(document.getElementById("characterCount")?.value || 4);
+        const response = await fetch(`/api/character-iteration-request?project=${encodeURIComponent(state.project)}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            characterName,
+            prompt,
+            negativePrompt,
+            count: Number.isFinite(count) && count > 0 ? Math.min(4, Math.round(count)) : 4,
+            aspectRatio: "square",
+            notes: "Queued from review UI. Agent should run Go Bananas MCP generate_image for character iterations, then save the winning character profile."
+          })
+        });
+        if (!response.ok) throw new Error(await response.text());
+        const result = await response.json();
+        inventory.characterQueue = result.queue;
+        state.selected.characterPlan = "generate-gobananas-iterations";
+        state.notes.characterName = characterName;
+        state.notes.characterPrompt = prompt;
+        state.notes.characterNegative = negativePrompt;
+        state.notes.characterCount = String(count);
+        state.statusMessage = `${result.request.id} queued for GoBananas character iterations.`;
+        return result;
+      }
+
+      async function handleAction(action, dataset = {}) {
+        if (action === "next") {
+          const missing = missingForStage();
+          if (missing.length) {
+            state.blockedMessage = "Not ready to continue yet.";
+            render();
+            return;
+          }
+          if (stageIndex() === stages.length - 1) {
+            try {
+              state.selected.reviewCompleteAt = new Date().toISOString();
+              state.savedArtifact = await saveLedgerToProject();
+              state.blockedMessage = "";
+              state.statusMessage = `Review saved to ${state.savedArtifact.path}`;
+            } catch (error) {
+              state.blockedMessage = `Could not save the review ledger: ${error.message}`;
+              state.statusMessage = "";
+            }
+            render();
+            return;
+          }
+          const next = Math.min(stages.length - 1, stageIndex() + 1);
+          setStage(stages[next].id);
+        } else if (action === "prev") {
+          const prev = Math.max(0, stageIndex() - 1);
+          setStage(stages[prev].id);
+        } else if (action === "reset") {
+          state.selected = {};
+          state.notes = {};
+          state.blockedMessage = "";
+          state.statusMessage = "Reloading saved project ledger...";
+          state.savedArtifact = null;
+          state.inspected = null;
+          localStorage.removeItem(storageKey());
+          if (window.location.protocol !== "file:") {
+            await loadInventoryFromApi();
+          } else {
+            state.stage = "inventory";
+          }
+          render();
+        } else if (action === "clearFilter") {
+          state.filter = "";
+          render();
+        } else if (action === "explainCandidateLock") {
+          state.blockedMessage = "Lock a generated candidate card below. Row-level markers are process notes, not valid downstream selections.";
+          state.statusMessage = "";
+          render();
+        } else if (action === "recordStillCandidate") {
+          try {
+            const sceneIndex = Number(dataset.sceneIndex || 0);
+            await recordStillCandidateFromForm(sceneIndex);
+            state.blockedMessage = "";
+          } catch (error) {
+            state.blockedMessage = `Could not record still candidate: ${error.message}`;
+            state.statusMessage = "";
+          }
+          render();
+        } else if (action === "recordUpscaledStill") {
+          try {
+            const sceneIndex = Number(dataset.sceneIndex || 0);
+            await recordUpscaledStillFromForm(sceneIndex);
+            state.blockedMessage = "";
+          } catch (error) {
+            state.blockedMessage = `Could not attach 4k asset: ${error.message}`;
+            state.statusMessage = "";
+          }
+          render();
+        } else if (action === "queueStillRequest") {
+          try {
+            const sceneIndex = Number(dataset.sceneIndex || 0);
+            await queueStillGenerationRequest(sceneIndex);
+            state.blockedMessage = "";
+          } catch (error) {
+            state.blockedMessage = `Could not queue GoBananas request: ${error.message}`;
+            state.statusMessage = "";
+          }
+          render();
+        } else if (action === "queueCharacterRequest") {
+          try {
+            await queueCharacterIterationRequest();
+            state.blockedMessage = "";
+          } catch (error) {
+            state.blockedMessage = `Could not queue character iterations: ${error.message}`;
+            state.statusMessage = "";
+          }
+          render();
+        } else if (action === "rejectCandidate") {
+          const candidateId = dataset.candidateId;
+          if (candidateId) {
+            const rejected = new Set(rejectedStillCandidateIds());
+            rejected.add(candidateId);
+            state.selected.rejectedStillCandidates = [...rejected].sort();
+            for (const key of ["lockedStill", "draftStill", "editStill", "upscaledStill"]) {
+              const selectionKey = `${key}-${dataset.sceneIndex || 0}`;
+              const selectionValue = String(state.selected[selectionKey] || "");
+              const shouldClear = key === "editStill" || key === "upscaledStill"
+                ? selectionValue.startsWith(candidateId)
+                : selectionValue === candidateId;
+              if (shouldClear) {
+                delete state.selected[selectionKey];
+              }
+            }
+            state.inspected = { key: "candidate", id: candidateId };
+            state.blockedMessage = "";
+            state.statusMessage = `${candidateId} rejected. It will not count as a locked still or downstream selection.`;
+            try {
+              state.savedArtifact = await saveLedgerToProject();
+              state.statusMessage = `${candidateId} rejected and saved.`;
+            } catch (error) {
+              state.blockedMessage = `Candidate rejected locally, but could not save: ${error.message}`;
+            }
+          }
+          render();
+        } else if (action === "restoreCandidate") {
+          const candidateId = dataset.candidateId;
+          if (candidateId) {
+            state.selected.rejectedStillCandidates = rejectedStillCandidateIds().filter((id) => id !== candidateId);
+            state.inspected = { key: "candidate", id: candidateId };
+            state.blockedMessage = "";
+            state.statusMessage = `${candidateId} restored for review.`;
+            try {
+              state.savedArtifact = await saveLedgerToProject();
+              state.statusMessage = `${candidateId} restored and saved.`;
+            } catch (error) {
+              state.blockedMessage = `Candidate restored locally, but could not save: ${error.message}`;
+            }
+          }
+          render();
+        } else if (action === "recommend" || action === "recommendedAction") {
+          recommendedAction();
+                } else if (action === "recommendStoryboardScene") {
+                  jumpToNextStoryboardScene();
+                } else if (action === "selectStoryboardScene") {
+                  const sceneIndex = clampSceneIndex(dataset.sceneIndex);
+                  state.activeSceneIndex = sceneIndex;
+                  state.stage = "storyboard";
+                  state.blockedMessage = "";
+                  state.statusMessage = `Scene ${String(sceneIndex).padStart(2, "0")} selected for image review.`;
+                  render();
+                } else if (action === "applyDirectorDefaults") {
+          applyDirectorDefaults();
+        } else if (action === "autoRoleReferences") {
+          const referenceSource = state.selected.reference || "docs/REFERENCE_VIDEO_SEEDANCE_MOTION_DESIGN_WORKFLOW.md";
+          const characterSource = state.selected.character || state.selected.characterSource || state.selected.characterPlan || "selected-character-source";
+          const assetSource = state.selected.asset || referenceSource;
+          state.selected["referenceRole-identity"] = characterSource;
+          state.selected["referenceRole-pose"] = assetSource;
+          state.selected["referenceRole-lookdev"] = referenceSource;
+          state.selected["referenceRole-background"] = assetSource;
+          state.selected["referenceRole-ui-structure"] = referenceSource;
+          state.selected["referenceRole-prop"] = assetSource;
+          if (state.selected["lockedStill-0"]) state.selected["referenceRole-start-frame"] = state.selected["lockedStill-0"];
+          if (state.selected["lockedStill-1"]) state.selected["referenceRole-end-frame"] = state.selected["lockedStill-1"];
+          state.selected["referenceRole-texture"] = characterSource;
+          state.statusMessage = "Reference roles assigned. Save progress to write the reference board.";
+          render();
+        } else if (action === "assignSelectedReferenceRoles") {
+          const referenceSource = state.selected.reference || state.selected.asset || state.selected.character || state.selected.characterSource;
+          if (!referenceSource) {
+            state.blockedMessage = "Select a prompt reference, asset, or character first.";
+            state.statusMessage = "";
+          } else {
+            ["identity", "pose", "lookdev", "background", "ui-structure", "prop", "start-frame", "end-frame", "texture"].forEach((role) => {
+              state.selected[`referenceRole-${role}`] = state.selected[`referenceRole-${role}`] || referenceSource;
+            });
+            state.blockedMessage = "";
+            state.statusMessage = "Open reference roles filled from the selected source.";
+          }
+          render();
+        } else if (action === "saveProgress") {
+          try {
+            state.savedArtifact = await saveLedgerToProject();
+            state.blockedMessage = "";
+            state.statusMessage = `Progress saved to ${state.savedArtifact.path}`;
+          } catch (error) {
+            state.blockedMessage = `Could not save the review ledger: ${error.message}`;
+            state.statusMessage = "";
+          }
+          render();
+        } else if (action === "downloadLedger") {
+          const blob = new Blob([JSON.stringify(ledger(), null, 2)], { type: "application/json" });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = "review-station-ledger.json";
+          a.click();
+          URL.revokeObjectURL(url);
+        } else if (action === "clearDetails") {
+          state.inspected = null;
+          state.statusMessage = "";
+          render();
+        }
+      }
+
+      async function boot() {
+        state.project = initialProjectFromLocation() || state.project;
+        render();
+        loadLocalProgress();
+        await loadInventoryFromApi();
+        hydrationComplete = true;
+        render();
+      }
+
+      boot();
+    </script>
+  </body>
+</html>

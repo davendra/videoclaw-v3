@@ -1,0 +1,17 @@
+{
+  "status": 429,
+  "statusText": "Too Many Requests",
+  "headers": {
+    "Retry-After": "60",
+    "Content-Type": "application/json",
+    "X-RateLimit-Limit": "100",
+    "X-RateLimit-Remaining": "0",
+    "X-RateLimit-Reset": "1706140800"
+  },
+  "body": {
+    "error": "Rate limit exceeded. Please wait 60 seconds before retrying.",
+    "retryAfter": 60,
+    "limit": 100,
+    "remaining": 0
+  }
+}

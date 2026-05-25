@@ -1,0 +1,23 @@
+{
+  "paths": {
+    "prompts": "./prompts.txt",
+    "cookies": "./cookie.json",
+    "outputDir": "./output-videos"
+  },
+  "browser": {
+    "headless": false
+  },
+  "timing": {
+    "pollIntervalMs": 3000,
+    "maxPollAttempts": 250,
+    "requestTimeoutMs": 30000,
+    "downloadTimeoutMs": 300000,
+    "interPromptDelayMs": 30000,
+    "loginWaitMs": 300000
+  },
+  "video": {
+    "outputsPerPrompt": 1,
+    "isSeedLocked": false,
+    "preferredAspectRatio": null
+  }
+}

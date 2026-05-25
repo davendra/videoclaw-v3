@@ -1,0 +1,13 @@
+{
+  "eval_id": 2,
+  "eval_name": "create-mode-tiktok-portrait",
+  "prompt": "i want to create a TikTok reel for our new perfume called 'Velvet Dusk'. no reference video — just make something original. i want 4 scenes: a close-up of the bottle on black velvet, a woman spraying it in a dimly lit boudoir, a slow-mo fabric swirl, and a final beauty shot with the bottle and logo. portrait 9:16 for TikTok. 15 seconds total.",
+  "assertions": [
+    "Selects CREATE mode (not COPY)",
+    "Identifies portrait 9:16 and warns about I2V API limitation — recommends T2V",
+    "Follows CREATE mode Phase 0-5 workflow",
+    "Uses model_id='gemini-pro-image' for all image generation",
+    "Asks about character references (Phase 1 Asset Collection)",
+    "Suggests scene templates or builds SEALCAM+ JSON for the 4 scenes"
+  ]
+}

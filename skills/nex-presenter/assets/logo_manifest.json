@@ -1,0 +1,26 @@
+{
+  "logo_source": "logo_source.jpg",
+  "logo_description": "Luminous cyan crystalline cube encased in holographic orbital rings with glowing blue light trails.",
+  "preset": "custom",
+  "direction": "reverse",
+  "duration": 6.0,
+  "ratio": "landscape",
+  "quality": "fast",
+  "variations": 1,
+  "runs": [
+    {
+      "run_id": "run001",
+      "status": "completed",
+      "frame": "run001_logo_frame.jpg",
+      "final_video": "run001_logo_animation.mp4",
+      "created_at": "2026-02-16T14:48:07.275461"
+    },
+    {
+      "run_id": "run002",
+      "status": "completed",
+      "frame": "run002_logo_frame.jpg",
+      "final_video": "run002_logo_animation.mp4",
+      "created_at": "2026-02-16T14:52:10.193223"
+    }
+  ]
+}

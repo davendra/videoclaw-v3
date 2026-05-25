@@ -1,0 +1,31 @@
+{
+  "jobId": "fixture-image-job-001",
+  "media": [
+    {
+      "name": "fixture-image-1",
+      "workflowId": "workflow-fixture-001",
+      "image": {
+        "generatedImage": {
+          "seed": 182811941,
+          "mediaGenerationId": "user:fixture-image-001"
+        }
+      }
+    },
+    {
+      "name": "fixture-image-2",
+      "workflowId": "workflow-fixture-002",
+      "image": {
+        "generatedImage": {
+          "seed": 293922052,
+          "mediaGenerationId": "user:fixture-image-002"
+        }
+      }
+    }
+  ],
+  "model": "imagen-4",
+  "captcha": {
+    "service": "ezcaptcha",
+    "taskId": "captcha-task-fixture-002",
+    "durationMs": 987
+  }
+}

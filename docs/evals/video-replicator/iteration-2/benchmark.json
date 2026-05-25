@@ -1,0 +1,110 @@
+{
+  "skill_name": "video-replicator",
+  "iteration": 2,
+  "description": "Restructured skill: 368-line SKILL.md + 7 mode-specific reference files (progressive disclosure)",
+  "configurations": [
+    {
+      "name": "with_skill (restructured)",
+      "description": "Using the restructured SKILL.md (368 lines) with mode-specific reference files"
+    }
+  ],
+  "runs": [
+    {
+      "eval_name": "copy-mode-nike-ad",
+      "config": "with_skill (restructured)",
+      "pass_rate": 1.0,
+      "passed": 7,
+      "total": 7,
+      "assertions": [
+        {"text": "Selects COPY mode", "passed": true},
+        {"text": "Reads references/copy-mode.md", "passed": true},
+        {"text": "Runs analyze_video.py first", "passed": true},
+        {"text": "Uses gemini-pro-image", "passed": true},
+        {"text": "Selects I2V for landscape", "passed": true},
+        {"text": "Correct phase order", "passed": true},
+        {"text": "16:9 and --ratio landscape", "passed": true}
+      ],
+      "timing": {
+        "note": "Timing data lost during context compression"
+      }
+    },
+    {
+      "eval_name": "create-mode-tiktok-portrait",
+      "config": "with_skill (restructured)",
+      "pass_rate": 1.0,
+      "passed": 6,
+      "total": 6,
+      "assertions": [
+        {"text": "Selects CREATE mode", "passed": true},
+        {"text": "Reads references/create-mode.md", "passed": true},
+        {"text": "Warns about I2V portrait limitation, recommends T2V", "passed": true},
+        {"text": "Uses gemini-pro-image", "passed": true},
+        {"text": "Asks about character references", "passed": true},
+        {"text": "Builds SEALCAM+ scene descriptions", "passed": true}
+      ],
+      "timing": {
+        "note": "Timing data lost during context compression"
+      }
+    },
+    {
+      "eval_name": "film-mode-chronos",
+      "config": "with_skill (restructured)",
+      "pass_rate": 1.0,
+      "passed": 7,
+      "total": 7,
+      "assertions": [
+        {"text": "Selects FILM mode", "passed": true},
+        {"text": "Reads references/film-mode.md", "passed": true},
+        {"text": "References film_pipeline.py", "passed": true},
+        {"text": "Mentions screenplay generation", "passed": true},
+        {"text": "Specifies --backend seedance", "passed": true},
+        {"text": "Uses gemini-pro-image", "passed": true},
+        {"text": "Correct FILM pipeline order", "passed": true}
+      ],
+      "timing": {
+        "total_tokens": 48621,
+        "duration_ms": 186993,
+        "total_duration_seconds": 187.0
+      }
+    }
+  ],
+  "run_summary": {
+    "with_skill_restructured": {
+      "pass_rate": 1.0,
+      "passed": 20,
+      "total": 20,
+      "evals": 3
+    }
+  },
+  "comparison_with_iteration_1": {
+    "iteration_1_with_skill": {
+      "pass_rate": 1.0,
+      "passed": 18,
+      "total": 18,
+      "note": "Original 3,919-line monolithic SKILL.md"
+    },
+    "iteration_1_without_skill": {
+      "pass_rate": 0.722,
+      "passed": 13,
+      "total": 18,
+      "note": "No skill baseline"
+    },
+    "iteration_2_with_skill": {
+      "pass_rate": 1.0,
+      "passed": 20,
+      "total": 20,
+      "note": "Restructured 368-line SKILL.md + 7 reference files (progressive disclosure)"
+    },
+    "delta_vs_no_skill": "+27.8 percentage points",
+    "delta_vs_iteration_1": "0.0 percentage points (maintained 100% with 10.6x smaller core file)"
+  },
+  "analyst_notes": [
+    "RESTRUCTURING SUCCESS: The 368-line core SKILL.md + 7 reference files maintained 100% pass rate, identical to the 3,919-line monolithic version.",
+    "NEW ASSERTION: 'Reads references/X-mode.md' was added for iteration 2 to verify progressive disclosure works. All 3 evals explicitly read and cited their mode-specific reference file.",
+    "PROGRESSIVE DISCLOSURE VERIFIED: Each agent read only the relevant reference file (copy-mode.md, create-mode.md, or film-mode.md) rather than loading all 3,000+ lines.",
+    "QUALITY IMPROVEMENT: The restructured outputs show richer mode-specific detail (e.g., COPY mode agent extracted 10 specific points from copy-mode.md including CTA banners, dual output, frame extraction — information that was buried in the monolithic version).",
+    "DISCRIMINATING ASSERTIONS STILL HOLD: Pro model override, I2V portrait warning, character reference questions, and screenplay generation all passed — these are the same assertions that failed without_skill in iteration 1.",
+    "NON-DISCRIMINATING: Film mode remains non-discriminating (6/6 without skill in iteration 1). The agent can reconstruct the FILM pipeline from script names in the codebase.",
+    "TIMING NOTE: Only film-mode timing was captured (187s). COPY and CREATE timing was lost during context compression."
+  ]
+}

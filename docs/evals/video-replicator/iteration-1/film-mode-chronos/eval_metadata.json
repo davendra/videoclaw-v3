@@ -1,0 +1,13 @@
+{
+  "eval_id": 4,
+  "eval_name": "film-mode-chronos",
+  "prompt": "i want to make a short film from scratch — like a cinematic ad for our luxury watch brand 'Chronos'. think James Bond meets tech. concept: a mysterious figure in a dark suit walks through a rain-soaked Tokyo street at night, glances at their wrist, and time seems to freeze around them. neon reflections everywhere. about 45 seconds, 6 scenes. use Seedance for the video generation.",
+  "assertions": [
+    "Selects FILM mode (not COPY or CREATE)",
+    "References film_pipeline.py as the orchestrator",
+    "Mentions screenplay generation step",
+    "Specifies --backend seedance since user requested Seedance",
+    "Uses model_id='gemini-pro-image' for first-frame image generation",
+    "Follows FILM pipeline: concept -> screenplay -> characters -> scene breakdown -> images -> videos -> stitch"
+  ]
+}

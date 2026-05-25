@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "vclaw-video-core/video/artifacts/storyboard",
+  "type": "object",
+  "required": ["projectSlug", "productionMode", "scenes"],
+  "properties": {
+    "projectSlug": { "type": "string" },
+    "productionMode": { "type": "string", "enum": ["storyboard", "director"] },
+    "scenes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["sceneIndex", "description"],
+        "properties": {
+          "sceneIndex": { "type": "integer" },
+          "description": { "type": "string" },
+          "scenePrompt": {
+            "type": "object",
+            "properties": {
+              "imagePrompt": { "type": "string" },
+              "animationPrompt": { "type": "string" },
+              "cameraMove": {
+                "type": "string",
+                "enum": ["push-in", "pull-out", "tracking", "crane", "orbit", "static"]
+              },
+              "styleFooter": { "type": "string" }
+            },
+            "additionalProperties": false
+          },
+          "characters": {
+            "type": "array",
+            "items": { "type": "string" }
+          }
+        },
+        "additionalProperties": true
+      }
+    }
+  },
+  "additionalProperties": true
+}

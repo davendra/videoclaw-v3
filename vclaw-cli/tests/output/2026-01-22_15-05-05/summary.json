@@ -1,0 +1,36 @@
+{
+  "timestamp": "2026-01-22_15-05-05",
+  "output_directory": "/Users/davendrapatel/Documents/GitHub/video-creation-projects/veo-cli/tests/output/2026-01-22_15-05-05",
+  "environment": {
+    "useapi_credentials": false,
+    "cookie_json": true,
+    "platform": "Darwin",
+    "bun_version": "1.3.6"
+  },
+  "totals": {
+    "passed": 556,
+    "failed": 2,
+    "skipped": 9,
+    "total": 567
+  },
+  "categories": {
+    "unit": {
+      "passed": 556,
+      "failed": 2,
+      "skipped": 0,
+      "ran": true
+    },
+    "integration": {
+      "passed": 0,
+      "failed": 0,
+      "skipped": 1,
+      "ran": true
+    },
+    "e2e": {
+      "passed": 0,
+      "failed": 0,
+      "skipped": 8,
+      "ran": true
+    }
+  }
+}

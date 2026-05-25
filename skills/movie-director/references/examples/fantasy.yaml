@@ -1,0 +1,80 @@
+# Example: Fantasy (Miyazaki + Spielberg hybrid)
+# Quest, magic, companion, heroic journey with cost.
+---
+project:
+  name: "The Last Lantern"
+  slug: "the-last-lantern"
+  genre: fantasy
+  runtime_target: "3:30"
+  scene_count: 14
+  clip_duration_sec: 15
+
+premise: |
+  A child carries the last unlit lantern to the top of a mountain to
+  reignite the world's fading light. Along the way they befriend a
+  small mountain spirit who teaches them that the lantern's flame
+  comes from courage, not magic.
+
+style:
+  preset: miyazaki
+  grading: golden-hour
+  platform: youtube
+  aspect: 16:9
+
+tone: "wonder, quest, magic, hopeful, hand-painted epic landscapes"
+
+cast:
+  - name: Tam
+    role: protagonist
+    library_id: null
+    description: "10-year-old child with messy dark hair tied with a red ribbon, amber eyes, soft brown skin, wearing a patched blue tunic and travel satchel, carrying a small unlit bronze lantern, determined expression, Miyazaki watercolor hand-painted aesthetic, warm golden-hour lighting"
+    archetype: human-child
+    create_on_first_run: true
+
+  - name: Pip
+    role: companion
+    library_id: null
+    description: "small mountain spirit with fox-like body made of glowing leaves and moss, two tiny antlers, large amber eyes, wispy green tail, hops with surprising grace, Miyazaki watercolor magical creature aesthetic, glowing softly golden-green in dim light"
+    archetype: magical-spirit
+    create_on_first_run: true
+
+adversaries:
+  type: none  # no antagonists — the mountain + darkness are the challenge
+
+setting:
+  time_period: timeless
+  location: "mountain path from valley to peak, various forests and cliffs"
+  world_notes: "World where the old lamps have gone out and darkness creeps from the valleys; a single lantern must be lit at the mountain's summit to reignite the light"
+
+act_structure:
+  - ordinary_world: "Wide shot of a small village in a valley, most windows dark. Tam stands at the edge holding the unlit lantern."
+  - call_to_adventure: "Tam begins climbing the mountain path. An old villager waves goodbye, worry on their face."
+  - departure: "Tam crosses a wooden bridge. Mist rises from the river below. The path rises."
+  - ally_meets: "Pip the spirit appears from a patch of moss, curious. Tam offers a piece of bread. Pip accepts."
+  - trial_one: "Tam and Pip push through a dark forest. Pip glows faintly — just enough to see the next stone."
+  - mentor_lesson: "At a cliff edge, Pip chirps and points. Tam is afraid. Pip touches the lantern — it glows faintly but doesn't light."
+  - trial_two: "Rain. Tam shelters under a rock with Pip. They share bread. Tam looks at the unlit lantern sadly."
+  - confrontation_with_magic: "Dawn. Tam and Pip approach a dark chasm. Pip stops — cannot cross. Tam must go alone."
+  - first_attempt: "Tam tries to light the lantern with a tinderbox. The wind blows it out. Darkness remains."
+  - realization: "Tam pauses. Remembers Pip's lesson. Closes eyes. Cups hand over the wick."
+  - victory_with_cost: "The lantern lights — fed by Tam's breath and determination, not magic flint. Pip fades slowly, duty done."
+  - return_transformed: "Tam reaches the summit. Holds the lantern high. Light spreads across the valley, one lamp at a time reigniting."
+  - companion_remembered: "Tam looks down. A new patch of moss has grown where Pip stood. A tiny antler-shaped leaf waves."
+  - circular_ending: "The village below is now fully lit. Tam descends the path, lantern in hand. A single leaf floats down beside them."
+
+content_filter_substitutions: []
+
+estimated_cost:
+  seedance_per_clip: 0.40
+  seedance_total: 5.60
+  gemini_batched: 0.02
+  go_bananas_new_characters: 0.10
+  elevenlabs_narration: 0.15
+  total: ~5.87
+
+estimated_wall_time: "~1h05m"
+
+audio_direction:
+  score: "Orchestral strings, flute melody for Pip's theme, horn swell for summit reveal"
+  sfx: "Wind, distant thunder, Pip's soft chimes, lantern hiss when lighting"
+  dialogue: "Tam has 3 soft lines of internal monologue; Pip has no words, only chirps"

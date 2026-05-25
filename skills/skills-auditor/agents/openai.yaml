@@ -1,0 +1,4 @@
+interface:
+  display_name: "Skills Auditor"
+  short_description: "Audit VideoClaw skills for production readiness"
+  default_prompt: "Use $skills-auditor to inspect local skills, find duplicates or invalid metadata, verify catalog alignment, and report concrete cleanup actions with evidence."

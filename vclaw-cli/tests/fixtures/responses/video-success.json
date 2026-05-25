@@ -1,0 +1,31 @@
+{
+  "jobId": "fixture-video-job-001",
+  "operations": [
+    {
+      "operation": {
+        "name": "operations/fixture-video-job-001/video",
+        "metadata": {
+          "@type": "type.googleapis.com/VideoGenerationMetadata",
+          "video": {
+            "seed": 12345,
+            "mediaGenerationId": "user:fixture-video-001",
+            "prompt": "A golden sunset over the ocean, cinematic",
+            "fifeUrl": "https://lh3.googleusercontent.com/fixture-video",
+            "servingBaseUri": "https://lh3.googleusercontent.com",
+            "model": "veo_3_1_fast_ultra",
+            "isLooped": false,
+            "aspectRatio": "LANDSCAPE"
+          }
+        }
+      },
+      "sceneId": "scene-1",
+      "mediaGenerationId": "user:fixture-video-001",
+      "status": "COMPLETED"
+    }
+  ],
+  "captcha": {
+    "service": "ezcaptcha",
+    "taskId": "captcha-task-fixture-001",
+    "durationMs": 1234
+  }
+}

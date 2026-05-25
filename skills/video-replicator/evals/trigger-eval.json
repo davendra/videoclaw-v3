@@ -1,0 +1,82 @@
+[
+  {
+    "query": "i found this amazing perfume ad on TikTok — about 20 seconds, really cinematic with close-up product shots and a model in a garden. id love to copy it but swap in our fragrance bottle and a different model. heres the link: https://www.tiktok.com/@brand/video/12345",
+    "should_trigger": true
+  },
+  {
+    "query": "create a 30-second video ad for our new wireless earbuds 'SoundPulse' from scratch. 5 scenes: unboxing, putting them in, running with music, rain splash waterproof moment, and final product hero shot. landscape for YouTube pre-roll.",
+    "should_trigger": true
+  },
+  {
+    "query": "we have a 15-slide PowerPoint about our company culture — its currently just static slide transitions. can you restyle it into something that looks like a Ted Talk opening sequence? dynamic animations, smooth camera moves between slides.",
+    "should_trigger": true
+  },
+  {
+    "query": "i want to make a cinematic film ad for our luxury handbag — concept: a woman walks through a rainy Parisian evening, stops at a cafe, places the bag on the table as golden light spills across it. 45 seconds, 6 scenes. use Seedance for the video backend.",
+    "should_trigger": true
+  },
+  {
+    "query": "copy this narrated explainer video about our SaaS product — it has a presenter speaking to camera for the first half and B-roll footage for the second half. i need the voiceover throughout. heres the original: projects/saas-explainer/reference/original.mp4",
+    "should_trigger": true
+  },
+  {
+    "query": "i need a long-form video — about 12 minutes, 25 scenes — for our product launch event. its a compilation of product shots, testimonial clips, and brand story moments. need to batch generate everything overnight.",
+    "should_trigger": true
+  },
+  {
+    "query": "break down this viral Instagram reel into a SEALCAM+ analysis — i just want the analysis JSON, not the full reproduction. the video shows a dancer doing a trending move in a studio with dramatic lighting.",
+    "should_trigger": true
+  },
+  {
+    "query": "create a storyboard grid for a children's animation — a fox and a rabbit go on an adventure through an enchanted forest. 9 panels, discovery/reveal narrative arc, consistent character design across all panels.",
+    "should_trigger": true
+  },
+  {
+    "query": "extend this 8-second video clip to 30 seconds — its a slow cinematic push-in on a watch face and i want it to keep going smoothly. chain multiple extensions together.",
+    "should_trigger": true
+  },
+  {
+    "query": "replicate this car commercial but with our electric vehicle. the original has 4 scenes: highway driving, city corner turn, parking garage reveal, and a hero shot. swap the car model in every scene. projects/ev-campaign/reference/toyota-ad.mp4",
+    "should_trigger": true
+  },
+  {
+    "query": "generate a single hero image of our new sneakers on a marble countertop with warm lighting — just a product photo, no video needed",
+    "should_trigger": false
+  },
+  {
+    "query": "write a Python script that uses FFmpeg to trim a video from 0:30 to 1:15 and add a fade-in/fade-out transition. just the script, not a full production.",
+    "should_trigger": false
+  },
+  {
+    "query": "help me set up the veo-cli TypeScript project — install dependencies, configure the cookie.json auth, and run the first test generation",
+    "should_trigger": false
+  },
+  {
+    "query": "our video player component has a bug — the progress bar doesnt update when seeking. can you debug the React component in frontend/src/components/VideoPlayer.tsx?",
+    "should_trigger": false
+  },
+  {
+    "query": "create a character named 'Sofia' with reference images and save her to Go Bananas for future use across different image generations",
+    "should_trigger": false
+  },
+  {
+    "query": "write unit tests for the analyze_video.py script — mock the Gemini API calls and test the SEALCAM+ JSON output parsing",
+    "should_trigger": false
+  },
+  {
+    "query": "design a landing page for our video production SaaS — hero section, pricing tiers, testimonial carousel, and a demo video embed. React + Tailwind.",
+    "should_trigger": false
+  },
+  {
+    "query": "help me edit this image to remove the background and add a gradient — its a product shot that needs cleanup before we use it in a video",
+    "should_trigger": false
+  },
+  {
+    "query": "set up a CI/CD pipeline with GitHub Actions that runs our Python test suite, lints with ruff, and deploys the doc-site on push to main",
+    "should_trigger": false
+  },
+  {
+    "query": "create a presentation slide deck in PowerPoint format about our Q3 results — 12 slides with charts, not a video. just the .pptx file.",
+    "should_trigger": false
+  }
+]

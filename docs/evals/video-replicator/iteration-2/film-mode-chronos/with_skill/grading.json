@@ -1,0 +1,45 @@
+{
+  "expectations": [
+    {
+      "text": "Selects FILM mode (not COPY or CREATE)",
+      "passed": true,
+      "evidence": "Line 3: '## Mode Selection: FILM' — correctly identified FILM from triggers 'make a short film', 'cinematic ad', 'from scratch'"
+    },
+    {
+      "text": "Reads references/film-mode.md for the detailed workflow",
+      "passed": true,
+      "evidence": "Line 11: '## Reference File Read: `references/film-mode.md`' — extracted 9 key points including pipeline phases, Seedance time-segments, hero subject, sliding window, and content safety"
+    },
+    {
+      "text": "References film_pipeline.py as the orchestrator",
+      "passed": true,
+      "evidence": "Lines 338-356: Uses 'film_pipeline.py --project chronos-time-freeze --status' for verification and shows full orchestrator command with --concept, --duration, --scenes, --backend seedance flags"
+    },
+    {
+      "text": "Mentions screenplay generation step",
+      "passed": true,
+      "evidence": "Lines 141-149: Phase 1 'Screenplay Generation' runs 'screenplay_generator.py --concept ... --duration 45 --scenes 6'"
+    },
+    {
+      "text": "Specifies --backend seedance",
+      "passed": true,
+      "evidence": "Line 272: '--backend seedance' in the parallel_video_gen.py command; also line 354 in orchestrator command"
+    },
+    {
+      "text": "Uses model_id='gemini-pro-image' for image generation",
+      "passed": true,
+      "evidence": "Lines 29-37: States model_id='gemini-pro-image' as hard requirement; all generate_image/generate_with_character/generate_with_product calls include model_id='gemini-pro-image'"
+    },
+    {
+      "text": "Follows FILM pipeline: concept -> screenplay -> characters -> scene breakdown -> images -> videos -> stitch",
+      "passed": true,
+      "evidence": "Pipeline phases: 0 (Setup), 1 (Screenplay), 2 (Characters/Products), 3 (Scene Breakdown), 4 (Image Gen), 5 (Video Gen/Seedance), 6 (Audio), 7 (Stitch), 8 (Complete) — correct order"
+    }
+  ],
+  "summary": {
+    "passed": 7,
+    "failed": 0,
+    "total": 7,
+    "pass_rate": 1.0
+  }
+}

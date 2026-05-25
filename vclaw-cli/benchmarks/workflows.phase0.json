@@ -1,0 +1,38 @@
+[
+  {
+    "id": "phase0-ad-creative-variants",
+    "workflow": "ad-creative-variants",
+    "description": "Short-form ad variant generation with routing, retries, and approval instrumentation.",
+    "primaryGoal": "Improve time to first acceptable ad cut while preserving cost discipline.",
+    "preferredRoutes": ["veo-useapi", "kling-useapi"],
+    "metricBudgets": {
+      "minimumApprovalRate": 0.45,
+      "maximumMedianLatencyMs": 120000,
+      "maximumCostPerApprovedMinuteUsd": 2.5,
+      "maximumRetryRate": 1.5
+    },
+    "humanRubric": [
+      "Hook matches brief in first 3 seconds",
+      "Product / brand continuity is maintained",
+      "CTA remains editable for follow-up variants"
+    ]
+  },
+  {
+    "id": "phase0-product-demo-spokesperson",
+    "workflow": "product-demo-spokesperson",
+    "description": "Product demo / spokesperson clips with editability, dialogue continuity, and approval telemetry.",
+    "primaryGoal": "Reduce review cycles for spokesperson and product walkthrough videos.",
+    "preferredRoutes": ["runway-useapi", "veo-direct"],
+    "metricBudgets": {
+      "minimumApprovalRate": 0.5,
+      "maximumMedianLatencyMs": 150000,
+      "maximumCostPerApprovedMinuteUsd": 3.25,
+      "maximumRetryRate": 1.2
+    },
+    "humanRubric": [
+      "Dialogue or lip-sync remains usable after edits",
+      "Product framing stays on-brand across revisions",
+      "Audio / narration hand-off remains patchable"
+    ]
+  }
+]

@@ -1,0 +1,40 @@
+{
+  "expectations": [
+    {
+      "text": "Selects COPY mode (not CREATE or FILM) based on 'copy this ad' / 'reference video' intent",
+      "passed": true,
+      "evidence": "Line 1: 'COPY Mode Plan: Replicating Nike Running Ad for AeroStride'"
+    },
+    {
+      "text": "Runs analyze_video.py first for SEALCAM+ breakdown (Phase 1 before any generation)",
+      "passed": true,
+      "evidence": "Line 49: 'python .claude/skills/video-replicator/scripts/analyze_video.py' in Phase 1, before any generation phases"
+    },
+    {
+      "text": "Uses model_id='gemini-pro-image' for Go Bananas image generation (skill's CRITICAL rule, not gemini-flash-image)",
+      "passed": false,
+      "evidence": "Line 137: 'Model choice is **gemini-flash-image (NB2)** per the project's established preference for image generation.' Uses gemini-flash-image throughout, not gemini-pro-image. Without the skill, the agent follows the user's memory preference instead of the skill's critical override."
+    },
+    {
+      "text": "Selects I2V mode for landscape video (skill says I2V works for landscape, T2V only for portrait)",
+      "passed": true,
+      "evidence": "Line 165: '--mode frames-to-video' (I2V mode)"
+    },
+    {
+      "text": "Pipeline follows correct phase order: analyze -> rewrite_prompts -> generate images -> generate videos -> stitch",
+      "passed": true,
+      "evidence": "Phases 0-6 follow: setup -> analyze -> extract frames -> rewrite prompts -> create references + generate images -> generate videos -> music -> stitch"
+    },
+    {
+      "text": "Mentions aspect_ratio='16:9' for both Go Bananas images and veo-cli --ratio landscape",
+      "passed": true,
+      "evidence": "Line 171: '--ratio landscape', Line 285: 'Go Bananas landscape aspect ratio outputs 1408x768'"
+    }
+  ],
+  "summary": {
+    "passed": 5,
+    "failed": 1,
+    "total": 6,
+    "pass_rate": 0.833
+  }
+}

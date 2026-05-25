@@ -1,0 +1,9 @@
+{
+  "category": "unit",
+  "timestamp": "2026-01-22_15-05-05",
+  "passed": 556,
+  "failed": 2,
+  "skipped": 0,
+  "exit_code": 1,
+  "output_file": "output.log"
+}

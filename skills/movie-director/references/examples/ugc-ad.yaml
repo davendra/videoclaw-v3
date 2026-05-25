@@ -1,0 +1,79 @@
+# Example: UGC Ad (Spielberg golden-hour testimonial)
+# Hook → problem → product → payoff → CTA.
+---
+project:
+  name: "Sarah's Morning Coffee"
+  slug: "sarah-morning-coffee-ugc"
+  genre: ugc-ad
+  runtime_target: "1:30"  # short-form
+  scene_count: 10
+  clip_duration_sec: 9
+
+premise: |
+  A busy mom demonstrates how a smart coffee maker transformed her chaotic
+  mornings. Direct-to-camera testimonial style with authentic product
+  moments.
+
+style:
+  preset: spielberg
+  grading: golden-hour
+  platform: tiktok-vertical  # vertical 9:16 for social
+  aspect: 9:16
+
+tone: "warm, aspirational, authentic, direct-to-camera, relatable"
+
+cast:
+  - name: Sarah
+    role: subject
+    library_id: null
+    description: "30s mother with shoulder-length light brown hair in a casual ponytail, freckles, bright green eyes, wearing a white cotton pajama top, authentic warm expression, Spielberg golden-hour natural light aesthetic, photorealistic"
+    archetype: human-adult-parent
+    create_on_first_run: true
+
+adversaries:
+  type: none
+
+setting:
+  time_period: contemporary
+  location: "sunlit modern kitchen, morning, 7am"
+  world_notes: "Window with sunrise light streaming in, coffee machine centerpiece, kid-toy evidence in background"
+
+act_structure:
+  - hook: "Close-up on Sarah, messy morning hair, 7am kitchen light. She yawns and laughs at camera."
+  - problem: "Quick cut: mug crashing in slo-mo. Sarah's hand pouring water that misses the cup entirely."
+  - relatable_struggle: "Wide shot: Sarah frazzled, kid toys in background, holding an empty coffee mug."
+  - discovery: "Sarah unboxing the product box. Close-up on the logo, warm light catching it."
+  - first_use: "Sarah taps the product button. Water hisses into a cup, steam curls upward."
+  - surprise_delight: "Sarah smells the coffee. Eyes widen. Small genuine smile."
+  - feature_in_action: "Close-up on the product's smart display scrolling through options. Sarah selects one."
+  - before_after: "Split-screen-style beat: left = messy morning, right = same kitchen with Sarah calm, coffee in hand."
+  - testimonial: "Sarah looks directly at camera, holding the coffee. Genuine warm expression."
+  - logo_cta: "Product pack shot on counter, golden-hour light, logo crisp, Sarah silhouetted behind reading a book."
+
+content_filter_substitutions: []
+
+estimated_cost:
+  seedance_per_clip: 0.25  # 9s clips cheaper
+  seedance_total: 2.50
+  gemini_batched: 0.02
+  go_bananas_new_characters: 0.05
+  elevenlabs_narration: 0.08
+  total: ~2.65
+
+estimated_wall_time: "~35min"
+
+audio_direction:
+  score: "Uplifting acoustic guitar, warm pop-folk, 90 BPM"
+  sfx: "Morning birds, coffee brewing, ambient kitchen"
+  dialogue: |
+    Sarah has 3 testimonial lines:
+    - "My mornings used to be… chaos."
+    - "Now I actually taste the coffee."
+    - "It changed my day. Truly."
+
+# Platform-specific notes:
+platform_optimization:
+  tiktok_hook: "First 0.3s must grab — use extreme close-up of Sarah's tired face"
+  vertical_framing: "Subject centered, avoid edges (UI overlay zone)"
+  caption_zone: "Bottom 15% kept clean for captions"
+  logo_zone: "Top 10% kept clean for TikTok UI"

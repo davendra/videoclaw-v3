@@ -1,0 +1,32 @@
+{
+  "name": "seedance-ugc",
+  "provider": "seedance",
+  "useWhen": [
+    "stylized UGC-style scenes",
+    "character-led promotional clips",
+    "fast hook + demo + payoff structure"
+  ],
+  "promptFormula": [
+    "opening hook",
+    "character action and framing",
+    "product or subject beat",
+    "single camera move and shot size",
+    "dialogue or caption budget when audio is enabled",
+    "style and atmosphere",
+    "negative constraints"
+  ],
+  "constraints": [
+    "keep prompts concrete and scene-local",
+    "prefer strong first-frame or reference-image anchors when available",
+    "avoid stacking too many camera moves into one short clip",
+    "keep spoken dialogue short enough for the clip duration",
+    "separate still-image composition prompts from Seedance motion prompts"
+  ],
+  "adaptationChecklist": [
+    "change topic and offer while preserving beat rhythm",
+    "preserve only the useful aesthetic constraints",
+    "restate character continuity requirements explicitly",
+    "bind character identity sheets before director-mode execution",
+    "record route, output, timing, and cost telemetry after live generation"
+  ]
+}

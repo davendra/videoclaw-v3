@@ -1,0 +1,83 @@
+# Example: Western (Tarantino vintage-film retro)
+# Laconic silence, taut tension, showdown.
+---
+project:
+  name: "The Last Stagecoach"
+  slug: "the-last-stagecoach"
+  genre: western
+  runtime_target: "3:00"
+  scene_count: 12
+  clip_duration_sec: 15
+
+premise: |
+  A drifter arrives at a desert town the same day a stagecoach full of
+  gold is due. The sheriff watches with narrowed eyes from the saloon
+  porch. When the stagecoach is late, both men know something is wrong.
+
+style:
+  preset: tarantino
+  grading: vintage-film
+  platform: youtube
+  aspect: 16:9
+
+tone: "laconic, wide-landscape, taut silence, honor-code, retro"
+
+cast:
+  - name: Cade
+    role: drifter
+    library_id: null
+    description: "late 30s man with weathered tan skin, sun-lined grey eyes, stubble, wearing a dusty long coat over a simple shirt and dark trousers, wide-brimmed hat, silent watchful expression, Tarantino retro-western with vintage film grain, saturated golden-hour palette"
+    archetype: human-adult
+    create_on_first_run: true
+
+  - name: Sheriff-Ruiz
+    role: sheriff
+    library_id: null
+    description: "50s man with grey-streaked black hair, deep brown skin, silver mustache, piercing hazel eyes, wearing a tin star on a leather vest over a white shirt, calm authoritative presence, Tarantino retro-western aesthetic, vintage-film saturated"
+    archetype: human-adult
+    create_on_first_run: true
+
+adversaries:
+  type: plural  # stagecoach robbers — generic role
+  description: "three masked bandits — no library entries, Seedance generates fresh per clip"
+
+setting:
+  time_period: "1880s American Southwest"
+  location: "small desert town: single main street, saloon porch, dirt road leading out to horizon"
+  world_notes: "Late afternoon, intense golden-hour light; tumbleweeds occasionally cross the frame"
+
+act_structure:
+  - wide_establishing: "Extreme wide shot of empty desert horizon. A single figure on horseback approaches."
+  - stranger_arrives: "Cade dismounts outside the saloon. Ties his horse. Dust settles."
+  - tension: "Cade walks past the saloon porch. Sheriff Ruiz watches, rocking chair, tin star glinting."
+  - backstory_hint: "Inside the saloon. Cade orders whiskey. His coat opens — revealing an old US marshal badge tucked inside."
+  - confrontation_one: "Sheriff enters the saloon. Stands at the bar. Doesn't look at Cade. Orders water."
+  - pause: "Cade and Sheriff drink in silence. Late sun cuts through slatted windows."
+  - tension_escalates: "Outside: a horse gallops into town, riderless. The stagecoach should have arrived by now."
+  - both_rise: "Cade and Sheriff both set down their glasses. Look at each other for the first time. Tiny nod."
+  - confrontation_two: "Both men ride out of town toward the desert. Tumbleweeds cross the frame."
+  - showdown: "Cade and Sheriff arrive at the overturned stagecoach. Three masked bandits wait. Extended wide-shot stand-off."
+  - aftermath: "(Cut to post-action.) The stagecoach is righted. Two bandits disarmed, the third riding away in defeat."
+  - ride_off: "Cade tips his hat to Sheriff. Rides off toward the horizon. Sheriff watches. Golden-hour light, vintage grain."
+
+content_filter_substitutions:
+  # Western combat is content-filter sensitive — keep implied
+  # "shootout" → "stand-off"
+  # "shoots" → "aims"
+  # "killed" → never mention; imply by "defeated" or "disarmed"
+  "shootout": "stand-off"
+
+estimated_cost:
+  seedance_per_clip: 0.40
+  seedance_total: 4.80
+  gemini_batched: 0.02
+  go_bananas_new_characters: 0.10
+  elevenlabs_narration: 0.10
+  total: ~5.02
+
+estimated_wall_time: "~55min"
+
+audio_direction:
+  score: "Morricone-style harmonica + whistle, slow build, percussion kick at showdown"
+  sfx: "Wind, hoofbeats, occasional gunshot in distance, spurs clinking"
+  dialogue: "Very sparse — 2 lines maximum. Western is about silence."

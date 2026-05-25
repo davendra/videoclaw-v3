@@ -1,0 +1,62 @@
+# Example: Documentary portrait (day-in-the-life)
+# Shows a shorter, observational, single-subject structure.
+---
+project:
+  name: "Hands of Clay"
+  slug: "hands-of-clay-portrait"
+  genre: documentary
+  runtime_target: "2:30"
+  scene_count: 10
+  clip_duration_sec: 15
+
+premise: |
+  A day in the life of a master potter in a small mountain village,
+  from morning wheel-throwing to afternoon kiln-firing.
+
+style:
+  preset: nolan
+  grading: desaturated
+  platform: youtube
+  aspect: 16:9
+
+tone: "observational, grounded, respectful, natural light, patient"
+
+cast:
+  - name: Master-Tan
+    role: subject
+    library_id: null
+    description: "70-year-old East Asian potter with deep smile lines, weathered hands, short grey hair neatly combed, wearing a grey linen apron over a simple blue shirt, gentle focused expression, natural light, Nolan cinematic realism, documentary photograph aesthetic"
+    archetype: human-elder
+    create_on_first_run: true
+
+adversaries:
+  type: none
+
+setting:
+  time_period: contemporary
+  location: "small mountain pottery studio, dawn to dusk"
+  world_notes: "Rural, quiet, surrounded by pine forest; studio has north-facing skylight"
+
+act_structure:
+  - establishing_location: "Wide shot of the studio at dawn, mountain mist. Door opens."
+  - subject_at_work: "Master-Tan walks in, lights the kiln, puts on an apron."
+  - detail_of_tool: "Close-up: his hands shape a lump of clay on the wheel. Water spins in droplets."
+  - interaction: "A young apprentice arrives. Master-Tan nods, gestures to the wheel next to his."
+  - quiet_moment: "Both work in silence for a beat. Only the sound of the wheel and water."
+  - main_task_begins: "Master-Tan begins a larger piece — a tall vase. Fingers press clay upward."
+  - challenge: "The vase wobbles. He slows, stops, recenters. Breathes."
+  - adaptation: "He starts over, more slowly. The apprentice watches."
+  - resolution: "The vase rises clean and tall. He lifts it carefully to the drying rack."
+  - reflection_hero: "Evening. Wide shot of Master-Tan closing up, the kiln glow warm. He pauses, looks at his hands."
+
+content_filter_substitutions: []
+
+estimated_cost:
+  seedance_per_clip: 0.40
+  seedance_total: 4.00
+  gemini_batched: 0.02
+  go_bananas_new_characters: 0.05
+  elevenlabs_narration: 0.10
+  total: ~4.17
+
+estimated_wall_time: "~45min"

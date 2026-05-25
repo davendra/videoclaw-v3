@@ -132,19 +132,25 @@ const COMMANDS: CommandSpec[] = [
 
 function loadArtifactSchemas(): Record<string, unknown> {
   const here = dirname(fileURLToPath(import.meta.url));
-  // src/video/cli-schema.ts compiles to dist/video/cli-schema.js — schemas
-  // live at <repo-root>/schemas/video/. Walk up two levels from dist/video.
   const schemasDir = join(here, '..', '..', 'schemas', 'video', 'artifacts');
   const out: Record<string, unknown> = {};
+  let entries: string[];
   try {
-    for (const file of readdirSync(schemasDir)) {
-      if (!file.endsWith('.schema.json')) continue;
-      const name = file.replace(/\.schema\.json$/, '');
-      const raw = readFileSync(join(schemasDir, file), 'utf-8');
-      out[name] = JSON.parse(raw);
+    entries = readdirSync(schemasDir);
+  } catch (err: unknown) {
+    // Directory missing is expected in some test envs. Anything else
+    // (permission denied, etc.) is genuinely unexpected.
+    if ((err as NodeJS.ErrnoException).code === 'ENOENT') {
+      return out;
     }
-  } catch {
-    // Schemas dir might not exist in some test envs — leave empty.
+    throw err;
+  }
+  for (const file of entries) {
+    if (!file.endsWith('.schema.json')) continue;
+    const name = file.replace(/\.schema\.json$/, '');
+    const raw = readFileSync(join(schemasDir, file), 'utf-8');
+    // JSON.parse errors propagate — a corrupt schema should fail loudly.
+    out[name] = JSON.parse(raw);
   }
   return out;
 }

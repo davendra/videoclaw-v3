@@ -9,7 +9,10 @@ describe('cli-schema', () => {
     const dump = buildSchemaDump();
     assert.equal(typeof dump.version, 'string', 'version present');
     assert.ok(Array.isArray(dump.commands), 'commands is an array');
-    assert.ok(dump.commands.length >= 30, 'at least 30 commands documented');
+    assert.equal(dump.commands.length, 55, 'expect exactly 55 curated commands; update this count when adding/removing entries');
+    const names = dump.commands.map((c) => c.name);
+    const uniqueNames = new Set(names);
+    assert.equal(uniqueNames.size, names.length, 'command names must be unique');
     assert.ok(Array.isArray(dump.errorCodes), 'errorCodes is an array');
     assert.ok(dump.errorCodes.length >= 20, 'at least 20 error codes');
     assert.deepEqual(Object.keys(dump.exitCodes).sort(), ['GATE', 'SUCCESS', 'SYSTEM_ERROR', 'USER_ERROR']);

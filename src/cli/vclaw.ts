@@ -3071,6 +3071,13 @@ export async function main(): Promise<void> {
 
   printCompatibilityNotice();
 
+  if (command === 'schema') {
+    const { buildSchemaDump } = await import('../video/cli-schema.js');
+    const { writeOutput } = await import('../video/cli-output.js');
+    writeOutput(buildSchemaDump(), { json: true });
+    return;
+  }
+
   if (command === 'video' && subcommand === 'providers') {
     const workspaceRoot = parseFlagValue(rest, '--workspace-root');
     const report = buildProviderStatusReport({ workspaceRoot });

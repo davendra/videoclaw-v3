@@ -1,0 +1,36 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "vclaw error response",
+  "description": "Stable error-code catalog for vclaw CLI JSON output. The TS source-of-truth is src/video/errors.ts ALL_ERROR_CODES.",
+  "type": "object",
+  "required": ["code", "message"],
+  "properties": {
+    "code": { "type": "string", "enum": [] },
+    "message": { "type": "string" },
+    "details": { "type": "object", "additionalProperties": true }
+  },
+  "codes": [
+    { "code": "invalid_slug", "exitCode": 1, "description": "Slug is missing or fails isProjectSlug validation." },
+    { "code": "project_not_found", "exitCode": 1, "description": "Referenced project slug has no workspace on disk." },
+    { "code": "missing_required_flag", "exitCode": 1, "description": "A flag required by the subcommand was not provided." },
+    { "code": "unknown_subcommand", "exitCode": 1, "description": "The subcommand is not in the dispatch table." },
+    { "code": "invalid_mode", "exitCode": 1, "description": "--mode value is not 'storyboard' or 'director'." },
+    { "code": "invalid_aspect_ratio", "exitCode": 1, "description": "Aspect ratio is not 16:9 / 9:16 / 1:1." },
+    { "code": "image_not_found", "exitCode": 1, "description": "Referenced image file (asset or reference) is not on disk." },
+    { "code": "asset_not_found", "exitCode": 1, "description": "Referenced asset (image/video/audio) is not on disk." },
+    { "code": "template_not_found", "exitCode": 1, "description": "Referenced template name is not registered." },
+    { "code": "character_not_found", "exitCode": 1, "description": "Referenced character name is not in the project's characters/." },
+    { "code": "duplicate_project", "exitCode": 1, "description": "vclaw video init on a slug whose workspace already exists." },
+    { "code": "directory_not_writable", "exitCode": 1, "description": "Workspace root is not writable." },
+    { "code": "provider_unreachable", "exitCode": 2, "description": "Provider HTTP / native transport returned a non-recoverable error." },
+    { "code": "adapter_command_failed", "exitCode": 2, "description": "User-provided ..._ADAPTER command exited non-zero." },
+    { "code": "env_var_missing", "exitCode": 2, "description": "Required env var (e.g. USEAPI_API_TOKEN) is not set for the chosen route." },
+    { "code": "native_transport_failed", "exitCode": 2, "description": "native-veo / native-seedance / native-runway hit an internal error." },
+    { "code": "schema_validation_failed", "exitCode": 2, "description": "Artifact failed its JSON-Schema validation." },
+    { "code": "workspace_corrupt", "exitCode": 2, "description": "projects/<slug>/ has missing or malformed canonical files." },
+    { "code": "unexpected_internal_error", "exitCode": 2, "description": "Catch-all for unanticipated exceptions; always a bug." },
+    { "code": "storyboard_approval_required", "exitCode": 3, "description": "Director-mode execute requires storyboard.md approval." },
+    { "code": "storyboard_review_stale", "exitCode": 3, "description": "Director storyboard review state is 'stale'; re-run storyboard-review." },
+    { "code": "execution_blocked_by_readiness", "exitCode": 3, "description": "readiness check reported blockers; resolve before plan/execute." }
+  ]
+}

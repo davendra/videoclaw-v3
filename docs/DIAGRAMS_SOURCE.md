@@ -106,7 +106,6 @@ flowchart LR
     VF --> MD["movie-director"]
     VF --> UGC["ugc"]
     VF --> VP["video-post"]
-    VF --> CB["creative-brief"]
     VF --> CC["character-creator"]
     VF --> CL["character-library"]
     VF --> SP["seedance-prompts"]

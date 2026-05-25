@@ -43,7 +43,6 @@ aliases as discovery handles rather than first-choice workflows.
 | 🎬 Video | [`video-post`](#video-post) | imported | Post-render verify, social variants, thumbnails, archival. |
 | 🎭 Cast | [`character-creator`](#character-creator) | imported | Create Go Bananas characters with profile + multi-view reference sheets. |
 | 🎭 Cast | [`character-library`](#character-library) | imported | Audit, list, patch, and delete entries in the shared Go Bananas library. |
-| 📝 Brief | [`creative-brief`](#creative-brief) | imported | 7-question filmmaker intake → exact CLI commands. |
 | 🎞️ Prompts | [`seedance-prompts`](#seedance-prompts) | imported | Browse and apply the clean-room Seedance prompt reference library. |
 | 📺 Audio | [`youtube-audio`](#youtube-audio) | imported | Download audio (MP3) or video (MP4) from YouTube using `yt-dlp` + FFmpeg. |
 | 📣 UGC | [`ugc`](#ugc) | imported | Belief-driven UGC campaign generator (E5 method) with multi-video output. |
@@ -263,23 +262,6 @@ bad anchors — without leaving the repo-local skill surface. Companion to `char
 **When to reach for it:** *"list my characters"*, *"audit the character library"*, *"patch this drifting character"*, *"delete polluted characters"*, *"fix library hygiene before a director run"*.
 
 **Full guide:** [`skills/character-library/SKILL.md`](../skills/character-library/SKILL.md)
-
----
-
-### creative-brief
-
-**Role:** 7-question filmmaker intake that translates creative language into exact CLI commands.
-**What it does:** Bridges *"I want a luxury resort ad"* and *"make something like a Nike spot"* into the
-correct `vclaw` command sequence. Asks a structured 7-question brief and emits the matching execution plan.
-**Key features:**
-- Filmmaker-language interview rather than CLI-language
-- Output is concrete CLI commands the user can copy/paste or hand to an executor
-- Triggers on creative intent ("video idea", "brand video", "short film", "make something like")
-- Pairs naturally with `video-framework` as the routing layer below
-
-**When to reach for it:** When the user describes a video in creative terms rather than as CLI commands.
-
-**Full guide:** [`skills/creative-brief/SKILL.md`](../skills/creative-brief/SKILL.md)
 
 ---
 

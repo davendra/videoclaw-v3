@@ -36,7 +36,6 @@ Compatibility/deep-reference surfaces remain available, but the preferred UX is:
 - `movie-director`
 - `seedance-prompts`
 - `ugc`
-- `creative-brief`
 - `character-library`
 - `character-creator`
 - `video-post`

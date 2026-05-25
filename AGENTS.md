@@ -10,6 +10,7 @@ contract:
 2. **Exit codes follow a 0/1/2/3 taxonomy** — see `docs/CLI_REFERENCE.md` § Agent-friendly surface.
 3. **Errors carry stable string codes** in their JSON envelope. The catalog: `schemas/video/errors.json`.
 4. **One-call discovery: `vclaw schema --json`** dumps the full contract — commands, flags, artifact schemas, exit codes, error codes.
+5. **Veo (Google Flow) access requires Bun.** `vclaw veo *` subcommands bridge to `bun run vclaw-cli/flow.ts` as a subprocess. Bun must be on PATH (`bun --version` to verify).
 
 If you are an agent author wiring videoclaw into your tool: call
 `vclaw schema --json` once, then drive the CLI deterministically.

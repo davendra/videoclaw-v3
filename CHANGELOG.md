@@ -26,6 +26,23 @@ orchestration layer. Research that resolved this question:
 - TTY-safe progress: spinners/colors to stderr only.
 - Noun-verb command aliases (e.g., `vclaw video character list` ↔ `vclaw video character-list`).
 
+### Changed (Slice 2 — skill consolidations, shipped)
+
+- Presenter family made parametric: `bunty`, `davendra-presenter`, `nex-presenter` reduced from ~560/820/842-line workflow duplicates to ~25-line stubs driven by per-skill `brand-profile.json` (~2126 lines removed). New `schemas/video/brand-profile.schema.json`.
+- `video-framework` is now the sole video front door; `video-replicator` demoted to reference-only (auto-trigger disabled).
+- `director-video` merged into `movie-director` (deleted — was a strict subset).
+- `creative-brief` 7-question intake folded into `video-framework` intake mode (deleted; reference files moved to `video-framework/references/`).
+- `seedance-music-video-prompts` merged into `seedance-prompts` as a music-video subsection (deleted; reference file moved).
+
+### Added (Slice 4 — Bun standalone surface collapse, shipped)
+
+- `vclaw veo {status|list|history|resume|reset|cancel}` — 6 standard verbs bridging to the Bun CLI via `spawnVeo()`.
+- `vclaw veo useapi:*` — 7 UseAPI verbs (accounts, captcha, health, image, image:upscale, gif, upscale).
+- `src/video/veo-subprocess.ts` — shared `spawnVeo()` helper for the Bun bridge.
+- Schema dump now includes 13 new `veo *` entries (`vclaw schema --json | jq '.commands | length'` → 68).
+- Bun runtime is now an explicit requirement for Veo / Google Flow access (documented in CLI_REFERENCE).
+- Legacy `bun run vclaw-cli/flow.ts <verb>` still works in v3.0 (soft-deprecation; banner in `vclaw-cli/CLAUDE.md`).
+
 ### Removed (breaking)
 
 - **`omx` deprecation alias** — `src/cli/omx.ts`, the `omx` bin entry in

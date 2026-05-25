@@ -88,6 +88,42 @@ would create confusion for users with existing scripts.
 
 ---
 
+## Veo (Bun bridge)
+
+The `vclaw veo *` subcommand family bridges to the Bun-based
+`vclaw-cli/flow.ts` for Google Flow access via Puppeteer. The Bun
+runtime is required (install via `curl -fsSL https://bun.sh/install | bash`).
+
+### Standard verbs
+
+| Command | Purpose |
+|---|---|
+| `vclaw veo status [batchId]` | Show batch status. |
+| `vclaw veo list` | List all batches. |
+| `vclaw veo history [--limit <n>]` | Recent job history. |
+| `vclaw veo resume [batchId]` | Resume a paused batch. |
+| `vclaw veo reset` | Reset failed jobs to pending. |
+| `vclaw veo cancel` | Cancel current batch. |
+
+### UseAPI verbs
+
+| Command | Purpose |
+|---|---|
+| `vclaw veo useapi:accounts list\|add` | Manage useapi.net accounts. |
+| `vclaw veo useapi:captcha list \| --provider <name> --key <key>` | CAPTCHA providers. |
+| `vclaw veo useapi:health` | Account health + history. |
+| `vclaw veo useapi:image --image-prompt "..."` | Generate images. |
+| `vclaw veo useapi:image:upscale --media-id <id> --resolution 2k\|4k` | Upscale images. |
+| `vclaw veo useapi:gif --media-id <id> --output-file <path>` | Video → GIF (free). |
+| `vclaw veo useapi:upscale --media-id <id> --resolution 1080p\|4k` | Upscale videos. |
+
+See `vclaw schema --json | jq '.commands[] | select(.name | startswith("veo "))'` for the canonical list.
+
+The legacy standalone form `bun run vclaw-cli/flow.ts <verb>` still
+works in v3.0 but is being deprecated. Use `vclaw veo *` going forward.
+
+---
+
 ## Project lifecycle
 
 ```bash

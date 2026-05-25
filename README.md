@@ -348,7 +348,7 @@ sane.
 | Role | Examples | When you reach for it |
 |---|---|---|
 | **Canonical entry** | `video-framework`, `brand-presenter` | Generic / unspecified video request — the entry skill routes into a specialist. |
-| **Specialist** | `video-storyboard`, `video-clone-ad`, `director-video`, `video-post`, ... | The mode is clearly known up front. |
+| **Specialist** | `video-storyboard`, `video-clone-ad`, `movie-director`, `video-post`, ... | The mode is clearly known up front. |
 | **Compatibility alias** | `davendra-presenter`, `nex-presenter`, `bunty` | Personal/brand presets that delegate into `brand-presenter`. |
 | **Workflow** | `autopilot`, `ralph`, `team`, `doctor`, `pipeline`, ... | Orchestration, debugging, ops — independent of any one production mode. |
 
@@ -357,7 +357,7 @@ sane.
 ### Quick skill map
 
 <details>
-<summary><strong>🎬 Video skills</strong> (16 — click to expand)</summary>
+<summary><strong>🎬 Video skills</strong> (14 — click to expand)</summary>
 
 | Skill | Role | One-liner |
 |---|---|---|
@@ -367,14 +367,12 @@ sane.
 | [`video-analyze-template`](./skills/video-analyze-template) | native clean-room | Reference video → reusable template packet (Gemini auto-mode). |
 | [`video-clone-ad`](./skills/video-clone-ad) | native clean-room | Saved template → new product/brand via `clone-execute`. |
 | [`video-thumbnail-lab`](./skills/video-thumbnail-lab) | native clean-room | Final render → thumbnail + platform variants. |
-| [`director-video`](./skills/director-video) | imported | Multi-scene Director-mode with two-phase approval. |
-| [`movie-director`](./skills/movie-director) | imported | Short-film production across 12 genres + structured entry modes. |
+| [`movie-director`](./skills/movie-director) | imported | Multi-scene Director-mode (12 genres, two-phase approval, structured entry modes). |
 | [`video-replicator`](./skills/video-replicator) | imported (deep) | 7-mode legacy pipeline (COPY/CREATE/NARRATED/PRESENTATION/LONG-FORM/FILM/UGC). |
 | [`video-post`](./skills/video-post) | imported | Post-render verify, variants, thumbnails, archive. |
 | [`character-creator`](./skills/character-creator) | imported | Go Bananas characters with multi-view reference sheets. |
 | [`character-library`](./skills/character-library) | imported | Audit / patch / delete entries in the shared GB library. |
-| [`creative-brief`](./skills/creative-brief) | imported | 7-question filmmaker intake → exact CLI commands. |
-| [`seedance-prompts`](./skills/seedance-prompts) | imported | Browse and apply the Seedance prompt reference library. |
+| [`seedance-prompts`](./skills/seedance-prompts) | imported | Seedance prompt reference library (incl. music-video patterns). |
 | [`youtube-audio`](./skills/youtube-audio) | imported | YouTube → MP3/MP4 via `yt-dlp` + FFmpeg. |
 | [`ugc`](./skills/ugc) | imported | Belief-driven UGC campaign generator (E5 method). |
 

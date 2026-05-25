@@ -188,9 +188,9 @@ specific to the visual.
 
 ### Intake reference files
 
-The intake question set is backed by reference notes (originally under
-`skills/creative-brief/references/`, fold them into video-framework's
-`references/` directory as you build them out):
+The intake question set is backed by reference notes in this skill's
+`references/` directory (folded in from the former `creative-brief`
+skill in Slice 2):
 
 - `references/visual-styles.md` — vibe/style → SEALCAM Metatokens + Go Bananas presets
 - `references/camera-archetypes.md` — 5 camera archetypes → CLI flags + transition IDs

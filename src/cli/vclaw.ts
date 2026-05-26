@@ -95,6 +95,7 @@ import { parseExecutionProfileInput, setExecutionProfileOverrides } from '../vid
 import { buildExecutionPlan } from '../video/execution-plan.js';
 import { scaffoldExecutionSeedAssetsFromStoryboard } from '../video/execution-seed.js';
 import { executeProject } from '../video/execute.js';
+import { assembleProject, writeAssembleReport } from '../video/assemble/assemble.js';
 import { cancelExecution } from '../video/execution-cancel.js';
 import { refreshExecutionStatus } from '../video/execution-status.js';
 import { buildPortfolioReport } from '../video/report.js';
@@ -2288,6 +2289,30 @@ async function handleVideoExecuteCancel(args: string[]): Promise<void> {
   }
 }
 
+async function handleVideoAssemble(args: string[]): Promise<void> {
+  const slug = parseFlagValue(args, '--project');
+  if (!slug) {
+    throw new VclawError(
+      'missing_required_flag',
+      'video assemble requires --project <slug>',
+      { missing: ['--project'] },
+    );
+  }
+  const root = parseFlagValue(args, '--root') ?? process.cwd();
+  const dryRun = args.includes('--dry-run');
+  const brandProfilePath = parseFlagValue(args, '--brand-profile') ?? undefined;
+
+  const workspace = await ensureProjectWorkspace(slug, root);
+  const result = await assembleProject({
+    workspace,
+    dryRun,
+    ...(brandProfilePath ? { brandProfilePath } : {}),
+  });
+  const { artifactPath } = await writeAssembleReport(workspace, result, brandProfilePath);
+
+  writeOutput({ slug, artifactPath, ...result });
+}
+
 async function handleVideoCloneInit(args: string[]): Promise<void> {
   const templateName = parseFlagValue(args, '--template');
   const projectSlug = parseFlagValue(args, '--project');
@@ -3485,6 +3510,11 @@ export async function main(): Promise<void> {
   }
   if (command === 'video' && subcommand === 'execute-cancel') {
     await handleVideoExecuteCancel(rest);
+    return;
+  }
+
+  if (command === 'video' && subcommand === 'assemble') {
+    await handleVideoAssemble(rest);
     return;
   }
 

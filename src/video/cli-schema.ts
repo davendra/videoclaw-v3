@@ -73,6 +73,7 @@ const COMMANDS: CommandSpec[] = [
   { name: 'video produce', usage: 'vclaw video produce --project <slug> [--root <path>] [--mode storyboard|director] [--dry-run] [--scene <sceneIndex> ...]', aliases: ['video execute'] },
   { name: 'video execute-status', usage: 'vclaw video execute-status --project <slug> [--root <path>] [--mode storyboard|director]' },
   { name: 'video execute-cancel', usage: 'vclaw video execute-cancel --project <slug> [--root <path>] [--mode storyboard|director]' },
+  { name: 'video assemble', usage: 'vclaw video assemble --project <slug> [--root <path>] [--brand-profile <path>] [--dry-run]', description: 'Assemble the final video: PDF slides -> title card -> per-slide animation -> TTS narration -> music bed -> stitched MP4 (dry-run plans the whole pipeline without ffmpeg/keys).' },
 
   // --- director gate ---
   { name: 'video director-preflight', usage: 'vclaw video director-preflight --project <slug> [--root <path>] [--apply-content-fixes]' },

@@ -222,6 +222,7 @@ vclaw video produce --project <slug> [--root <path>] [--mode storyboard|director
 vclaw video execute --project <slug> [--root <path>] [--mode storyboard|director] [--dry-run]
 vclaw video execute-status --project <slug> [--root <path>] [--mode storyboard|director]
 vclaw video execute-cancel --project <slug> [--root <path>] [--mode storyboard|director]
+vclaw video assemble --project <slug> [--root <path>] [--brand-profile <path>] [--dry-run]
 vclaw video review-ui --project <slug> [--root <path>] [--host <host>] [--port <port>] [--ui-path <path>] [--dry-run]
 vclaw video review-autopilot --project <slug> [--root <path>] [--template <template-id>] [--character <name>] [--run-id <id>]
 vclaw video artifact-history --project <slug> --artifact <name> [--root <path>]
@@ -361,6 +362,23 @@ than silently pretending the job was cancelled.
 
 That review file now includes a character-binding table for referenced scene
 characters, including any stored Go Bananas ids and reference assets.
+
+## Assemble stage
+
+`vclaw video assemble --project <slug>` runs the post-execution assembly
+pipeline in order: (optional) PDF slide extraction, (optional) branded title
+card, per-slide animation, per-scene TTS narration, (optional) background-music
+bed, and the final FFmpeg stitch — then advisory QA (dialogue/narration/image
+filter) whose findings land in the report `warnings`. It writes a typed
+`assemble-report.json` artifact (schema: `schemas/video/artifacts/assemble-report.schema.json`).
+
+`--dry-run` plans the entire pipeline (every FFmpeg command + provider call,
+recorded into the manifest and `events`) WITHOUT executing anything or needing
+ffmpeg or any API key — this is the agent-safe planning surface. `--brand-profile <path>`
+supplies the presenter knobs (voice, intro/outro segments, optional deck/music/
+title-card config). Real (non-dry-run) assembly spawns FFmpeg and calls the TTS
+and music providers; verifying the rendered MP4 looks/sounds correct is a human
+integration checkpoint.
 
 The JSON returned by `vclaw video status` now also includes referenced
 `characterBindings` so project-facing status surfaces can show the same identity

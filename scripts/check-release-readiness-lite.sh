@@ -29,6 +29,7 @@ node scripts/smoke-execution-cancel.mjs
 node scripts/smoke-portfolio.mjs
 node scripts/smoke-reference-sheets.mjs
 node scripts/smoke-scene-candidates.mjs
+node scripts/smoke-assemble.mjs
 node scripts/e2e-image-storyboard-workflow.mjs --verify-server
 bash scripts/check-movie-director-wrappers.sh
 bash scripts/check-cleanroom-docs.sh

@@ -42,6 +42,15 @@ Use this workflow when:
 7. synthesize narration / voice-change presenter scenes
 8. assemble final video with music and transitions
 
+> **TS-native assembly path (Slice 3i):** `vclaw video assemble --project <slug> [--brand-profile <path>] [--dry-run]`
+> is now the forward path for the assemble stage (step 8 + its inputs 1–7). It runs the
+> in-process pipeline — PDF slides → title card → per-slide animation → TTS narration →
+> background-music bed → FFmpeg stitch — and writes a typed `assemble-report.json`. Run it
+> with `--dry-run` to plan the full pipeline (every FFmpeg command + provider call) without
+> needing ffmpeg or API keys. The Python pipeline under `skills/video-replicator/scripts/`
+> is **superseded for the assemble stage** but retained for now until a future cleanup;
+> prefer the `vclaw video assemble` CLI going forward.
+
 ## Brand Profile Inputs
 
 Each brand/presenter profile should provide:

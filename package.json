@@ -62,6 +62,7 @@
     "smoke:portfolio": "npm run build && node scripts/smoke-portfolio.mjs",
     "smoke:reference-sheets": "npm run build && node scripts/smoke-reference-sheets.mjs",
     "smoke:scene-candidates": "npm run build && node scripts/smoke-scene-candidates.mjs",
+    "smoke:assemble": "npm run build && node scripts/smoke-assemble.mjs",
     "e2e:image-storyboard": "npm run build && node scripts/e2e-image-storyboard-workflow.mjs --verify-server",
     "e2e:image-storyboard:examples": "npm run build && node scripts/e2e-image-storyboard-workflow.mjs --include-examples --verify-server",
     "check:movie-director-wrappers": "bash scripts/check-movie-director-wrappers.sh",

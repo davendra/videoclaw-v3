@@ -36,6 +36,38 @@ export type {
   GenerateTitleCardResult,
 } from './title-card.js';
 
+// Sub-slice 3e: shared FFmpeg helper (spawn wrapper + ffprobe duration) and
+// slide-animation arg-builder. Pure arg-builders are the tested surface;
+// actual ffmpeg execution is integration-only (human-verified).
+export {
+  runFfmpeg,
+  ffprobeDuration,
+  resolveFfmpegBin,
+  resolveFfprobeBin,
+  STANDARD_VIDEO_ARGS,
+  STANDARD_AUDIO_ARGS,
+} from './ffmpeg.js';
+export type {
+  RunFfmpegOptions,
+  RunFfmpegResult,
+  FfprobeDurationOptions,
+} from './ffmpeg.js';
+
+export {
+  buildAnimateArgs,
+  animateSlide,
+  alignDurationToFrame,
+  DEFAULT_FADE_DURATION_SEC,
+  TARGET_WIDTH,
+  TARGET_HEIGHT,
+  TARGET_FPS,
+  APAD_SAFETY_SEC,
+} from './animate-slides.js';
+export type {
+  BuildAnimateArgsInput,
+  AnimateSlideResult,
+} from './animate-slides.js';
+
 // Sub-slice 3f: background-music generation (Kie.ai Suno; submit -> poll -> download).
 export { generateMusic, resolveMusicApiKey } from './music.js';
 export type {

@@ -35,3 +35,10 @@ export type {
   GenerateTitleCardInput,
   GenerateTitleCardResult,
 } from './title-card.js';
+
+// Sub-slice 3f: background-music generation (Kie.ai Suno; submit -> poll -> download).
+export { generateMusic, resolveMusicApiKey } from './music.js';
+export type {
+  GenerateMusicInput,
+  GenerateMusicResult,
+} from './music.js';

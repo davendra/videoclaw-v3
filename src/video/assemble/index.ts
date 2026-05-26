@@ -119,3 +119,30 @@ export type {
   CheckImageFilterResult,
   ImageFilterWarning,
 } from './qa-image-filter.js';
+
+// Sub-slice 3h: stitch keystone — concat-demuxer (primary) + concat-filter
+// fallback + music-bed mix. Pure arg-builders are the tested surface; the final
+// MP4 quality check is a human integration checkpoint (ffmpeg never run in tests).
+export {
+  stitch,
+  orderedSegments,
+  selectConcatStrategy,
+  buildConcatListContent,
+  buildConcatDemuxerArgs,
+  buildConcatFilterArgs,
+  buildMusicMixArgs,
+  FILTER_FALLBACK_SEGMENT_THRESHOLD,
+  DEFAULT_MUSIC_VOLUME,
+  DEFAULT_MUSIC_FADE_OUT_SEC,
+  STANDARD_AUDIO_BITRATE,
+} from './stitch.js';
+export type {
+  ConcatStrategy,
+  MusicMixSettings,
+  StitchInput,
+  StitchPlannedStep,
+  StitchResult,
+  StitchOptions,
+  BuildConcatFilterOptions,
+  BuildMusicMixOptions,
+} from './stitch.js';

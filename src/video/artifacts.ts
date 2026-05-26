@@ -53,6 +53,33 @@ export interface PublishReportArtifact {
   notes?: string[];
 }
 
+export interface AssembleReportArtifact {
+  projectSlug: string;
+  generatedAt: string;
+  status: 'complete' | 'partial' | 'dry-run' | 'failed';
+  brandProfile?: string | null;
+  outputPath?: string;
+  manifest: Array<{
+    kind: 'narration' | 'music' | 'title-card' | 'slide-animation' | 'final-video';
+    path: string;
+    durationMs: number;
+    sceneIndex?: number;
+    sizeBytes: number;
+    generator: string;
+  }>;
+  warnings?: string[];
+  events?: string[];
+}
+
+export function createAssembleReportArtifact(
+  input: Omit<AssembleReportArtifact, 'generatedAt'> & { generatedAt?: string },
+): AssembleReportArtifact {
+  return {
+    ...input,
+    generatedAt: input.generatedAt ?? new Date().toISOString(),
+  };
+}
+
 export function createBriefArtifact(
   input: Omit<BriefArtifact, 'createdAt'> & { createdAt?: string },
 ): BriefArtifact {
@@ -93,4 +120,5 @@ export type CanonicalArtifact =
   | AssetManifestArtifact
   | ReviewReportArtifact
   | PublishReportArtifact
+  | AssembleReportArtifact
   | VideoAnalyzeOutput;

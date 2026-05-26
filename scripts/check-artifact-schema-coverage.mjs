@@ -36,9 +36,6 @@ const KNOWN_ALTERNATE_WRITERS = new Set([
   'review-report',
   'scene-candidates',
   'scene-selection',
-  // assemble-report's schema landed in Slice 3a; its writer arrives in
-  // Slice 3i when `vclaw video assemble` is wired. Expected orphan until then.
-  'assemble-report',
 ]);
 
 const REPO_ROOT = process.cwd();

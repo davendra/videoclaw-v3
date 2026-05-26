@@ -11,6 +11,9 @@ export type {
   AssembleResult,
 } from './types.js';
 
+// Sub-slice 3i: the assemble-stage orchestrator + typed assemble-report writer.
+export { assembleProject, writeAssembleReport } from './assemble.js';
+
 // Sub-slice 3b: TTS (text->speech narration).
 export { generateTts } from './tts.js';
 export type {

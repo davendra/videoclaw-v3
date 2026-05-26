@@ -35,14 +35,23 @@ is wired end-to-end:
   full pipeline and writes a typed `assemble-report.json`.
 - 630 tests, `check:release-readiness-lite` green (incl. `smoke:assemble`).
 
-**The remaining work is OUTPUT VALIDATION, which is a human checkpoint:**
-the unit tests cover arg-shape + dry-run planning. They do NOT run real
-FFmpeg or call the TTS/music providers. So the pipeline has not yet been
-proven to produce a *correct-looking/sounding MP4* on real media. That
-needs `ELEVENLABS_API_KEY` + `KIE_API_KEY` + ffmpeg on PATH + a human to
-watch/listen to the result. The FFmpeg arg-strings were ported verbatim
-from the proven Python, so the expectation is parity — but it's unverified
-until someone renders a real video.
+**The FFmpeg layer is now real-render-validated** (`npm run smoke:assemble-render`):
+the animate-slides, stitch (both concat-demuxer and concat-filter paths),
+and music-mix commands have all been executed through **real ffmpeg 8.1**
+on synthetic inputs (ffmpeg-generated test sources + sharp PNGs, no API
+keys). Every stage produced a valid h264/aac MP4 at the correct
+1280×720@24 / 44100-stereo with the expected duration + stream counts.
+No ported arg-string was rejected by ffmpeg. So the FFmpeg *plumbing* is
+proven, not just arg-shape-matched.
+
+**What STILL needs a human (the narrowed checkpoint):** aesthetic /
+content quality on REAL media — real TTS narration (needs
+`ELEVENLABS_API_KEY`), real music bed (needs `KIE_API_KEY`), real slide
+imagery — and confirming fades / AV-lock / mix levels look + sound right.
+The smoke uses silent `anullsrc` audio + solid-color slides, so it proves
+mechanical correctness but not that the finished video is *good*. Run
+`vclaw video assemble` for real on one project with keys + watch the
+result to close this out.
 
 Practical impact: the "single `npm install`, no Python" promise is now
 structurally true — the TS assemble path exists and is wired. It is

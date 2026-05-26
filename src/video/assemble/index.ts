@@ -10,3 +10,12 @@ export type {
   AssembleManifestEntry,
   AssembleResult,
 } from './types.js';
+
+// Sub-slice 3b: TTS (text->speech narration).
+export { generateTts } from './tts.js';
+export type {
+  TtsInput,
+  TtsResult,
+  TtsSegment,
+  TtsSceneOutput,
+} from './tts.js';

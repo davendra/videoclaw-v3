@@ -19,3 +19,12 @@ export type {
   TtsSegment,
   TtsSceneOutput,
 } from './tts.js';
+
+// Sub-slice 3c: PDF slide extraction (rasterize PDF pages to images).
+export { extractPdfSlides, slideImageFilename } from './pdf.js';
+export type {
+  ExtractPdfSlidesInput,
+  ExtractPdfSlidesResult,
+  ExtractedPdfPage,
+  SlideImageFormat,
+} from './pdf.js';

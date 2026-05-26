@@ -103,6 +103,7 @@
   ],
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.0",
+    "@napi-rs/canvas": "^0.1.100",
     "pdfjs-dist": "^4.10.38",
     "sharp": "^0.33.5"
   },

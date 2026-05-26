@@ -42,3 +42,48 @@ export type {
   GenerateMusicInput,
   GenerateMusicResult,
 } from './music.js';
+
+// Sub-slice 3g: QA modules (advisory, pure-local; Gemini-vision deferred).
+export {
+  lintDialogue,
+  countWords,
+  STANDARD_MAX_WORDS,
+  STANDARD_RECOMMENDED_WORDS,
+  SIGNOFF_SCENE_INDEX,
+  SIGNOFF_MAX_WORDS,
+  SIGNOFF_RECOMMENDED_WORDS,
+} from './qa-dialogue-lint.js';
+export type {
+  DialogueSegment,
+  LintDialogueInput,
+  LintDialogueResult,
+  DialogueWarning,
+} from './qa-dialogue-lint.js';
+
+export {
+  checkNarration,
+  countNarrationWords,
+  MIN_NARRATION_CHARS,
+  DEFAULT_MAX_NARRATION_WORDS,
+  WORDS_PER_SECOND,
+} from './qa-narration.js';
+export type {
+  NarrationScene,
+  CheckNarrationInput,
+  CheckNarrationResult,
+  NarrationWarning,
+} from './qa-narration.js';
+
+export {
+  checkImageFilter,
+  classifyImagePrompt,
+  VERDICT_ORDER,
+  RISK_CATEGORIES,
+} from './qa-image-filter.js';
+export type {
+  FilterVerdict,
+  ImageFilterCandidate,
+  CheckImageFilterInput,
+  CheckImageFilterResult,
+  ImageFilterWarning,
+} from './qa-image-filter.js';

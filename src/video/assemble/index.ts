@@ -28,3 +28,10 @@ export type {
   ExtractedPdfPage,
   SlideImageFormat,
 } from './pdf.js';
+
+// Sub-slice 3d: title-card generation (SVG text composited over a base via sharp).
+export { generateTitleCard } from './title-card.js';
+export type {
+  GenerateTitleCardInput,
+  GenerateTitleCardResult,
+} from './title-card.js';

@@ -23,22 +23,32 @@ for the v2 merge.
   plan → execute, with 4 production provider routes (`veo-direct`,
   `veo-useapi`, `seedance-direct`, `runway-useapi`).
 
-**The one remaining feature gap — Slice 3 (Python fold), NOT yet shipped:**
+**Slice 3 (Python fold) — CODE-COMPLETE (ported + wired + dry-run tested), NOT yet OUTPUT-VALIDATED:**
 
-The final-assembly pipeline (TTS · music · slide animation · title cards ·
-FFmpeg stitch) still lives in the **Python scripts** under
-`skills/video-replicator/scripts/` (~9.2K LOC). Until Slice 3 lands, a
-pure `npm install -g videoclaw` does NOT give you the assemble stage
-without a working Python environment. The TS port is planned in 9
-sub-slices at `docs/superpowers/plans/2026-05-25-slice-3-python-fold.md`
-and is estimated at 2-3 months — it requires human video-quality review
-(eyeballing stitched output) and so is deliberately not executed
-autonomously. **`vclaw video assemble` does not exist yet.**
+All 9 sub-slices are ported to TypeScript and `vclaw video assemble`
+is wired end-to-end:
+- TTS (ElevenLabs), PDF slide extraction (pdfjs), title cards (sharp),
+  music (Kie.ai/Suno), QA checks, FFmpeg helper, slide animation, and
+  the stitch keystone (concat-demuxer + filter-fallback + music-mix) all
+  live under `src/video/assemble/`.
+- `vclaw video assemble --project <slug> [--dry-run]` orchestrates the
+  full pipeline and writes a typed `assemble-report.json`.
+- 630 tests, `check:release-readiness-lite` green (incl. `smoke:assemble`).
 
-Practical impact: v3 today is production-ready as a **provider-dispatch +
-project-state + agent-integration toolkit**. The end-to-end
-"deck/script → final narrated MP4" path still depends on the Python
-sidecar until Slice 3 completes.
+**The remaining work is OUTPUT VALIDATION, which is a human checkpoint:**
+the unit tests cover arg-shape + dry-run planning. They do NOT run real
+FFmpeg or call the TTS/music providers. So the pipeline has not yet been
+proven to produce a *correct-looking/sounding MP4* on real media. That
+needs `ELEVENLABS_API_KEY` + `KIE_API_KEY` + ffmpeg on PATH + a human to
+watch/listen to the result. The FFmpeg arg-strings were ported verbatim
+from the proven Python, so the expectation is parity — but it's unverified
+until someone renders a real video.
+
+Practical impact: the "single `npm install`, no Python" promise is now
+structurally true — the TS assemble path exists and is wired. It is
+**code-complete but not yet output-validated**. The Python scripts under
+`skills/video-replicator/scripts/` are retained as the proven reference
+until the TS path is validated on real renders.
 
 ---
 

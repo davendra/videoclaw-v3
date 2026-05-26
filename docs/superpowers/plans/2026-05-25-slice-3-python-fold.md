@@ -262,13 +262,28 @@ git commit -m "Slice 3a: assemble foundation — types, schema, error codes, sha
 - E2E: only after sub-slice 3i, drive `vclaw video assemble` against a fixture project
 
 **Commit pattern for 3b:**
-- 3b.1: scaffolding + TtsInput/TtsResult types + main dispatch shell
-- 3b.2: ElevenLabs adapter + tests
-- 3b.3: OpenAI adapter + tests (if applicable)
-- 3b.4: audio-utils.ts (fade, duration probe, format conversion)
-- 3b.5: tts.ts main wiring + integration smoke
+- 3b.1: scaffolding + TtsInput/TtsResult types + main dispatch shell — ✅ SHIPPED (6e0e5c4)
+- 3b.2: ElevenLabs adapter + tests — ✅ SHIPPED (6e0e5c4)
+- ~~3b.3: OpenAI adapter~~ — DROPPED. generate_tts.py is ElevenLabs-only; there is no OpenAI provider.
+- 3b.4: audio-utils.ts (fade, duration probe, format conversion) — partial: pure helpers shipped in 6e0e5c4; real ffprobe duration probing still TODO
+- 3b.5: transcript-file loading + combined-track concat + conductor/bake-narration + the 3 other endpoint variants + integration smoke — NOT STARTED
 
-Each commit independent + tests green.
+**Discovery notes from the 3b.1/3b.2 port (carry into the remaining 3b work):**
+
+1. **Core TTS call** (verified from generate_tts.py): `POST /v1/text-to-speech/{voice_id}?output_format=<fmt>`, header `xi-api-key`, `Accept: audio/mpeg`. Body `{ text, model_id, voice_settings: { stability, similarity_boost, style, use_speaker_boost } }` + optional `speed`/`previous_text`/`next_text` when non-default. Defaults: model `eleven_flash_v2_5`, stability 0.5, similarity 0.75, format `mp3_44100_128`. 200 → raw audio bytes.
+
+2. **Three MORE endpoint variants the remaining 3b work must handle:**
+   - `/v1/text-to-speech/{voice_id}/with-timestamps` → JSON with base64 `audio_base64` + `alignment` (REQUIRED for `--sync-to-slides`).
+   - `/v1/text-to-dialogue/convert` (Eleven v3, emotional tags).
+   - `/v1/speech-to-speech/{voice_id}` (the `swap`/voice-change subcommand) — multipart `files`+`data`, NOT JSON.
+
+3. **Output format is a free string in the Python CLI** (no `choices=`). v3's adapter introduced an allow-list (`audio-utils.validateOutputFormat`) — confirm the set matches the formats actually used before it rejects a valid one.
+
+4. **Embedded Gemini translation path** (`translate_text`, 20 languages) lives interleaved in generate_tts.py — orthogonal to ElevenLabs. Decide whether v3 wants it (probably a separate concern, not part of the assemble pipeline).
+
+5. **FFmpeg dependency:** the concat/conductor step relies on a local `ffmpeg_wrapper` + `logging_config` module. v3 needs an FFmpeg equivalent for combined-track assembly — the `ffmpeg_failed` error code is already reserved (3a). This overlaps with sub-slice 3e/3h FFmpeg work; consider a shared `assemble/ffmpeg.ts`.
+
+Each commit independent + tests green. **Audio-quality validation (listening to generated speech) is a human checkpoint — needs ELEVENLABS_API_KEY + ears, not mocked tests.**
 
 ---
 

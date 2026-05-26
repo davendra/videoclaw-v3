@@ -24,6 +24,9 @@ export const ALL_ERROR_CODES = [
   'duplicate_project',
   'directory_not_writable',
   'invalid_role',
+  'invalid_audio_format',
+  'invalid_video_format',
+  'unsupported_codec',
 
   // System errors (exit code 2)
   'provider_unreachable',
@@ -33,6 +36,11 @@ export const ALL_ERROR_CODES = [
   'schema_validation_failed',
   'workspace_corrupt',
   'unexpected_internal_error',
+  'tts_failed',
+  'music_gen_failed',
+  'pdf_parse_failed',
+  'ffmpeg_failed',
+  'audio_sync_drift',
 
   // Gates (exit code 3)
   'storyboard_approval_required',
@@ -61,6 +69,9 @@ export const EXIT_CODES: Record<ErrorCode, 1 | 2 | 3> = {
   duplicate_project: 1,
   directory_not_writable: 1,
   invalid_role: 1,
+  invalid_audio_format: 1,
+  invalid_video_format: 1,
+  unsupported_codec: 1,
   // System errors (2)
   provider_unreachable: 2,
   adapter_command_failed: 2,
@@ -69,6 +80,11 @@ export const EXIT_CODES: Record<ErrorCode, 1 | 2 | 3> = {
   schema_validation_failed: 2,
   workspace_corrupt: 2,
   unexpected_internal_error: 2,
+  tts_failed: 2,
+  music_gen_failed: 2,
+  pdf_parse_failed: 2,
+  ffmpeg_failed: 2,
+  audio_sync_drift: 2,
   // Gates (3)
   storyboard_approval_required: 3,
   storyboard_review_stale: 3,

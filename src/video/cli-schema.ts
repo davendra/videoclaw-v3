@@ -176,7 +176,7 @@ function loadArtifactSchemas(): Record<string, unknown> {
 
 export function buildSchemaDump(): SchemaDump {
   return {
-    version: '3.0.0-alpha.0',
+    version: '3.0.0-alpha.1',
     generatedAt: new Date().toISOString(),
     exitCodes: { ...ExitCode },
     errorCodes: ALL_ERROR_CODES,

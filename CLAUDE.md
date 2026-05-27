@@ -136,4 +136,4 @@ Proceed by default on obvious next steps. Keep work scoped to this repository an
 
 ## Recommended reading order
 
-`docs/ARCHITECTURE.md` → `docs/CLI_REFERENCE.md` → `docs/OPERATIONS.md` → `docs/OBSIDIAN.md` → `docs/TEMPLATES.md` → `docs/MIGRATION.md` → `docs/DEPRECATION.md` → `docs/RELEASE_READINESS.md` → `docs/MASTER_PLAN_ALIGNMENT.md` → `docs/DIAGRAMS_SOURCE.md`.
+`docs/ARCHITECTURE.md` → `docs/CLI_REFERENCE.md` → `docs/ASSEMBLE.md` → `docs/OPERATIONS.md` → `docs/OBSIDIAN.md` → `docs/TEMPLATES.md` → `docs/MIGRATION.md` → `docs/DEPRECATION.md` → `docs/RELEASE_READINESS.md` → `docs/MASTER_PLAN_ALIGNMENT.md` → `docs/DIAGRAMS_SOURCE.md`.

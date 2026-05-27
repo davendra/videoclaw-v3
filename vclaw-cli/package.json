@@ -1,6 +1,6 @@
 {
   "name": "vclaw-cli",
-  "version": "3.0.0-alpha.0",
+  "version": "3.0.0-alpha.1",
   "description": "Bun sidecar for videoclaw v3: Google Labs Flow (Veo 3.x + Omni Flash) via Puppeteer browser automation + UseAPI aggregator (Veo, Seedance, Runway). Subprocess-only — invoked from the main `videoclaw` CLI via native-veo; not a standalone user surface.",
   "private": true,
   "scripts": {

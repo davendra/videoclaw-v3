@@ -144,7 +144,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
 
 export function buildMcpServer(): Server {
   const server = new Server(
-    { name: 'videoclaw', version: '3.0.0-alpha.0' },
+    { name: 'videoclaw', version: '3.0.0-alpha.1' },
     { capabilities: { tools: {} } },
   );
 

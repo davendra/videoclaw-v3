@@ -539,6 +539,7 @@ Read in this order when you want to go deep:
 | 13 | [`docs/DEPRECATION.md`](./docs/DEPRECATION.md) | Alias + deprecation status |
 | 14 | [`docs/RELEASE_READINESS.md`](./docs/RELEASE_READINESS.md) | Release checklist |
 | 15 | [`docs/MASTER_PLAN_ALIGNMENT.md`](./docs/MASTER_PLAN_ALIGNMENT.md) | What's shipped + remaining gaps |
+| 16 | [`docs/ASSEMBLE.md`](./docs/ASSEMBLE.md) | **`vclaw video assemble` operator guide — pipeline stages, API keys, dry-run vs real render, validation status** |
 
 Skill deep-dives (also indexed in [`docs/SKILLS.md`](./docs/SKILLS.md)):
 

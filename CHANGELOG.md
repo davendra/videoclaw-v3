@@ -5,6 +5,49 @@ All notable changes to `videoclaw` (the npm package; repo: `videoclaw-v3`).
 Format loosely based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 The repo follows [Semantic Versioning](https://semver.org/).
 
+## [3.0.0-alpha.1] — 2026-05-27 (unreleased)
+
+**Slice 3 (Python fold) — code-complete + FFmpeg-validated.** The video
+assembly pipeline is now native TypeScript end-to-end.
+
+### Added (Slice 3 — Python fold)
+
+- `vclaw video assemble --project <slug> [--dry-run] [--brand-profile <path>]` —
+  orchestrates the full assembly pipeline (PDF slides → title card → TTS
+  narration → slide animation → music bed → FFmpeg stitch → QA), writing a
+  typed `assemble-report.json`.
+- `src/video/assemble/` — TS ports of the former Python pipeline:
+  - `tts.ts` + `tts-elevenlabs.ts` — ElevenLabs narration adapter.
+  - `pdf.ts` — PDF slide rasterization (pdfjs-dist legacy + @napi-rs/canvas).
+  - `title-card.ts` — title cards via sharp (SVG-text composite).
+  - `music.ts` — background music via Kie.ai/Suno (poll-based).
+  - `qa-dialogue-lint.ts` / `qa-narration.ts` / `qa-image-filter.ts` — local
+    QA checks (Gemini-vision parts deferred).
+  - `ffmpeg.ts` — spawn wrapper + `ffprobeDuration` + encoding-param constants.
+  - `animate-slides.ts` — Ken-Burns slide animation (FFmpeg).
+  - `stitch.ts` — the stitch keystone: concat-demuxer (<8 segments) /
+    concat-filter (≥8) + music-mix, brand-profile parameterized.
+- 8 assemble error codes (`tts_failed`, `music_gen_failed`, `pdf_parse_failed`,
+  `ffmpeg_failed`, `audio_sync_drift`, `invalid_audio_format`,
+  `invalid_video_format`, `unsupported_codec`).
+- `assemble-report` artifact + schema (typed writer).
+- `smoke:assemble` (dry-run, CI-safe) + `smoke:assemble-render` (opt-in real
+  ffmpeg render on synthetic inputs, no API keys — validates the FFmpeg layer
+  actually executes and produces valid h264/aac MP4s).
+- New deps: `sharp`, `pdfjs-dist`, `@napi-rs/canvas`.
+
+### Notes
+
+- **Code-complete + FFmpeg-validated, not yet output-validated.** Unit tests +
+  the render smoke prove the pipeline runs and produces structurally valid MP4s.
+  Aesthetic/content quality on real media (real TTS voice, real music, real
+  slides) is a human checkpoint — needs `ELEVENLABS_API_KEY` + `KIE_API_KEY` +
+  a render-and-review. See `docs/ASSEMBLE.md` and `docs/MASTER_PLAN_ALIGNMENT.md`.
+- The Python scripts under `skills/video-replicator/scripts/` are retained as
+  the proven reference until the TS path is validated on real renders.
+- ElevenLabs is the only TTS provider (the planned OpenAI adapter was dropped —
+  not present in the source).
+
 ## [3.0.0-alpha.0] — 2026-05-25 (unreleased)
 
 The **v3 unification line**. Same repo, major-version cutover. Pre-cutover

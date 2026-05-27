@@ -1973,6 +1973,10 @@ function parsePositiveIntegerFlag(args: string[], flag: string): number | undefi
 }
 
 function resolveMultiShotPreset(args: string[]): MultiShotPreset {
+  const presetName = parseFlagValue(args, '--preset');
+  if (presetName !== undefined && presetName !== 'cinematic-15s') {
+    throw new Error(`video multi-shot: unknown --preset "${presetName}" (known: cinematic-15s)`);
+  }
   const preset: MultiShotPreset = { ...CINEMATIC_15S_PRESET };
   const totalSeconds = parsePositiveIntegerFlag(args, '--total-seconds');
   const maxChars = parsePositiveIntegerFlag(args, '--max-chars');

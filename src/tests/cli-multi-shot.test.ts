@@ -25,6 +25,18 @@ describe('vclaw video multi-shot --plan', () => {
     const total = parsed.shots.reduce((s: number, x: any) => s + (x.end - x.start), 0);
     assert.equal(total, 15);
   });
+
+  it('accepts the known --preset cinematic-15s as a no-op', () => {
+    const res = run(['video', 'multi-shot', '--plan', '--shots', '5', '--seed', '7', '--preset', 'cinematic-15s']);
+    assert.equal(res.status, 0, res.stderr);
+    assert.equal(JSON.parse(res.stdout).preset.name, 'cinematic-15s');
+  });
+
+  it('exits nonzero with a clear error for an unknown --preset', () => {
+    const res = run(['video', 'multi-shot', '--plan', '--preset', 'bogus']);
+    assert.notEqual(res.status, 0);
+    assert.match(res.stdout + res.stderr, /unknown --preset "bogus"/);
+  });
 });
 
 describe('vclaw video multi-shot --validate', () => {

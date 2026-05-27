@@ -683,6 +683,7 @@ metadata block.
 
 | Flag | Default | Description |
 |---|---|---|
+| `--preset <name>` | `cinematic-15s` | Named preset to base the build on. The only preset today is `cinematic-15s`; passing any other name errors. Additional named presets (`seedance-*` / `veo-*` / `runway-*`) are Phase 2. |
 | `--shots <n>` | auto (3–7) | Exact shot count for `--plan`. |
 | `--seed <n>` | random | PRNG seed for reproducible plans. |
 | `--total-seconds <n>` | 15 | Total clip duration in seconds. |

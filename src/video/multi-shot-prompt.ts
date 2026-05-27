@@ -182,3 +182,30 @@ export function composePromptText(
 }
 
 export { SHOT_SIZES, LENSES, ANGLES, MOVEMENTS, SHOT_TYPE_VOCABULARY };
+
+// Authors a finished prompt body. When VCLAW_MULTISHOT_AUTO_STUB points to a file,
+// its contents are returned verbatim (test/offline path). Otherwise calls Gemini.
+export async function generateMultiShotPromptText(input: {
+  preset: MultiShotPreset;
+  imagePath: string;
+  character?: string;
+  action?: string;
+  location: string;
+  timeOfDay: string;
+}): Promise<string> {
+  const stub = process.env.VCLAW_MULTISHOT_AUTO_STUB;
+  if (stub) {
+    const { readFile } = await import('node:fs/promises');
+    return (await readFile(stub, 'utf-8')).trim();
+  }
+  // Real path: delegate to the shared Gemini analyze plumbing.
+  const { generateMultiShotWithGemini } = await import('./gemini-analyze.js');
+  return generateMultiShotWithGemini({
+    preset: input.preset,
+    imagePath: input.imagePath,
+    character: input.character,
+    action: input.action,
+    location: input.location,
+    timeOfDay: input.timeOfDay,
+  });
+}

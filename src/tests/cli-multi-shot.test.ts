@@ -1,7 +1,7 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { mkdtemp, writeFile, rm } from 'node:fs/promises';
+import { mkdtemp, writeFile, readFile, rm } from 'node:fs/promises';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 
@@ -66,5 +66,68 @@ describe('vclaw video multi-shot --validate', () => {
     const parsed = JSON.parse(res.stdout);
     assert.equal(parsed.valid, false);
     assert.ok(parsed.issues.some((i: any) => i.code === 'multi-shot-timecode-total'));
+  });
+});
+
+describe('vclaw video multi-shot --auto (stubbed) + --project', () => {
+  const STUB_PROMPT = [
+    '[00:00 - 00:05] Wide, 24mm, low angle, static — a figure stands in a field.',
+    '',
+    '[00:05 - 00:10] Medium, 50mm, eye-level, push-in — wind moves the grass.',
+    '',
+    '[00:10 - 00:15] Close-up, 85mm, high angle, handheld — the figure turns to camera.',
+    '',
+    'Location: Open field, golden hour.',
+    'Style: Grounded realism. In the style of a Christopher Nolan movie.',
+    'Audio: Diegetic sound only.',
+  ].join('\n');
+
+  it('authors via stub, validates, persists artifact under --project', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'vclaw-ms-proj-'));
+    try {
+      const init = run(['video', 'init', 'ms-demo', '--root', root]);
+      assert.equal(init.status, 0, init.stderr);
+
+      const stubFile = join(root, 'stub.txt');
+      await writeFile(stubFile, STUB_PROMPT, 'utf-8');
+
+      const res = spawnSync(
+        process.execPath,
+        [cliPath, 'video', 'multi-shot', '--auto', '--image', '/tmp/ref.png',
+         '--location', 'Open field', '--time', 'golden hour',
+         '--project', 'ms-demo', '--root', root],
+        { cwd: process.cwd(), encoding: 'utf-8', env: { ...process.env, VCLAW_MULTISHOT_AUTO_STUB: stubFile } },
+      );
+      assert.equal(res.status, 0, res.stdout + res.stderr);
+      const parsed = JSON.parse(res.stdout);
+      assert.equal(parsed.valid, true);
+
+      const artifact = JSON.parse(
+        await readFile(join(root, 'projects', 'ms-demo', 'artifacts', 'multi-shot-prompt.json'), 'utf-8'),
+      );
+      assert.equal(artifact.preset, 'cinematic-15s');
+      assert.equal(artifact.location, 'Open field');
+      assert.ok(artifact.promptText.includes('00:00 - 00:05'));
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  it('--raw prints only the prompt body', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'vclaw-ms-raw-'));
+    try {
+      const stubFile = join(dir, 'stub.txt');
+      await writeFile(stubFile, STUB_PROMPT, 'utf-8');
+      const res = spawnSync(
+        process.execPath,
+        [cliPath, 'video', 'multi-shot', '--auto', '--image', '/tmp/ref.png', '--location', 'Open field', '--time', 'golden hour', '--raw'],
+        { cwd: process.cwd(), encoding: 'utf-8', env: { ...process.env, VCLAW_MULTISHOT_AUTO_STUB: stubFile } },
+      );
+      assert.equal(res.status, 0, res.stderr);
+      assert.ok(res.stdout.trimStart().startsWith('[00:00'));
+      assert.ok(!res.stdout.includes('"valid"'));
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
   });
 });

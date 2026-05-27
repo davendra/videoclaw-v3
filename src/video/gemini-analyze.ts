@@ -126,3 +126,63 @@ export async function generateAnalyzeOutputWithGemini(input: {
     ...generated,
   });
 }
+
+// Authors a multi-shot cinematic prompt body via Gemini.
+// Requires GEMINI_API_KEYS (or GOOGLE_API_KEYS / GOOGLE_API_KEY) to be set.
+// The stub path (VCLAW_MULTISHOT_AUTO_STUB) is handled upstream in
+// generateMultiShotPromptText; this function is only called for the live path.
+export async function generateMultiShotWithGemini(input: {
+  preset: import('./multi-shot-prompt.js').MultiShotPreset;
+  imagePath: string;
+  character?: string;
+  action?: string;
+  location: string;
+  timeOfDay: string;
+}): Promise<string> {
+  const endpoint =
+    process.env.VCLAW_GEMINI_API_ENDPOINT ?? DEFAULT_GEMINI_ANALYZE_ENDPOINT;
+  const brief = [
+    `Preset: ${input.preset.name} (${input.preset.totalSeconds}s total, ${input.preset.minShotSeconds}-${input.preset.maxShotSeconds}s per shot, max ${input.preset.maxChars} chars)`,
+    `Style: ${input.preset.styleLine}`,
+    `Audio: ${input.preset.audioLine}`,
+    `Location: ${input.location}, ${input.timeOfDay}`,
+    ...(input.character ? [`Character: ${input.character}`] : []),
+    ...(input.action ? [`Action: ${input.action}`] : []),
+    `Image reference: ${input.imagePath}`,
+  ].join('\n');
+  const promptText = `You are a cinematographer authoring a compressed timecoded multi-shot prompt for an AI video generator.\n\nRules:\n- Use timecodes in [MM:SS - MM:SS] format, contiguous from 00:00 to ${String(Math.floor(input.preset.totalSeconds / 60)).padStart(2,'0')}:${String(input.preset.totalSeconds % 60).padStart(2,'0')}\n- Each shot: ${input.preset.minShotSeconds}-${input.preset.maxShotSeconds}s; vary shot size, lens, angle, movement shot-to-shot (never repeat consecutively)\n- End with three metadata lines: Location, Style, Audio\n- Total prompt under ${input.preset.maxChars} characters\n- Return ONLY the prompt body, no explanation\n\nBrief:\n${brief}`;
+
+  if (!process.env.GEMINI_API_KEYS && !process.env.GOOGLE_API_KEYS && !process.env.GOOGLE_API_KEY) {
+    throw new Error(
+      'multi-shot --auto requires VCLAW_MULTISHOT_AUTO_STUB (stub/test path) or a configured Gemini key pool (GEMINI_API_KEYS / GOOGLE_API_KEYS / GOOGLE_API_KEY)',
+    );
+  }
+
+  const response = await fetchGeminiWithPool(
+    (key) => `${endpoint}${endpoint.includes('?') ? '&' : '?'}key=${encodeURIComponent(key)}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Connection': 'close' },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: promptText }] }],
+        generationConfig: {
+          temperature: 0.7,
+          maxOutputTokens: 800,
+          responseMimeType: 'text/plain',
+        },
+      }),
+    },
+    {
+      onRetry: (label, status) => {
+        process.stderr.write(`[multi-shot/gemini] ${label} returned HTTP ${status}; rotating key\n`);
+      },
+    },
+  );
+
+  if (!response.ok) {
+    throw new Error(`Gemini multi-shot request failed with HTTP ${response.status}`);
+  }
+
+  const payload = await response.json();
+  return parseGeminiTextResponse(payload).trim();
+}

@@ -1962,14 +1962,24 @@ async function handleVideoPromptLibShow(args: string[]): Promise<void> {
   process.stdout.write(`${JSON.stringify({ root, reference }, null, 2)}\n`);
 }
 
+function parsePositiveIntegerFlag(args: string[], flag: string): number | undefined {
+  const raw = parseFlagValue(args, flag);
+  if (raw === undefined) return undefined;
+  const value = Number(raw);
+  if (!Number.isInteger(value) || value <= 0) {
+    throw new Error(`video multi-shot: ${flag} must be a positive integer, got: ${raw}`);
+  }
+  return value;
+}
+
 function resolveMultiShotPreset(args: string[]): MultiShotPreset {
   const preset: MultiShotPreset = { ...CINEMATIC_15S_PRESET };
-  const totalSeconds = parseFlagValue(args, '--total-seconds');
-  const maxChars = parseFlagValue(args, '--max-chars');
+  const totalSeconds = parsePositiveIntegerFlag(args, '--total-seconds');
+  const maxChars = parsePositiveIntegerFlag(args, '--max-chars');
   const styleLine = parseFlagValue(args, '--style-line');
   const audioLine = parseFlagValue(args, '--audio-line');
-  if (totalSeconds) preset.totalSeconds = Number(totalSeconds);
-  if (maxChars) preset.maxChars = Number(maxChars);
+  if (totalSeconds !== undefined) preset.totalSeconds = totalSeconds;
+  if (maxChars !== undefined) preset.maxChars = maxChars;
   if (styleLine) preset.styleLine = styleLine;
   if (audioLine) preset.audioLine = audioLine;
   return preset;
@@ -1984,8 +1994,14 @@ async function handleVideoMultiShot(args: string[]): Promise<void> {
     const file = parseFlagValue(args, '--file');
     let promptText: string;
     if (file) {
+      if (!existsSync(file)) {
+        throw new Error(`video multi-shot --validate: file not found: ${file}`);
+      }
       promptText = await readFile(file, 'utf-8');
     } else {
+      if (process.stdin.isTTY) {
+        throw new Error('video multi-shot --validate: pipe a prompt via stdin or use --file <path>');
+      }
       promptText = await new Promise<string>((resolve) => {
         let buf = '';
         process.stdin.setEncoding('utf-8');
@@ -2002,12 +2018,16 @@ async function handleVideoMultiShot(args: string[]): Promise<void> {
 
   // Default: --plan (scaffold)
   void isPlan;
-  const shotsFlag = parseFlagValue(args, '--shots');
-  const seedFlag = parseFlagValue(args, '--seed');
-  const plan = buildShotPlan(preset, {
-    shots: shotsFlag ? Number(shotsFlag) : undefined,
-    seed: seedFlag ? Number(seedFlag) : undefined,
-  });
+  const shots = parsePositiveIntegerFlag(args, '--shots');
+  const seedRaw = parseFlagValue(args, '--seed');
+  let seed: number | undefined;
+  if (seedRaw !== undefined) {
+    seed = Number(seedRaw);
+    if (!Number.isInteger(seed)) {
+      throw new Error(`video multi-shot: --seed must be an integer, got: ${seedRaw}`);
+    }
+  }
+  const plan = buildShotPlan(preset, { shots, seed });
   process.stdout.write(`${JSON.stringify({ preset, shots: plan.shots }, null, 2)}\n`);
 }
 

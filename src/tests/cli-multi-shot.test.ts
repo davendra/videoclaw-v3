@@ -51,7 +51,9 @@ describe('vclaw video multi-shot --validate', () => {
       await writeFile(file, VALID, 'utf-8');
       const res = run(['video', 'multi-shot', '--validate', '--file', file]);
       assert.equal(res.status, 0, res.stdout + res.stderr);
-      assert.equal(JSON.parse(res.stdout).valid, true);
+      const parsed = JSON.parse(res.stdout);
+      assert.equal(parsed.valid, true);
+      assert.equal(parsed.issues.length, 0);
     } finally {
       await rm(dir, { recursive: true, force: true });
     }

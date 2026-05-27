@@ -56,7 +56,8 @@ export type VideoStageArtifactName =
   | 'review-report'
   | 'publish-report'
   | 'analyze-output'
-  | 'assemble-report';
+  | 'assemble-report'
+  | 'multi-shot-prompt';
 
 export interface VideoPipelineStageManifest {
   name: 'brief' | 'storyboard' | 'assets' | 'review' | 'publish';

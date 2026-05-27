@@ -13,7 +13,10 @@
  */
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { resolve as resolvePath } from 'node:path';
+import { resolve as resolvePath, join } from 'node:path';
+import { mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { spawnSync } from 'node:child_process';
 import {
   stitch,
   orderedSegments,
@@ -333,5 +336,41 @@ describe('stitch — empty input guard', () => {
       () => stitch({ segments: [], outputPath: '/p/out.mp4' }, { dryRun: true }),
       /no segments/,
     );
+  });
+});
+
+describe('stitch — pre-concat MP4-validity guard', () => {
+  it('dry-run does NOT validate segments (plans without any files existing)', async () => {
+    // These paths do not exist; if dry-run probed them this would throw.
+    const res = await stitch(
+      { segments: ['/no/such/seg_a.mp4', '/no/such/seg_b.mp4'], outputPath: '/no/such/out.mp4' },
+      { dryRun: true },
+    );
+    assert.equal(res.status, 'dry-run');
+    assert.equal(res.plan.length, 1);
+    assert.equal(res.plan[0].kind, 'concat-demuxer');
+  });
+
+  it('rejects a corrupt/truncated segment with ffmpeg_failed when not dry-run (requires ffprobe)', async (t) => {
+    if (spawnSync('ffprobe', ['-version'], { encoding: 'utf-8' }).status !== 0) {
+      t.skip('ffprobe not on PATH');
+      return;
+    }
+    const dir = await mkdtemp(join(tmpdir(), 'vclaw-stitch-guard-'));
+    try {
+      const junk = join(dir, 'truncated.mp4');
+      await writeFile(junk, Buffer.from('garbage-not-mp4'), 'binary');
+      await assert.rejects(
+        () => stitch({ segments: [junk], outputPath: join(dir, 'out.mp4') }, { dryRun: false }),
+        (err: unknown) => {
+          assert.ok(err instanceof Error);
+          assert.equal((err as { code?: string }).code, 'ffmpeg_failed');
+          assert.match((err as Error).message, /corrupt or truncated MP4/);
+          return true;
+        },
+      );
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
   });
 });

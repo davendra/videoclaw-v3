@@ -46,7 +46,8 @@
  */
 import { writeFile, mkdir, stat } from 'node:fs/promises';
 import { dirname, resolve as resolvePath } from 'node:path';
-import { runFfmpeg, ffprobeDuration, type RunFfmpegOptions } from './ffmpeg.js';
+import { runFfmpeg, ffprobeDuration, isValidMp4, type RunFfmpegOptions } from './ffmpeg.js';
+import { VclawError } from '../errors.js';
 
 /**
  * Segment-count threshold at which `auto` strategy switches from the
@@ -328,6 +329,14 @@ export function buildMusicMixArgs(
 export interface StitchOptions extends RunFfmpegOptions {
   /** Override the ffprobe binary (forwarded to `ffprobeDuration`). */
   ffprobeBin?: string;
+  /**
+   * Skip the pre-concat MP4-validity guard. Default OFF (validation ON) for
+   * real runs. The guard probes each input segment with {@link isValidMp4} and
+   * fails fast on a truncated/no-moov MP4 instead of letting ffmpeg concat die
+   * with a cryptic "Invalid data found when processing input". Always skipped on
+   * dry-run (no real files to probe).
+   */
+  skipSegmentValidation?: boolean;
 }
 
 /**
@@ -397,6 +406,25 @@ export async function stitch(
       plan,
       durationMs: 0,
     };
+  }
+
+  // --- Pre-concat corruption guard ---
+  // useapi sometimes reports a generation 'complete' while the downloaded mp4
+  // is truncated (no moov atom): it passes existence/size checks but ffmpeg
+  // concat later dies with "Invalid data found when processing input". Probe
+  // each real input segment up front so the corrupt one is named clearly.
+  // Only the actual segment inputs are probed (not derived intermediates).
+  if (!opts.skipSegmentValidation) {
+    for (const seg of segs) {
+      const ok = await isValidMp4(seg, { ffprobeBin: opts.ffprobeBin });
+      if (!ok) {
+        throw new VclawError(
+          'ffmpeg_failed',
+          `stitch input segment is a corrupt or truncated MP4 (ffprobe could not read a valid duration): ${seg}`,
+          { segment: seg },
+        );
+      }
+    }
   }
 
   // --- Real execution ---

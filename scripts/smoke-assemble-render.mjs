@@ -16,14 +16,14 @@
 // it is safe to run anywhere (including CI that lacks ffmpeg).
 //
 //   npm run smoke:assemble-render
-import { mkdtemp, rm, stat, writeFile } from 'node:fs/promises';
+import { mkdtemp, rm, stat, writeFile, readFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { spawnSync } from 'node:child_process';
 
 import { animateSlide } from '../dist/video/assemble/animate-slides.js';
 import { stitch, buildMusicMixArgs } from '../dist/video/assemble/stitch.js';
-import { runFfmpeg, ffprobeDuration } from '../dist/video/assemble/ffmpeg.js';
+import { runFfmpeg, ffprobeDuration, isValidMp4 } from '../dist/video/assemble/ffmpeg.js';
 import { generateTitleCard } from '../dist/video/assemble/title-card.js';
 
 // ---------------------------------------------------------------------------
@@ -191,6 +191,23 @@ try {
       `${p.videoCodec}/${p.audioCodec} ${p.width}x${p.height}@${p.fps} ${p.durationSec.toFixed(3)}s (aligned ${res.durationMs}ms)`,
     );
   }
+
+  // --- 2b. MP4-validity guard (isValidMp4) on real ffmpeg output ---
+  // Every rendered segment must read as a valid MP4 (positive duration), and a
+  // deliberately-truncated copy (first 200 bytes, no moov atom) must be caught.
+  for (let i = 0; i < segments.length; i += 1) {
+    const ok = await isValidMp4(segments[i]);
+    assert(ok === true, `isValidMp4 true for rendered segment ${i}`);
+  }
+  const truncated = join(root, 'truncated_seg.mp4');
+  const head = (await readFile(segments[0])).subarray(0, 200);
+  await writeFile(truncated, head);
+  const truncOk = await isValidMp4(truncated);
+  assert(truncOk === false, 'isValidMp4 false for a truncated (no-moov) MP4 copy');
+  stagePass(
+    'validity-guard',
+    `${segments.length} valid segments pass + truncated copy (200B) caught`,
+  );
 
   // --- 3. stitch via DEMUXER path (3 segments < 8) ---
   const demuxOut = join(root, 'final_demuxer.mp4');

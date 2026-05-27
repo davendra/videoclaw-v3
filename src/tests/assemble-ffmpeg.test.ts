@@ -8,14 +8,27 @@
  */
 import { describe, it, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
+import { mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { spawnSync } from 'node:child_process';
 import {
   runFfmpeg,
   resolveFfmpegBin,
   resolveFfprobeBin,
   ffprobeDuration,
+  isValidMp4,
   STANDARD_VIDEO_ARGS,
   STANDARD_AUDIO_ARGS,
 } from '../video/assemble/ffmpeg.js';
+
+/** Is ffmpeg/ffprobe on PATH? Used to gate the one real-media sub-case. */
+function ffmpegAvailable(): boolean {
+  return (
+    spawnSync('ffprobe', ['-version'], { encoding: 'utf-8' }).status === 0 &&
+    spawnSync('ffmpeg', ['-version'], { encoding: 'utf-8' }).status === 0
+  );
+}
 
 const realFfmpegBin = process.env.VCLAW_FFMPEG_BIN;
 const realFfprobeBin = process.env.VCLAW_FFPROBE_BIN;
@@ -99,5 +112,55 @@ describe('ffprobeDuration dry-run (no spawn)', () => {
   it('returns 0 without spawning when dryRun is set', async () => {
     const ms = await ffprobeDuration('/does/not/matter.mp4', { dryRun: true });
     assert.equal(ms, 0);
+  });
+});
+
+describe('isValidMp4 — MP4 corruption guard (ported from _ffprobe_is_valid_mp4)', () => {
+  // False-cases are deterministic and need no ffmpeg: ffprobe exits non-zero
+  // (or the binary is absent → spawn error) and the guard resolves false.
+  it('returns false for a non-existent path', async () => {
+    assert.equal(await isValidMp4('/does/not/exist/nope.mp4'), false);
+  });
+
+  it('returns false for an empty / garbage file (no moov atom)', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'vclaw-validmp4-'));
+    try {
+      const junk = join(dir, 'junk.mp4');
+      await writeFile(junk, Buffer.from('not-a-mp4!'), 'binary'); // 10 bytes of garbage
+      assert.equal(await isValidMp4(junk), false);
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('returns false quickly when the timeout is effectively immediate', async () => {
+    // A 0ms timeout forces the kill-path before ffprobe could ever finish.
+    assert.equal(await isValidMp4('/does/not/exist/nope.mp4', { timeoutMs: 0 }), false);
+  });
+
+  // Real valid-mp4 case requires ffmpeg to synthesize a tiny clip; skip if absent.
+  it('returns true for a real 1s lavfi-generated mp4 (requires ffmpeg)', async (t) => {
+    if (!ffmpegAvailable()) {
+      t.skip('ffmpeg/ffprobe not on PATH');
+      return;
+    }
+    const dir = await mkdtemp(join(tmpdir(), 'vclaw-validmp4-ok-'));
+    try {
+      const good = join(dir, 'good.mp4');
+      const r = spawnSync(
+        'ffmpeg',
+        [
+          '-y',
+          '-f', 'lavfi', '-i', 'testsrc=size=160x120:rate=24:duration=1',
+          '-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-movflags', '+faststart',
+          good,
+        ],
+        { encoding: 'utf-8' },
+      );
+      assert.equal(r.status, 0, `ffmpeg synth failed: ${r.stderr}`);
+      assert.equal(await isValidMp4(good), true);
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
   });
 });

@@ -230,3 +230,76 @@ export async function ffprobeDuration(
     });
   });
 }
+
+export interface IsValidMp4Options {
+  /** Override the ffprobe binary (falls back to VCLAW_FFPROBE_BIN, then `ffprobe`). */
+  ffprobeBin?: string;
+  /** Probe timeout in ms; on expiry the probe is killed and false is returned. Default 15000. */
+  timeoutMs?: number;
+}
+
+/**
+ * True iff ffprobe can read a positive duration from `path`. Catches
+ * truncated/no-moov MP4s that pass existence+size checks but fail at
+ * stitch. Ported from parallel_video_gen._ffprobe_is_valid_mp4. Never
+ * throws — returns false on any probe failure / missing file / timeout.
+ *
+ * Mirrors the Python guard's args exactly:
+ *   ffprobe -v error -show_entries format=duration -of csv=p=0 <path>
+ * returning true only when ffprobe exits 0 AND stdout trims to a finite
+ * number > 0.
+ */
+export async function isValidMp4(path: string, opts: IsValidMp4Options = {}): Promise<boolean> {
+  const bin = resolveFfprobeBin(opts.ffprobeBin);
+  const timeoutMs = opts.timeoutMs ?? 15000;
+  const args = [
+    '-v',
+    'error',
+    '-show_entries',
+    'format=duration',
+    '-of',
+    'csv=p=0',
+    path,
+  ];
+
+  return await new Promise<boolean>((resolve) => {
+    let settled = false;
+    const done = (value: boolean): void => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      resolve(value);
+    };
+
+    let child: ReturnType<typeof spawn>;
+    try {
+      child = spawn(bin, args, { stdio: ['ignore', 'pipe', 'ignore'] });
+    } catch {
+      // Spawn threw synchronously (e.g. binary not found on some platforms).
+      done(false);
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      child.kill('SIGKILL');
+      done(false);
+    }, timeoutMs);
+
+    let stdout = '';
+    child.stdout?.on('data', (chunk: Buffer) => {
+      stdout += chunk.toString();
+    });
+
+    // Missing binary / spawn failure → false (never throws).
+    child.on('error', () => done(false));
+
+    child.on('close', (code) => {
+      if (code !== 0) {
+        done(false);
+        return;
+      }
+      const seconds = Number.parseFloat(stdout.trim());
+      done(Number.isFinite(seconds) && seconds > 0);
+    });
+  });
+}

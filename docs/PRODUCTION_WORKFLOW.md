@@ -91,6 +91,23 @@ For release handoff, keep source checkout commands and installed CLI commands
 separate. In this repository, use `node dist/cli/vclaw.js ...` only after
 building. Installed users should see `vclaw ...` examples.
 
+## Authoring aid: multi-shot prompts
+
+For a single 15s cinematic clip, `vclaw video multi-shot` scaffolds a timecoded,
+non-repeating-camera shot plan (the `cinematic-15s` preset), validates the hard
+rules (char budget, contiguous timecodes, metadata block), and can author prose
+end-to-end with `--auto`:
+
+```bash
+vclaw video multi-shot --plan                       # timecode scaffold + camera grid
+vclaw video multi-shot --validate --file prompt.txt # enforce the rules (nonzero exit on error)
+```
+
+This is a **standalone** authoring aid in Phase 1 — it sits beside the
+init→brief→…→publish pipeline rather than inside it. Phase 2 will integrate it
+into the per-scene flow (see [`docs/SCENE_CANDIDATES.md`](./SCENE_CANDIDATES.md)).
+Full reference: [`docs/CLI_REFERENCE.md`](./CLI_REFERENCE.md#multi-shot-prompt).
+
 ## Production Readiness Rules
 
 - One source of truth: review handoff readiness comes from `review-report.json`.

@@ -707,6 +707,8 @@ metadata block.
 
 `--auto` emits JSON: `{ preset, location, timeOfDay, shots, promptText, charCount, valid, issues, generatedAt }`. With `--raw`, prints only `promptText`.
 
+> **Note:** When `--project` is supplied, the artifact is persisted to disk even when validation fails (`valid: false`); the issues array is recorded and the process exits with code `1`. A persisted artifact does **not** imply the prompt passed validation — always check the `valid` field.
+
 ### Worked example
 
 ```bash

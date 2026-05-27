@@ -378,10 +378,16 @@ function toSeconds(mm: string, ss: string): number {
 }
 
 function firstMatch(haystack: string, pool: string[]): string | undefined {
-  const lower = haystack.toLowerCase();
+  // Normalise both sides: lowercase + replace hyphens with spaces so that
+  // hand-authored "push in" matches vocab term "push-in", "close up" matches
+  // "close-up", "eye level" matches "eye-level", etc.  The canonical term
+  // returned is the original (pre-normalisation) pool entry so downstream
+  // equality comparisons (consecutive-repeat detection) remain stable.
+  const normHaystack = haystack.toLowerCase().replace(/-/g, ' ');
   // Longest-first so "medium close-up" wins over "medium".
   for (const term of [...pool].sort((a, b) => b.length - a.length)) {
-    if (lower.includes(term)) return term;
+    const normTerm = term.toLowerCase().replace(/-/g, ' ');
+    if (normHaystack.includes(normTerm)) return term;
   }
   return undefined;
 }

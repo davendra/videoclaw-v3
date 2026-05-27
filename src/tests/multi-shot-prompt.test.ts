@@ -182,4 +182,28 @@ describe('multi-shot-prompt: runMultiShotChecks', () => {
     const bad = VALID_PROMPT.split('\nLocation:')[0];
     assert.ok(codes(runMultiShotChecks(bad, CINEMATIC_15S_PRESET)).includes('multi-shot-missing-metadata'));
   });
+
+  it('detects repeated movement when authored with spaces ("push in") instead of hyphens ("push-in")', () => {
+    // Two consecutive shots both use the SPACED spelling "push in".
+    // Shot sizes, lenses, and angles are all varied so ONLY movement repeats.
+    // This test FAILS before the firstMatch hyphen/space normalisation fix and
+    // PASSES after it.
+    const spacedMovementPrompt = [
+      '[00:00 - 00:04] Wide, 24mm, low angle, push in — a man walks through a Tokyo alley.',
+      '',
+      '[00:04 - 00:08] Medium, 50mm, eye-level, push in — he moves between food stalls.',
+      '',
+      '[00:08 - 00:11] Close-up, 85mm, high angle, static — his hand brushes a lantern.',
+      '',
+      '[00:11 - 00:15] Medium close-up, 35mm, Dutch angle, handheld — he looks up at a sign.',
+      '',
+      'Location: Narrow Tokyo alley, night.',
+      'Style: Cool shadows, natural skin tones. In the style of a Christopher Nolan movie.',
+      'Audio: Diegetic sound only — natural ambience.',
+    ].join('\n');
+    assert.ok(
+      codes(runMultiShotChecks(spacedMovementPrompt, CINEMATIC_15S_PRESET)).includes('multi-shot-repeated-parameter'),
+      'expected multi-shot-repeated-parameter when consecutive shots both use spaced "push in"',
+    );
+  });
 });

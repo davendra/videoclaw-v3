@@ -1984,8 +1984,8 @@ function resolveMultiShotPreset(args: string[]): MultiShotPreset {
   const audioLine = parseFlagValue(args, '--audio-line');
   if (totalSeconds !== undefined) preset.totalSeconds = totalSeconds;
   if (maxChars !== undefined) preset.maxChars = maxChars;
-  if (styleLine) preset.styleLine = styleLine;
-  if (audioLine) preset.audioLine = audioLine;
+  if (styleLine !== undefined) preset.styleLine = styleLine;
+  if (audioLine !== undefined) preset.audioLine = audioLine;
   return preset;
 }
 

@@ -121,6 +121,36 @@ describe('multi-shot-prompt: runMultiShotChecks', () => {
     assert.ok(codes(runMultiShotChecks(bad, CINEMATIC_15S_PRESET)).includes('multi-shot-timecode-gap'));
   });
 
+  it('flags a first shot that does not start at 00:00', () => {
+    const bad = [
+      '[00:01 - 00:04] Wide, 24mm, low angle, tracking — a man walks through a Tokyo alley.',
+      '',
+      '[00:04 - 00:07] Medium, 50mm, eye-level, handheld — he moves between food stalls.',
+      '',
+      '[00:07 - 00:09] Close-up, 85mm, high angle, static — his hand brushes a lantern.',
+      '',
+      '[00:09 - 00:12] Wide, 35mm, Dutch angle, push-in — he emerges into a broad street.',
+      '',
+      '[00:12 - 00:15] Medium close-up, 50mm, low angle, pull-out — he looks up at a sign.',
+      '',
+      'Location: Narrow Tokyo alley, night.',
+      'Style: Cool shadows. In the style of a Christopher Nolan movie.',
+      'Audio: Diegetic sound only.',
+    ].join('\n');
+    assert.ok(codes(runMultiShotChecks(bad, CINEMATIC_15S_PRESET)).includes('multi-shot-timecode-start'));
+  });
+
+  it('flags a prompt with no parseable timecode stamps', () => {
+    const bad = [
+      'A man walks through a narrow Tokyo alley, glancing at the food stalls.',
+      '',
+      'Location: Narrow Tokyo alley, night.',
+      'Style: Cool shadows. In the style of a Christopher Nolan movie.',
+      'Audio: Diegetic sound only.',
+    ].join('\n');
+    assert.ok(codes(runMultiShotChecks(bad, CINEMATIC_15S_PRESET)).includes('multi-shot-timecode-parse'));
+  });
+
   it('flags a shot shorter than minShotSeconds', () => {
     const bad = [
       '[00:00 - 00:01] Wide, 24mm, low angle, tracking — too short.',

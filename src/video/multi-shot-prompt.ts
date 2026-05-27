@@ -1,4 +1,10 @@
-import { CAMERA_MOVE_VOCABULARY, SHOT_TYPE_VOCABULARY } from './prompt-quality.js';
+import {
+  CAMERA_MOVE_VOCABULARY,
+  SHOT_TYPE_VOCABULARY,
+  SHOT_SIZE_VOCABULARY,
+  LENS_VOCABULARY,
+  ANGLE_VOCABULARY,
+} from './prompt-quality.js';
 
 export interface MultiShotPreset {
   name: string;
@@ -25,9 +31,9 @@ export const CINEMATIC_15S_PRESET: MultiShotPreset = {
 // Suggested camera-grid vocabularies. Shot sizes/angles/lenses are local to the
 // framework; prompt-quality's SHOT_TYPE_VOCABULARY is only re-exported for
 // consumers (it is not used when building the plan — SHOT_SIZES is).
-const SHOT_SIZES = ['wide', 'medium', 'medium close-up', 'close-up', 'macro'] as const;
-const LENSES = ['24mm', '35mm', '50mm', '85mm'] as const;
-const ANGLES = ['low angle', 'high angle', 'eye-level', 'over-the-shoulder', 'Dutch angle'] as const;
+const SHOT_SIZES = SHOT_SIZE_VOCABULARY;
+const LENSES = LENS_VOCABULARY;
+const ANGLES = ANGLE_VOCABULARY;
 const MOVEMENTS = CAMERA_MOVE_VOCABULARY;
 
 export interface ShotSlot {

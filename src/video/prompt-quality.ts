@@ -50,6 +50,28 @@ export const SHOT_TYPE_VOCABULARY = [
   'medium shot',
 ] as const;
 
+// Canonical multi-shot camera-grid parameter vocabularies. These live here
+// (alongside CAMERA_MOVE_VOCABULARY) so both multi-shot-prompt.ts (which builds
+// plans) and runMultiShotChecks (which validates them) share one source of
+// truth and cannot silently diverge. multi-shot-prompt.ts imports these.
+export const SHOT_SIZE_VOCABULARY = [
+  'wide',
+  'medium',
+  'medium close-up',
+  'close-up',
+  'macro',
+] as const;
+
+export const LENS_VOCABULARY = ['24mm', '35mm', '50mm', '85mm'] as const;
+
+export const ANGLE_VOCABULARY = [
+  'low angle',
+  'high angle',
+  'eye-level',
+  'over-the-shoulder',
+  'Dutch angle',
+] as const;
+
 export const STYLE_VOCABULARY = [
   'cinematic',
   'epic',
@@ -343,9 +365,11 @@ export function runPromptQualityChecks(prompt: string): PromptQualityIssue[] {
 // compile time — no runtime cycle.
 import type { MultiShotPreset } from './multi-shot-prompt.js';
 
-const MULTI_SHOT_SHOT_SIZES = ['macro', 'close-up', 'medium close-up', 'medium', 'wide'];
-const MULTI_SHOT_LENSES = ['24mm', '35mm', '50mm', '85mm'];
-const MULTI_SHOT_ANGLES = ['low angle', 'high angle', 'eye-level', 'over-the-shoulder', 'dutch angle'];
+// Derived from the canonical vocab constants above so the validator's match
+// lists can't drift from what multi-shot-prompt.ts uses to build plans.
+const MULTI_SHOT_SHOT_SIZES = SHOT_SIZE_VOCABULARY.map((s) => s.toLowerCase());
+const MULTI_SHOT_LENSES = LENS_VOCABULARY.map((s) => s.toLowerCase());
+const MULTI_SHOT_ANGLES = ANGLE_VOCABULARY.map((s) => s.toLowerCase());
 
 const TIMECODE_RE = /\[(\d{2}):(\d{2})\s*-\s*(\d{2}):(\d{2})\]/g;
 
@@ -366,6 +390,9 @@ export function runMultiShotChecks(
   prompt: string,
   preset: MultiShotPreset,
 ): PromptQualityIssue[] {
+  // Multi-shot issues are structural (timecode contiguity, durations, metadata),
+  // so they are always errors — unlike the stylistic runPromptQualityChecks,
+  // which downgrades to warnings unless DIRECTOR_STRICT_PROMPT_QUALITY=1.
   const severity: PromptQualitySeverity = 'error';
   const issues: PromptQualityIssue[] = [];
 
@@ -431,7 +458,9 @@ export function runMultiShotChecks(
       issues.push({
         code: 'multi-shot-timecode-gap',
         severity,
-        message: `shot ${i + 1} starts at ${shots[i].start}s but previous ended at ${shots[i - 1].end}s`,
+        message: shots[i].start < shots[i - 1].end
+          ? `shot ${i + 1} overlaps: starts at ${shots[i].start}s but previous ends at ${shots[i - 1].end}s`
+          : `shot ${i + 1} has a gap: starts at ${shots[i].start}s but previous ends at ${shots[i - 1].end}s`,
       });
     }
   }

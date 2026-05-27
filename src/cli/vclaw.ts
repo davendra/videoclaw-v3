@@ -1993,6 +1993,12 @@ async function handleVideoMultiShot(args: string[]): Promise<void> {
   if (args.includes('--auto')) {
     const image = parseFlagValue(args, '--image');
     if (!image) throw new Error('video multi-shot --auto requires --image <path>');
+    // The live Gemini path reads the image bytes, so the file must exist. Skip
+    // this check on the stub path (VCLAW_MULTISHOT_AUTO_STUB), which never reads
+    // the image and is how the offline tests exercise --auto.
+    if (!process.env.VCLAW_MULTISHOT_AUTO_STUB && !existsSync(image)) {
+      throw new Error(`video multi-shot --auto: image not found: ${image}`);
+    }
     const location = parseFlagValue(args, '--location') ?? '';
     const timeOfDay = parseFlagValue(args, '--time') ?? 'natural daylight';
     const promptText = await generateMultiShotPromptText({
@@ -2017,6 +2023,8 @@ async function handleVideoMultiShot(args: string[]): Promise<void> {
       preset: preset.name,
       location,
       timeOfDay,
+      // Intentionally empty in this phase: the Gemini path returns prose only.
+      // Structured per-shot parsing of the authored prompt is Phase 2 work.
       shots: [] as unknown[],
       promptText,
       charCount: promptText.length,

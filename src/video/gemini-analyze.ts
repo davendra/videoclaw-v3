@@ -1,3 +1,5 @@
+import { readFile } from 'node:fs/promises';
+import { extname } from 'node:path';
 import { createAnalyzeOutput } from './analyze-output.js';
 import { fetchGeminiWithPool } from './gemini-key-pool.js';
 import type { VideoAnalyzeOutput } from './types.js';
@@ -127,8 +129,22 @@ export async function generateAnalyzeOutputWithGemini(input: {
   });
 }
 
-// Authors a multi-shot cinematic prompt body via Gemini.
-// Requires GEMINI_API_KEYS (or GOOGLE_API_KEYS / GOOGLE_API_KEY) to be set.
+function multiShotImageMimeType(imagePath: string): string {
+  switch (extname(imagePath).toLowerCase()) {
+    case '.jpg':
+    case '.jpeg':
+      return 'image/jpeg';
+    case '.webp':
+      return 'image/webp';
+    case '.png':
+    default:
+      return 'image/png';
+  }
+}
+
+// Authors a multi-shot cinematic prompt body via Gemini, conditioned on the
+// actual reference image bytes (sent as an inlineData part). Requires a
+// configured Gemini key pool (fetchGeminiWithPool throws if the pool is empty).
 // The stub path (VCLAW_MULTISHOT_AUTO_STUB) is handled upstream in
 // generateMultiShotPromptText; this function is only called for the live path.
 export async function generateMultiShotWithGemini(input: {
@@ -148,15 +164,14 @@ export async function generateMultiShotWithGemini(input: {
     `Location: ${input.location}, ${input.timeOfDay}`,
     ...(input.character ? [`Character: ${input.character}`] : []),
     ...(input.action ? [`Action: ${input.action}`] : []),
-    `Image reference: ${input.imagePath}`,
   ].join('\n');
-  const promptText = `You are a cinematographer authoring a compressed timecoded multi-shot prompt for an AI video generator.\n\nRules:\n- Use timecodes in [MM:SS - MM:SS] format, contiguous from 00:00 to ${String(Math.floor(input.preset.totalSeconds / 60)).padStart(2,'0')}:${String(input.preset.totalSeconds % 60).padStart(2,'0')}\n- Each shot: ${input.preset.minShotSeconds}-${input.preset.maxShotSeconds}s; vary shot size, lens, angle, movement shot-to-shot (never repeat consecutively)\n- End with three metadata lines: Location, Style, Audio\n- Total prompt under ${input.preset.maxChars} characters\n- Return ONLY the prompt body, no explanation\n\nBrief:\n${brief}`;
+  const promptText = `You are a cinematographer authoring a compressed timecoded multi-shot prompt for an AI video generator, conditioned on the attached reference image.\n\nRules:\n- Use timecodes in [MM:SS - MM:SS] format, contiguous from 00:00 to ${String(Math.floor(input.preset.totalSeconds / 60)).padStart(2,'0')}:${String(input.preset.totalSeconds % 60).padStart(2,'0')}\n- Each shot: ${input.preset.minShotSeconds}-${input.preset.maxShotSeconds}s; vary shot size, lens, angle, movement shot-to-shot (never repeat consecutively)\n- End with three metadata lines: Location, Style, Audio\n- Total prompt under ${input.preset.maxChars} characters\n- Return ONLY the prompt body, no explanation\n\nBrief:\n${brief}`;
 
-  if (!process.env.GEMINI_API_KEYS && !process.env.GOOGLE_API_KEYS && !process.env.GOOGLE_API_KEY) {
-    throw new Error(
-      'multi-shot --auto requires VCLAW_MULTISHOT_AUTO_STUB (stub/test path) or a configured Gemini key pool (GEMINI_API_KEYS / GOOGLE_API_KEYS / GOOGLE_API_KEY)',
-    );
-  }
+  // Read the real image bytes; on the live path a missing/unreadable file
+  // surfaces as a propagated error.
+  const imageBytes = await readFile(input.imagePath);
+  const imageData = imageBytes.toString('base64');
+  const mimeType = multiShotImageMimeType(input.imagePath);
 
   const response = await fetchGeminiWithPool(
     (key) => `${endpoint}${endpoint.includes('?') ? '&' : '?'}key=${encodeURIComponent(key)}`,
@@ -164,7 +179,12 @@ export async function generateMultiShotWithGemini(input: {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Connection': 'close' },
       body: JSON.stringify({
-        contents: [{ parts: [{ text: promptText }] }],
+        contents: [{
+          parts: [
+            { inlineData: { mimeType, data: imageData } },
+            { text: promptText },
+          ],
+        }],
         generationConfig: {
           temperature: 0.7,
           maxOutputTokens: 800,

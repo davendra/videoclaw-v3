@@ -1,3 +1,4 @@
+import { readFile } from 'node:fs/promises';
 import {
   CAMERA_MOVE_VOCABULARY,
   SHOT_TYPE_VOCABULARY,
@@ -195,10 +196,10 @@ export async function generateMultiShotPromptText(input: {
 }): Promise<string> {
   const stub = process.env.VCLAW_MULTISHOT_AUTO_STUB;
   if (stub) {
-    const { readFile } = await import('node:fs/promises');
     return (await readFile(stub, 'utf-8')).trim();
   }
-  // Real path: delegate to the shared Gemini analyze plumbing.
+  // Real path: delegate to the shared Gemini analyze plumbing. Dynamic import so
+  // the Gemini module is only loaded on the live path (avoids a static import edge).
   const { generateMultiShotWithGemini } = await import('./gemini-analyze.js');
   return generateMultiShotWithGemini({
     preset: input.preset,

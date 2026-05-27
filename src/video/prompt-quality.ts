@@ -6,7 +6,15 @@ export type PromptQualityIssueCode =
   | 'prompt-quality-multiple-camera-moves'
   | 'prompt-quality-style-word-overload'
   | 'prompt-quality-literary-emotion'
-  | 'prompt-quality-overlong';
+  | 'prompt-quality-overlong'
+  | 'multi-shot-timecode-parse'
+  | 'multi-shot-timecode-start'
+  | 'multi-shot-timecode-gap'
+  | 'multi-shot-timecode-total'
+  | 'multi-shot-shot-duration'
+  | 'multi-shot-overlong'
+  | 'multi-shot-repeated-parameter'
+  | 'multi-shot-missing-metadata';
 
 export interface PromptQualityIssue {
   code: PromptQualityIssueCode;
@@ -324,5 +332,144 @@ export function runPromptQualityChecks(prompt: string): PromptQualityIssue[] {
   if (literary) issues.push(literary);
   const overlong = checkOverlongPrompt(prompt, severity);
   if (overlong) issues.push(overlong);
+  return issues;
+}
+
+// ---------------------------------------------------------------------------
+// Multi-shot validator
+// ---------------------------------------------------------------------------
+// NOTE: `multi-shot-prompt.ts` imports CAMERA_MOVE_VOCABULARY FROM this file.
+// We import only the TYPE `MultiShotPreset` here so the import is erased at
+// compile time — no runtime cycle.
+import type { MultiShotPreset } from './multi-shot-prompt.js';
+
+const MULTI_SHOT_SHOT_SIZES = ['macro', 'close-up', 'medium close-up', 'medium', 'wide'];
+const MULTI_SHOT_LENSES = ['24mm', '35mm', '50mm', '85mm'];
+const MULTI_SHOT_ANGLES = ['low angle', 'high angle', 'eye-level', 'over-the-shoulder', 'dutch angle'];
+
+const TIMECODE_RE = /\[(\d{2}):(\d{2})\s*-\s*(\d{2}):(\d{2})\]/g;
+
+function toSeconds(mm: string, ss: string): number {
+  return Number(mm) * 60 + Number(ss);
+}
+
+function firstMatch(haystack: string, pool: string[]): string | undefined {
+  const lower = haystack.toLowerCase();
+  // Longest-first so "medium close-up" wins over "medium".
+  for (const term of [...pool].sort((a, b) => b.length - a.length)) {
+    if (lower.includes(term)) return term;
+  }
+  return undefined;
+}
+
+export function runMultiShotChecks(
+  prompt: string,
+  preset: MultiShotPreset,
+): PromptQualityIssue[] {
+  const severity: PromptQualitySeverity = 'error';
+  const issues: PromptQualityIssue[] = [];
+
+  // Character budget.
+  if (prompt.length > preset.maxChars) {
+    issues.push({
+      code: 'multi-shot-overlong',
+      severity,
+      message: `prompt is ${prompt.length} chars (max ${preset.maxChars})`,
+    });
+  }
+
+  // Metadata block.
+  const hasLocation = /^Location:\s*\S/m.test(prompt);
+  const hasStyle = /^Style:\s*\S/m.test(prompt);
+  const hasAudio = /^Audio:\s*\S/m.test(prompt);
+  if (!hasLocation || !hasStyle || !hasAudio) {
+    issues.push({
+      code: 'multi-shot-missing-metadata',
+      severity,
+      message: `missing metadata line(s): ${[!hasLocation && 'Location', !hasStyle && 'Style', !hasAudio && 'Audio'].filter(Boolean).join(', ')}`,
+    });
+  }
+
+  // Parse timecodes and per-shot lines.
+  const shots: Array<{ start: number; end: number; line: string }> = [];
+  const lines = prompt.split('\n').filter((l) => l.trim().length > 0);
+  for (const line of lines) {
+    TIMECODE_RE.lastIndex = 0;
+    const m = TIMECODE_RE.exec(line);
+    if (m) {
+      shots.push({ start: toSeconds(m[1], m[2]), end: toSeconds(m[3], m[4]), line });
+    }
+  }
+
+  if (shots.length === 0) {
+    issues.push({
+      code: 'multi-shot-timecode-parse',
+      severity,
+      message: 'no parseable timecode stamps found',
+    });
+    return issues;
+  }
+
+  if (shots[0].start !== 0) {
+    issues.push({
+      code: 'multi-shot-timecode-start',
+      severity,
+      message: `first shot starts at ${shots[0].start}s (must start at 0)`,
+    });
+  }
+
+  for (let i = 0; i < shots.length; i += 1) {
+    const dur = shots[i].end - shots[i].start;
+    if (dur < preset.minShotSeconds || dur > preset.maxShotSeconds) {
+      issues.push({
+        code: 'multi-shot-shot-duration',
+        severity,
+        message: `shot ${i + 1} is ${dur}s (allowed ${preset.minShotSeconds}-${preset.maxShotSeconds}s)`,
+      });
+    }
+    if (i > 0 && shots[i].start !== shots[i - 1].end) {
+      issues.push({
+        code: 'multi-shot-timecode-gap',
+        severity,
+        message: `shot ${i + 1} starts at ${shots[i].start}s but previous ended at ${shots[i - 1].end}s`,
+      });
+    }
+  }
+
+  const total = shots[shots.length - 1].end - shots[0].start;
+  if (total !== preset.totalSeconds) {
+    issues.push({
+      code: 'multi-shot-timecode-total',
+      severity,
+      message: `sequence totals ${total}s (must be exactly ${preset.totalSeconds}s)`,
+    });
+  }
+
+  // Consecutive-parameter repetition (size, lens, angle, movement).
+  let prev: { size?: string; lens?: string; angle?: string; move?: string } = {};
+  for (let i = 0; i < shots.length; i += 1) {
+    const size = firstMatch(shots[i].line, MULTI_SHOT_SHOT_SIZES);
+    const lens = firstMatch(shots[i].line, MULTI_SHOT_LENSES);
+    const angle = firstMatch(shots[i].line, MULTI_SHOT_ANGLES);
+    const move = firstMatch(shots[i].line, [...CAMERA_MOVE_VOCABULARY]);
+    if (i > 0) {
+      for (const [label, cur, was] of [
+        ['shot size', size, prev.size],
+        ['lens', lens, prev.lens],
+        ['angle', angle, prev.angle],
+        ['movement', move, prev.move],
+      ] as const) {
+        if (cur && was && cur === was) {
+          issues.push({
+            code: 'multi-shot-repeated-parameter',
+            severity,
+            message: `shot ${i + 1} repeats ${label} "${cur}" from the previous shot`,
+          });
+        }
+      }
+    }
+    prev = { size, lens, angle, move };
+  }
+
   return issues;
 }

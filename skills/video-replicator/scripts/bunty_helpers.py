@@ -75,6 +75,21 @@ BUNTY_NEGATIVE_PROMPT = (
     "no mid-speech mouth open"
 )
 
+# Known-canonical Bunty image used as style anchor when the caller doesn't pass
+# an explicit reference. The Heyford-match intro from 2026-05-25 — confirmed by
+# the user as the gold-standard canonical Bunty (round face, chubby cheeks, big
+# handlebar moustache, slicked-back combover, orange blazer). Pinning a stable
+# anchor prevents the same drift mode that hit M2 Overstone Park 4th XI on
+# 2026-05-25 even with the strengthened canonical + extended negative prompt
+# (Pro is stochastic on bare canonical+negative alone — ~1 in 3 intros drift to
+# a thinner-faced rendering). Both intro AND outro generations should now carry
+# a style reference: intros default to this anchor when not overridden, outros
+# pass the just-generated intro URL via `--style-ref-url`.
+BUNTY_CANONICAL_ANCHOR_URL = (
+    "https://pub-fc1a3eb7233f432cbd48bc8087dc8448.r2.dev/"
+    "davendra/2026-05-25/character-bunty-shqzdm0q.jpg"
+)
+
 
 def build_bunty_image_kwargs(
     scene_description: str,
@@ -82,20 +97,33 @@ def build_bunty_image_kwargs(
     aspect_ratio: str = "16:9",
     negative_extra: str = "",
     landscape_token: str = "WIDE HORIZONTAL shot, cinematic widescreen 16:9.",
+    style_reference_url: str | None = None,
 ) -> dict:
     """Build the full kwargs dict for mcp__go-bananas__generate_image with canonical Bunty.
 
     The scene_description should describe ONLY pose, action, environment, lighting —
     NOT face/body details (those come from the canonical prompt + character ref).
 
+    Args:
+        style_reference_url: Optional URL of a previously-generated canonical Bunty
+            image (typically the intro frame) to anchor identity. When passed, adds
+            reference_images=[url] + reference_mode='style' + a "match reference
+            one-to-one" prompt clause + an extra negative-prompt entry. Use this
+            ALWAYS when generating the outro after the intro — the strict canonical
+            + negative prompt alone is stochastic (Pro drifts ~1 in 3 outros), but
+            passing the just-generated intro URL as a style anchor makes the outro
+            match the intro one-to-one. Validated 2026-05-25 (Overstone Park match)
+            after a strict-canonical-only outro drifted to a thinner-faced rendering.
+
     Returns a dict ready to spread into mcp__go-bananas__generate_image:
-        {prompt, character_id, model_id, aspect_ratio, negative_prompt, enhance_prompt}
+        {prompt, character_id, model_id, aspect_ratio, negative_prompt, enhance_prompt,
+         optionally reference_images, reference_mode}
     """
     prompt = f"{BUNTY_CANONICAL_PROMPT} {landscape_token} {scene_description.strip()}"
     negative = BUNTY_NEGATIVE_PROMPT
     if negative_extra:
         negative = f"{negative}, {negative_extra}"
-    return {
+    kwargs = {
         "prompt": prompt,
         "character_id": BUNTY_CHARACTER_ID,
         "model_id": "gemini-pro-image",
@@ -103,6 +131,19 @@ def build_bunty_image_kwargs(
         "negative_prompt": negative,
         "enhance_prompt": False,
     }
+    # If the caller didn't pass an explicit anchor, attach the pinned canonical
+    # one (see BUNTY_CANONICAL_ANCHOR_URL above). This guarantees every Bunty
+    # generation has a style reference, not just outros — closes the intro-drift
+    # gap observed 2026-05-25.
+    effective_anchor = style_reference_url or BUNTY_CANONICAL_ANCHOR_URL
+    kwargs["reference_images"] = [effective_anchor]
+    kwargs["reference_mode"] = "style"
+    kwargs["prompt"] += (
+        " CRITICAL: the face proportions, cheek chubbiness, and overall "
+        "character build must match the supplied style reference image one-to-one."
+    )
+    kwargs["negative_prompt"] += ", different character from reference, character drift"
+    return kwargs
 
 
 # ---------------------------------------------------------------------------
@@ -117,6 +158,14 @@ def build_bunty_image_kwargs(
 
 _GROUND_LINE_RE = re.compile(r"^\s*Ground\s+(.+?)\s*$", re.MULTILINE)
 
+# Sentinel ground names that play-cricket renders when the venue is empty/
+# unset/placeholder. Treat these as "no ground found" so auto-ground falls
+# back to --location preset rather than baking nonsense into the prompt.
+# Observed 2026-05-25: "Add New Ground" (M2/M4 4th-XI fixtures), "0" (M3
+# youth fixture), and "TBD" appear when play-cricket has no actual venue
+# entry. Comparison is case-insensitive on the trimmed string.
+_GROUND_SENTINELS = {"add new ground", "0", "tbd", "n/a", "tba", "-", ""}
+
 
 def parse_ground_from_match_facts(facts_path: Path | str) -> str | None:
     """Extract the 'Ground       <name>' value from a match_facts.txt file.
@@ -125,7 +174,8 @@ def parse_ground_from_match_facts(facts_path: Path | str) -> str | None:
     line like `Ground       Avenue Road`. pdftotext --layout preserves the
     column gap as whitespace.
 
-    Returns the trimmed ground name, or None if not found / file missing.
+    Returns the trimmed ground name, or None if not found / file missing /
+    matches a known sentinel placeholder ("Add New Ground", "0", "TBD" etc.).
     """
     p = Path(facts_path)
     if not p.is_file():
@@ -141,7 +191,9 @@ def parse_ground_from_match_facts(facts_path: Path | str) -> str | None:
     # Some play-cricket pages render two columns; strip anything after
     # 2+ consecutive spaces (next column header).
     ground = re.split(r"\s{2,}", ground, maxsplit=1)[0].strip()
-    return ground or None
+    if not ground or ground.lower() in _GROUND_SENTINELS:
+        return None
+    return ground
 
 
 def build_match_ground_scene_description(

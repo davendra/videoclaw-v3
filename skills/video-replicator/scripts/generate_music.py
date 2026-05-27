@@ -29,6 +29,19 @@ import sys
 import time
 from pathlib import Path
 
+# Auto-load .env from the nearest parent containing one so this script works
+# whether invoked from the repo root, a project dir, or via a wrapper. Doesn't
+# override env vars already set in the shell (those win). No-op if python-dotenv
+# is not installed — the prior manual `source .env` flow continues to work.
+try:
+    from dotenv import load_dotenv as _load_dotenv
+    for _parent in Path(__file__).resolve().parents:
+        if (_parent / ".env").is_file():
+            _load_dotenv(_parent / ".env", override=False)
+            break
+except ImportError:
+    pass
+
 import requests
 
 sys.path.insert(0, str(Path(__file__).parent))

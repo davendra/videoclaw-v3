@@ -225,7 +225,10 @@ def fetch_url_assets(
         ])
         if wants_live:
             print(f"[playwright] loading {live_url} (live, for hero + logos + icon-preserving + division screenshots)", file=sys.stderr)
-            page.goto(live_url, wait_until="load", timeout=60_000)
+            # Live page carries heavy third-party widgets (ECB scorecard embed, ads)
+            # that often never fire the "load" event within 60s — wait for the DOM
+            # instead, then the existing wait_for_timeout settles the dynamic content.
+            page.goto(live_url, wait_until="domcontentloaded", timeout=90_000)
             page.wait_for_timeout(3500)
 
             # Hero shot: scroll to top, capture viewport only (1600x1200) — this is
@@ -324,7 +327,8 @@ def fetch_url_assets(
                 # (b) regex-extract the division URL from the raw page source as a fallback
                 # and navigate directly. (b) is more robust against further script changes.
                 print(f"[playwright] navigating back to {live_url} to capture division table", file=sys.stderr)
-                page.goto(live_url, wait_until="load", timeout=60_000)
+                # domcontentloaded (not "load") — heavy live-page widgets stall full load.
+                page.goto(live_url, wait_until="domcontentloaded", timeout=90_000)
                 page.wait_for_timeout(3500)
 
                 division_url = None
@@ -346,7 +350,7 @@ def fetch_url_assets(
 
                 if division_url:
                     print(f"[playwright] resolved division URL → {division_url}", file=sys.stderr)
-                    page.goto(division_url, wait_until="load", timeout=60_000)
+                    page.goto(division_url, wait_until="domcontentloaded", timeout=90_000)
                     page.wait_for_timeout(3000)
                     page.screenshot(path=str(division_table_png), full_page=True)
                     print(f"[playwright] saved {division_table_png.name} ({division_table_png.stat().st_size:,} bytes)", file=sys.stderr)
@@ -374,6 +378,16 @@ def nlm_create_notebook(title: str) -> str:
 
 
 def nlm_add_source(nb_id: str, *, file: Path | None = None, url: str | None = None, title: str | None = None) -> None:
+    """Add a source to an NLM notebook.
+
+    Observed 2026-05-25 (M1 + M3 of the parallel batch): nlm source add
+    intermittently fails on the URL source-add step even after all prior
+    file-source-adds in the same notebook succeeded. The failure mode is
+    transient — a single retry after a short backoff almost always succeeds.
+    Without retry, the script's only recovery path is the operator manually
+    re-running with --reuse-notebook-id, which is verbose. One inline retry
+    handles the common case automatically.
+    """
     cmd = [NLM, "source", "add", nb_id, "--wait", "--wait-timeout", "300"]
     if file:
         cmd += ["--file", str(file)]
@@ -381,7 +395,17 @@ def nlm_add_source(nb_id: str, *, file: Path | None = None, url: str | None = No
         cmd += ["--url", url]
     if title:
         cmd += ["--title", title]
-    run(cmd)
+    try:
+        run(cmd)
+    except subprocess.CalledProcessError as e:
+        kind = "URL" if url else "file"
+        print(
+            f"[nlm] source add ({kind}) failed (exit {e.returncode}); "
+            f"retrying once after 10s backoff…",
+            file=sys.stderr,
+        )
+        time.sleep(10)
+        run(cmd)
 
 
 def nlm_create_slide_deck(nb_id: str, focus: str) -> None:

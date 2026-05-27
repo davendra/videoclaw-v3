@@ -641,6 +641,31 @@ def find_frame_image(
     return None
 
 
+def _ffprobe_is_valid_mp4(path: str) -> bool:
+    """Return True if ffprobe can read a duration from `path`.
+
+    useapi sometimes reports a Veo generation as 'complete' while the downloaded
+    mp4 is truncated mid-transfer (no moov atom). The file lands on disk at near-
+    expected size and passes existence + size checks, but stitch fails downstream
+    with 'Invalid data found when processing input'. Probing the moov atom
+    immediately after copy catches this so the scene gets marked failed and the
+    retry/recovery logic kicks in, instead of the failure surfacing at stitch.
+    Observed 2026-05-25 on the WICC 2nd XI vs New Bradwell match (scene 20).
+    """
+    try:
+        out = subprocess.run(
+            ["ffprobe", "-v", "error", "-show_entries", "format=duration",
+             "-of", "csv=p=0", path],
+            capture_output=True, text=True, timeout=15, check=False,
+        )
+        if out.returncode != 0:
+            return False
+        duration = out.stdout.strip()
+        return bool(duration) and float(duration) > 0
+    except (subprocess.TimeoutExpired, ValueError, FileNotFoundError):
+        return False
+
+
 def copy_and_rename_outputs(
     veo_path: str,
     project_base: str,
@@ -738,6 +763,13 @@ def copy_and_rename_outputs(
             suffix = get_variation_suffix(variation, total_variations)
             dst = os.path.join(project_videos_dir, f"{base_name}{suffix}.mp4")
             shutil.copy2(src, dst)
+            if not _ffprobe_is_valid_mp4(dst):
+                logger.error("Saved file failed ffprobe (likely truncated / no moov atom): %s — deleting + marking scene failed", dst)
+                try:
+                    os.remove(dst)
+                except OSError:
+                    pass
+                continue
             videos.append(dst)
             logger.info("Saved: %s", dst)
     else:
@@ -755,6 +787,13 @@ def copy_and_rename_outputs(
                 suffix = f"_v{i + 1}"
             dst = os.path.join(project_videos_dir, f"{base_name}{suffix}.mp4")
             shutil.copy2(src, dst)
+            if not _ffprobe_is_valid_mp4(dst):
+                logger.error("Saved file failed ffprobe (likely truncated / no moov atom): %s — deleting + marking scene failed", dst)
+                try:
+                    os.remove(dst)
+                except OSError:
+                    pass
+                continue
             videos.append(dst)
             logger.info("Saved: %s", dst)
 
@@ -1488,6 +1527,42 @@ def generate_scene_with_retry(
                     "imagery, graphic violence)."
                 )
                 result["image_rejected"] = True
+            else:
+                # Diagnostic succeeded — image is fine; the original prompt was
+                # the problem. The diagnostic's generate_scene call wrote an 8s
+                # clip at the canonical scene path using the NEUTRAL diagnostic
+                # prompt ("Slow camera push in"), which has no lip movements.
+                # If we leave it on disk, downstream voice-change + stitch will
+                # pick it up and produce a final video with audio that doesn't
+                # match the actor's lips. Delete the artifact so the scene is
+                # truly absent and the operator must re-run with a fixed prompt.
+                # Confirmed 2026-05-25 M2 Overstone Park 4th XI scene 17 —
+                # the artifact landed in the final and the user flagged the
+                # audio-vs-lip drift at preview review.
+                diag_base = videos_dir or os.path.join(project_base, product_name, "videos")
+                diag_name = (
+                    f"{run_id}_scene_{scene_number}.mp4"
+                    if (run_id and not use_run_dirs)
+                    else f"scene_{scene_number}.mp4"
+                )
+                diag_artifact = os.path.join(diag_base, diag_name)
+                if os.path.exists(diag_artifact):
+                    try:
+                        os.remove(diag_artifact)
+                        logger.info(
+                            "[Scene %d] Deleted diagnostic artifact at %s — "
+                            "operator must re-run the scene with a shorter or "
+                            "simpler prompt (lip-sync clips: keep dialogue "
+                            "≤25 words to avoid mid-word truncation).",
+                            scene_number, diag_artifact,
+                        )
+                    except OSError as e:
+                        logger.warning(
+                            "[Scene %d] Could not delete diagnostic artifact "
+                            "%s: %s — delete manually before voice-change/stitch.",
+                            scene_number, diag_artifact, e,
+                        )
+                result["diagnostic_artifact_removed"] = True
 
         logger.error("All retry strategies exhausted")
         break
@@ -4425,6 +4500,42 @@ def main() -> None:
             dialogue_map = json.loads(args.dialogue)
         except json.JSONDecodeError as e:
             logger.error("Invalid --dialogue JSON: %s", e)
+            sys.exit(1)
+
+    # Pre-Veo word-count gate for lip-sync dialogue. Veo I2V clips are a fixed
+    # 8s duration; lip-sync at >28 words gets truncated mid-sentence and the
+    # truncation cadence leaks into voice-change, producing audio-vs-lip drift
+    # in the final stitch. Reject early so the operator tightens the line
+    # before paying for Veo credits. Confirmed 2026-05-25 on M2 Overstone Park
+    # 4th XI scene 17 — the original 28-word line truncated; tightening to 22
+    # words fixed the lip-sync. Documented threshold in bunty-voice-guide.md.
+    if dialogue_map:
+        SOFT_CAP, HARD_CAP = 25, 28
+        over_hard = []
+        over_soft = []
+        for scene_key, line in dialogue_map.items():
+            if not isinstance(line, str):
+                continue
+            words = len(line.split())
+            if words > HARD_CAP:
+                over_hard.append((scene_key, words, line))
+            elif words > SOFT_CAP:
+                over_soft.append((scene_key, words, line))
+        for scene_key, words, line in over_soft:
+            logger.warning(
+                "[lip-sync] scene %s dialogue is %d words (>%d soft cap, <=%d hard cap) "
+                "— close to Veo's mid-sentence cutoff; consider trimming.",
+                scene_key, words, SOFT_CAP, HARD_CAP,
+            )
+        if over_hard:
+            for scene_key, words, line in over_hard:
+                logger.error(
+                    "[lip-sync] scene %s dialogue is %d words (>%d hard cap). "
+                    "Veo will truncate mid-sentence and produce audio-vs-lip drift. "
+                    "Trim before re-running. Line: %r",
+                    scene_key, words, HARD_CAP, line,
+                )
+            logger.error("Aborting — fix dialogue word counts and re-run.")
             sys.exit(1)
 
     # Chained lip-sync mode (v2.39) — validate + parse pairs BEFORE normal lip-sync wrapping

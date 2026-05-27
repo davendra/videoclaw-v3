@@ -376,6 +376,14 @@ def main() -> int:
                     help="Manual ground-name override for the Bunty image prompt (e.g. 'Avenue Road', "
                          "'Bernard Weston Pavilion'). Use when --auto-ground can't parse or you want "
                          "a different name than the scorecard has. Overrides --location.")
+    ap.add_argument("--style-ref-url", default=None,
+                    help="URL of a previously-generated canonical Bunty image (typically the intro "
+                         "frame) to pass as a reference_images style anchor. STRONGLY RECOMMENDED "
+                         "for outro generations — the strict canonical+negative prompt alone is "
+                         "stochastic (Pro drifts ~1 in 3 outros to a thinner-faced rendering); "
+                         "passing the just-generated intro URL here makes the outro match the intro "
+                         "one-to-one. Standard workflow: gen intro first → pass its URL here when "
+                         "generating outro.")
     args = ap.parse_args()
 
     if args.list_locations:
@@ -416,10 +424,25 @@ def main() -> int:
         scene_source = f"--location={args.location}"
 
     if args.print_prompt:
-        kwargs = build_bunty_image_kwargs(scene_desc)
+        kwargs = build_bunty_image_kwargs(scene_desc, style_reference_url=args.style_ref_url)
         import json
         print(json.dumps(kwargs, indent=2))
         print(f"\n# scene_source: {scene_source}", file=sys.stderr)
+        if args.style_ref_url:
+            print(f"# style_reference_url: {args.style_ref_url} (explicit)", file=sys.stderr)
+        else:
+            # build_bunty_image_kwargs auto-attached the pinned canonical anchor
+            # (see BUNTY_CANONICAL_ANCHOR_URL). Surface that so the operator
+            # knows what's anchoring identity — and can override with
+            # --style-ref-url <intro_url> for outros to keep intro+outro pair-tight.
+            from bunty_helpers import BUNTY_CANONICAL_ANCHOR_URL
+            print(f"# style_reference_url: {BUNTY_CANONICAL_ANCHOR_URL} (auto-attached canonical anchor)", file=sys.stderr)
+            if args.segment == "outro":
+                print(
+                    "# NOTE: outro using canonical anchor by default. For tighter intro+outro "
+                    "pair consistency, pass --style-ref-url <intro_url> instead.",
+                    file=sys.stderr,
+                )
         return 0
 
     if not args.project:

@@ -131,3 +131,16 @@ describe('vclaw video multi-shot --auto (stubbed) + --project', () => {
     }
   });
 });
+
+describe('vclaw video prompt-lib-show multi-shot-framework', () => {
+  it('lists and shows the multi-shot-framework reference', () => {
+    const list = run(['video', 'prompt-lib-list']);
+    assert.equal(list.status, 0, list.stderr);
+    const names = JSON.parse(list.stdout).references.map((r: any) => r.name);
+    assert.ok(names.includes('multi-shot-framework'));
+
+    const show = run(['video', 'prompt-lib-show', '--name', 'multi-shot-framework']);
+    assert.equal(show.status, 0, show.stderr);
+    assert.ok(JSON.parse(show.stdout).reference.content.length > 100);
+  });
+});

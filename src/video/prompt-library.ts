@@ -64,6 +64,12 @@ const REFERENCE_REGISTRY: VideoPromptReference[] = [
     summary: 'Reference-ad analysis dimensions for reusable clone plans.',
     file: 'clone-ad-template-workflow.md',
   },
+  {
+    name: 'multi-shot-framework',
+    category: 'framework',
+    summary: 'Compressed timecoded multi-shot cinematic prompt builder (cinematic-15s preset).',
+    file: 'multi-shot-framework.md',
+  },
 ];
 
 function referencesDir(root = process.cwd()): string {

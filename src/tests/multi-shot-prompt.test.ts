@@ -5,6 +5,7 @@ import {
   buildShotPlan,
   formatTimecode,
   assembleMetadataBlock,
+  composePromptText,
 } from '../video/multi-shot-prompt.js';
 
 describe('multi-shot-prompt: buildShotPlan', () => {
@@ -63,5 +64,21 @@ describe('multi-shot-prompt: assembleMetadataBlock', () => {
     assert.match(lines[0], /^Location: Tokyo alley, night\.?$/);
     assert.match(lines[1], /^Style: .*Christopher Nolan/);
     assert.match(lines[2], /^Audio: Diegetic sound only/);
+  });
+});
+
+describe('multi-shot-prompt: composePromptText', () => {
+  it('joins shot lines with blank lines and appends the metadata block', () => {
+    const text = composePromptText(
+      [
+        { timecode: '[00:00 - 00:04]', line: 'Wide, a man walks.' },
+        { timecode: '[00:04 - 00:08]', line: 'Medium, he turns.' },
+      ],
+      'Location: X\nStyle: Y\nAudio: Z',
+    );
+    assert.equal(
+      text,
+      '[00:00 - 00:04] Wide, a man walks.\n\n[00:04 - 00:08] Medium, he turns.\n\nLocation: X\nStyle: Y\nAudio: Z',
+    );
   });
 });

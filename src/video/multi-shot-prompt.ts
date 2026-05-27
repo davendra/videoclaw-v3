@@ -23,7 +23,8 @@ export const CINEMATIC_15S_PRESET: MultiShotPreset = {
 };
 
 // Suggested camera-grid vocabularies. Shot sizes/angles/lenses are local to the
-// framework (prompt-quality's SHOT_TYPE_VOCABULARY is reused where it overlaps).
+// framework; prompt-quality's SHOT_TYPE_VOCABULARY is only re-exported for
+// consumers (it is not used when building the plan — SHOT_SIZES is).
 const SHOT_SIZES = ['wide', 'medium', 'medium close-up', 'close-up', 'macro'] as const;
 const LENSES = ['24mm', '35mm', '50mm', '85mm'] as const;
 const ANGLES = ['low angle', 'high angle', 'eye-level', 'over-the-shoulder', 'Dutch angle'] as const;
@@ -83,25 +84,21 @@ function partitionDurations(
   }
   const durations = new Array(count).fill(min);
   let remaining = total - count * min;
+  const open = durations.map((_, i) => i); // indices still below max
   while (remaining > 0) {
-    const i = Math.floor(rand() * count);
-    if (durations[i] < max) {
-      durations[i] += 1;
-      remaining -= 1;
-    }
+    const pick = Math.floor(rand() * open.length);
+    const i = open[pick];
+    durations[i] += 1;
+    remaining -= 1;
+    if (durations[i] >= max) open.splice(pick, 1);
   }
   return durations;
 }
 
 function pickNonRepeating<T>(pool: readonly T[], prev: T | undefined, rand: () => number): T {
   if (pool.length === 1) return pool[0];
-  let choice = pool[Math.floor(rand() * pool.length)];
-  let guard = 0;
-  while (choice === prev && guard < 16) {
-    choice = pool[Math.floor(rand() * pool.length)];
-    guard += 1;
-  }
-  return choice;
+  const candidates = prev === undefined ? pool : pool.filter((v) => v !== prev);
+  return candidates[Math.floor(rand() * candidates.length)];
 }
 
 export function buildShotPlan(
@@ -112,6 +109,7 @@ export function buildShotPlan(
   const minCount = Math.max(3, Math.ceil(preset.totalSeconds / preset.maxShotSeconds));
   const maxCount = Math.min(7, Math.floor(preset.totalSeconds / preset.minShotSeconds));
   let count = options.shots ?? minCount + Math.floor(rand() * (maxCount - minCount + 1));
+  // Clamp to [minCount, maxCount] so an explicit --shots stays feasible.
   if (count < minCount) count = minCount;
   if (count > maxCount) count = maxCount;
 
@@ -162,7 +160,7 @@ export function assembleMetadataBlock(
 ): string {
   const loc = timeOfDay ? `${location}, ${timeOfDay}` : location;
   return [
-    `Location: ${loc}.`,
+    `Location: ${loc}`,
     `Style: ${preset.styleLine}`,
     `Audio: ${preset.audioLine}`,
   ].join('\n');

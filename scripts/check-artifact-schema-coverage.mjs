@@ -36,6 +36,9 @@ const KNOWN_ALTERNATE_WRITERS = new Set([
   'review-report',
   'scene-candidates',
   'scene-selection',
+  // Written via writeArtifact() in src/cli/vclaw.ts handleVideoMultiShot
+  // (--auto --project path). The WRITER_RE only scans src/video/**/*.ts.
+  'multi-shot-prompt',
 ]);
 
 const REPO_ROOT = process.cwd();

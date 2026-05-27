@@ -329,6 +329,9 @@ and writes the same review artifacts as the browser station.
 ### Obsidian
 `export-obsidian` · `sync-obsidian` · `scaffold-obsidian-vault`
 
+### Multi-shot prompt
+`multi-shot` — scaffold / validate / Gemini-author timecoded multi-shot cinematic prompts ([docs](./docs/CLI_REFERENCE.md#multi-shot-prompt))
+
 ### Reference libraries
 `playbook-list` · `playbook-show` · `prompt-lib-list` · `prompt-lib-show` · `providers`
 

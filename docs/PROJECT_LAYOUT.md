@@ -45,6 +45,9 @@ projects/<slug>/
 │   ├── publish-report.json
 │   ├── analyze-output.json
 │   ├── clone-plan.json
+│   ├── multi-shot-prompt.json  # Written only when `vclaw video multi-shot
+│   │                             --project <slug>` is used; absent for
+│   │                             standalone (no --project) invocations.
 │   └── history/                # Snapshots of artifacts/ files on overwrite.
 │                                 Append-only. One subdir per artifact:
 │                                 history/brief/<ts>.json.
@@ -228,10 +231,10 @@ The build pipeline includes `check:artifact-schema-coverage`
   when you want hard enforcement. Currently zero unexpected drift
   with the allowlist applied.
 
-Current allowlist (8 schemas needing per-artifact audit): `analyze-output`,
-`clone-plan`, `execution-plan`, `publish-report`, `reference-sheets`,
-`review-report`, `scene-candidates`, `scene-selection`. The audit
-work is tracked in `MERGE_PLAN.md` §A2.
+Current allowlist (9 schemas needing per-artifact audit): `analyze-output`,
+`clone-plan`, `execution-plan`, `multi-shot-prompt`, `publish-report`,
+`reference-sheets`, `review-report`, `scene-candidates`, `scene-selection`.
+The audit work is tracked in `MERGE_PLAN.md` §A2.
 
 ## Slug validation implementation
 

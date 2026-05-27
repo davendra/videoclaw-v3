@@ -99,6 +99,68 @@ review cues.
   buckets, so all downstream consumers (tests, CI checks, storyboard.md
   approval review) see them automatically.
 
+## Multi-shot cinematic prompt validation
+
+`runMultiShotChecks(prompt, preset)` enforces the structural rules for
+multi-shot cinematic prompts. It lives in the same module as
+`runPromptQualityChecks` (`src/video/prompt-quality.ts`) and is invoked
+via:
+
+```bash
+vclaw video multi-shot --validate
+```
+
+Unlike the six anti-pattern checks above, all issues from
+`runMultiShotChecks` are **always `error` severity** — they are
+structural requirements of the multi-shot format, not stylistic
+guidelines, so they cannot be downgraded to warnings by omitting
+`DIRECTOR_STRICT_PROMPT_QUALITY`.
+
+### Preset: `cinematic-15s`
+
+The `cinematic-15s` preset defines:
+
+- total duration: **15 s**
+- per-shot duration range: **2–5 s**
+- character budget: **≤ 1500** characters total
+
+### Issue codes
+
+| Code | What it catches |
+|---|---|
+| `multi-shot-timecode-parse` | A timecode in the prompt cannot be parsed |
+| `multi-shot-timecodes-not-contiguous` | Timecodes have gaps or are not in order |
+| `multi-shot-must-start-at-zero` | First timecode is not `00:00` |
+| `multi-shot-duration-mismatch` | Timecodes do not sum to the preset total (15 s for `cinematic-15s`) |
+| `multi-shot-shot-duration-out-of-range` | A shot's duration falls outside the preset bounds (2–5 s) |
+| `multi-shot-character-budget-exceeded` | Total prompt character count exceeds the preset budget (1500) |
+| `multi-shot-consecutive-shot-repeat` | A consecutive pair of shots shares the same shot size, lens, angle, or camera movement |
+| `multi-shot-missing-metadata-block` | The required `Location / Style / Audio` metadata block is absent |
+
+Matching for consecutive-shot-repeat checks is hyphen/space-insensitive,
+so `push in` and `push-in` are treated as the same value.
+
+### Canonical vocabularies
+
+The shot-parameter vocabularies used for consecutive-repeat detection are
+defined in `src/video/prompt-quality.ts` and are now canonical for the
+entire module:
+
+- `SHOT_SIZE_VOCABULARY` — e.g. `wide shot`, `medium shot`, `close-up`
+- `LENS_VOCABULARY` — e.g. `wide angle`, `telephoto`, `macro`
+- `ANGLE_VOCABULARY` — e.g. `eye level`, `low angle`, `bird's eye`
+- `CAMERA_MOVE_VOCABULARY` — movement families shared with `runPromptQualityChecks`
+
+### Smoke
+
+```bash
+npm run smoke:multi-shot
+```
+
+Builds the project, runs `vclaw video multi-shot --plan`, then validates
+a fixture at `references/video/.fixtures/multi-shot-valid.txt` — a
+no-network plan → validate round-trip.
+
 ## Follow-on roadmap
 
 - Per-project threshold overrides (today: hardcoded constants).

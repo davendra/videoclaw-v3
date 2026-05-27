@@ -41,6 +41,12 @@ npm run smoke:native-veo                 # native veo-direct path
 npm run smoke:character-hydration        # create-time cast hydration + approval-gate cost
 npm run smoke:execution-cancel           # adapter + project-level cancel
 npm run smoke:portfolio                  # index → report → export-csv visibility
+npm run smoke:reference-sheets           # character reference-sheet generation path
+npm run smoke:scene-candidates           # scene-candidate generation path
+npm run smoke:assemble                   # FFmpeg assemble/stitch layer (dry)
+npm run smoke:assemble-render            # real FFmpeg render validation
+npm run smoke:multi-shot                 # multi-shot prompt plan→validate round-trip
+npm run e2e:image-storyboard             # image-storyboard workflow (add --verify-server)
 npm run check:omx-alias                  # omx deprecation wrapper
 npm run check:movie-director-wrappers    # bundled Director helper scripts
 npm run check:cleanroom-docs             # clean-room docs + skills
@@ -56,7 +62,7 @@ npm run check:release-readiness-lite     # one-shot: build + tests + main smokes
 ### Layers (read top-down)
 
 1. `src/cli/vclaw.ts` — the single user-facing entrypoint. It argparses by hand and dispatches into `src/video/*` modules. `src/cli/omx.ts` is a deprecation wrapper that delegates to the same handlers and prints a notice to stderr. `src/cli/provider-adapter.ts` is the built-in adapter binary for `seedance-direct` / `veo-direct`.
-2. `src/video/` — the core domain. Each file is small and single-purpose, e.g. `artifacts.ts`, `artifact-store.ts`, `checkpoints.ts`, `workspace.ts`, `projects.ts`, `status.ts`, `doctor.ts`, `doctor-portfolio.ts`, `readiness.ts`, `execution-plan.ts`, `execute.ts`, `execution-runtime.ts`, `execution-status.ts`, `execution-cancel.ts`, `director-preflight.ts`, `report.ts`, `csv-export.ts`, `obsidian-export.ts`, `project-index.ts`, `metrics.ts`, `next-actions.ts`, `template-store.ts`, `provider-status.ts`, `native-seedance.ts`, `native-veo.ts`.
+2. `src/video/` — the core domain. Each file is small and single-purpose, e.g. `artifacts.ts`, `artifact-store.ts`, `checkpoints.ts`, `workspace.ts`, `projects.ts`, `status.ts`, `doctor.ts`, `doctor-portfolio.ts`, `readiness.ts`, `execution-plan.ts`, `execute.ts`, `execution-runtime.ts`, `execution-status.ts`, `execution-cancel.ts`, `director-preflight.ts`, `report.ts`, `csv-export.ts`, `obsidian-export.ts`, `project-index.ts`, `metrics.ts`, `next-actions.ts`, `template-store.ts`, `provider-status.ts`, `native-seedance.ts`, `native-veo.ts`, `multi-shot-prompt.ts`.
 3. `src/video/provider-platform/` — route descriptors (Veo / Seedance / Runway direct and useapi flavors).
 4. `src/video/pipeline-manifests/` — built-in stage definitions for the two production modes.
 5. `schemas/video/` — canonical JSON Schema contracts for artifacts and pipeline manifests. Treat these as the source of truth for artifact shapes.
@@ -136,4 +142,4 @@ Proceed by default on obvious next steps. Keep work scoped to this repository an
 
 ## Recommended reading order
 
-`docs/ARCHITECTURE.md` → `docs/CLI_REFERENCE.md` → `docs/ASSEMBLE.md` → `docs/OPERATIONS.md` → `docs/OBSIDIAN.md` → `docs/TEMPLATES.md` → `docs/MIGRATION.md` → `docs/DEPRECATION.md` → `docs/RELEASE_READINESS.md` → `docs/MASTER_PLAN_ALIGNMENT.md` → `docs/DIAGRAMS_SOURCE.md`.
+`docs/ARCHITECTURE.md` → `docs/CLI_REFERENCE.md` → `docs/ASSEMBLE.md` → `docs/PRODUCTION_WORKFLOW.md` → `docs/REVIEW_UI_STORYBOARD_WORKFLOW.md` → `docs/REFERENCE_SHEETS.md` → `docs/SCENE_CANDIDATES.md` → `docs/OPERATIONS.md` → `docs/GENERATION_TELEMETRY.md` → `docs/OBSIDIAN.md` → `docs/TEMPLATES.md` → `docs/MIGRATION.md` → `docs/DEPRECATION.md` → `docs/RELEASE_READINESS.md` → `docs/MASTER_PLAN_ALIGNMENT.md` → `docs/DIAGRAMS_SOURCE.md`.

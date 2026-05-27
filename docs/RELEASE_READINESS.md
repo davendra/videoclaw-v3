@@ -557,12 +557,13 @@ Expanded checklist:
 6. run `npm run smoke:portfolio`
 7. run `npm run smoke:reference-sheets`
 8. run `npm run smoke:scene-candidates`
-9. run `npm run e2e:image-storyboard`
-10. run `npm run check:omx-alias`
-11. run `npm run check:movie-director-wrappers`
-12. run `npm run check:cleanroom-docs`
-13. run `npm run check:skill-frontdoor`
-14. run `npm run check:artifact-schema-coverage`
-15. from a source checkout, confirm `node dist/cli/vclaw.js video plan --project <slug>` works on a sample workspace; installed-package users should run the same check as `vclaw video plan --project <slug>`
-16. confirm `vclaw video sync-obsidian` still reflects current project state for a sampled workspace
-17. update migration/deprecation notes if alias or lifecycle policy changes
+9. run `npm run smoke:multi-shot`
+10. run `npm run e2e:image-storyboard`
+11. run `npm run check:omx-alias`
+12. run `npm run check:movie-director-wrappers`
+13. run `npm run check:cleanroom-docs`
+14. run `npm run check:skill-frontdoor`
+15. run `npm run check:artifact-schema-coverage`
+16. from a source checkout, confirm `node dist/cli/vclaw.js video plan --project <slug>` works on a sample workspace; installed-package users should run the same check as `vclaw video plan --project <slug>`
+17. confirm `vclaw video sync-obsidian` still reflects current project state for a sampled workspace
+18. update migration/deprecation notes if alias or lifecycle policy changes

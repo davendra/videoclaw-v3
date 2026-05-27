@@ -106,6 +106,13 @@
       "role": "specialist"
     },
     {
+      "id": "multi-shot-prompt",
+      "category": "video",
+      "status": "native-clean-room",
+      "specializes": "video-framework",
+      "role": "specialist"
+    },
+    {
       "id": "nex-presenter",
       "category": "video",
       "status": "alias",

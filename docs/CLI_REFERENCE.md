@@ -660,6 +660,106 @@ available under the same root, the estimate reports `historical-telemetry` in
 3. `execute` remains an alias for `produce`
 4. deprecation notices are written to `stderr` so JSON `stdout` stays machine-readable
 
+## Multi-shot prompt
+
+```bash
+vclaw video multi-shot (--plan | --validate | --auto) [flags]
+```
+
+Scaffolds, validates, and (via Gemini) authors **compressed timecoded multi-shot
+cinematic prompts** — structured shot sequences targeting a fixed duration (default
+15 s) with enforced non-repeating camera parameters and a Location/Style/Audio
+metadata block.
+
+### Modes
+
+| Flag | Purpose |
+|---|---|
+| `--plan` | Scaffold a shot grid (timecodes + suggested camera parameters) without prose. |
+| `--validate` | Check an existing prompt text against the preset rules. Reads from `--file <path>` or stdin. Exits `0` if valid, `1` if errors are found. |
+| `--auto` | Author the full prompt via Gemini (requires `--image <path>` and a configured Gemini key pool, or `VCLAW_MULTISHOT_AUTO_STUB` for offline/testing). |
+
+### Flags
+
+| Flag | Default | Description |
+|---|---|---|
+| `--preset <name>` | `cinematic-15s` | Named preset to base the build on. The only preset today is `cinematic-15s`; passing any other name errors. Additional named presets (`seedance-*` / `veo-*` / `runway-*`) are Phase 2. |
+| `--shots <n>` | auto (3–7) | Exact shot count for `--plan`. |
+| `--seed <n>` | random | PRNG seed for reproducible plans. |
+| `--total-seconds <n>` | 15 | Total clip duration in seconds. |
+| `--max-chars <n>` | 1500 | Character budget enforced by `--validate`. |
+| `--style-line <text>` | cinematic-15s default | Override the `Style:` metadata line. |
+| `--audio-line <text>` | cinematic-15s default | Override the `Audio:` metadata line. |
+| `--image <path>` | — | Reference image path; required for `--auto`. |
+| `--location <text>` | — | Scene location written into `Location:` block. |
+| `--time <text>` | `natural daylight` | Time of day written into `Location:` block. |
+| `--character <text>` | — | Character description hint passed to Gemini. |
+| `--action <text>` | — | Action description hint passed to Gemini. |
+| `--project <slug>` | — | Persist the result as a `multi-shot-prompt` artifact under the named project. |
+| `--root <path>` | `cwd` | Workspace root (used with `--project`). |
+| `--raw` | false | With `--auto`: print only the prompt body, no JSON envelope. |
+
+### Output
+
+`--plan` emits JSON: `{ preset, shots[] }` where each shot has `index`, `start`, `end`, `timecode`, `shotSize`, `lens`, `angle`, `movement`.
+
+`--validate` emits JSON: `{ valid, charCount, issues[] }` where each issue has `code`, `severity`, `message`. Exit code `1` when any issue has `severity: "error"`.
+
+`--auto` emits JSON: `{ preset, location, timeOfDay, shots, promptText, charCount, valid, issues, generatedAt }`. With `--raw`, prints only `promptText`.
+
+> **Note:** When `--project` is supplied, the artifact is persisted to disk even when validation fails (`valid: false`); the issues array is recorded and the process exits with code `1`. A persisted artifact does **not** imply the prompt passed validation — always check the `valid` field.
+
+### Worked example
+
+```bash
+# 1. Generate a 5-shot plan (reproducible with --seed)
+vclaw video multi-shot --plan --shots 5 --seed 42
+
+# 2. Validate an existing prompt file — exits 0 if clean
+vclaw video multi-shot --validate --file my-prompt.txt
+
+# 3. Validate from stdin
+cat my-prompt.txt | vclaw video multi-shot --validate
+
+# 4. Author and validate via Gemini (requires GEMINI_API_KEYS)
+vclaw video multi-shot --auto \
+  --image /path/to/ref.png \
+  --location "Tokyo back alley" \
+  --time "night" \
+  --project my-project
+
+# 5. Print only the raw prompt body (no JSON wrapper)
+vclaw video multi-shot --auto --image /path/to/ref.png \
+  --location "Tokyo back alley" --time "night" --raw
+```
+
+**Tokyo-alley example** (5-shot, 15 s, cinematic-15s preset):
+
+```
+[00:00 - 00:04] Wide, 24mm, low angle, tracking — a man walks through a Tokyo alley.
+
+[00:04 - 00:07] Medium, 50mm, eye-level, handheld — he moves between food stalls.
+
+[00:07 - 00:09] Close-up, 85mm, high angle, static — his hand brushes a lantern.
+
+[00:09 - 00:12] Wide, 35mm, Dutch angle, push-in — he emerges into a broad street.
+
+[00:12 - 00:15] Medium close-up, 50mm, low angle, pull-out — he looks up at a sign.
+
+Location: Narrow Tokyo alley, night.
+Style: Cool shadows, natural skin tones. IMAX-scale composition, deep focus, practical lighting. High contrast, grounded realism. In the style of a Christopher Nolan movie.
+Audio: Diegetic sound only — natural ambience, environmental foley, and subject-driven sound.
+```
+
+Validation rules enforced by `--validate` / `--auto`:
+- Timecodes must start at `00:00`, be contiguous (no gaps), and total exactly `--total-seconds`.
+- Each shot duration must be within `[minShotSeconds, maxShotSeconds]` (default 2–5 s).
+- No camera parameter (shot size, lens, angle, movement) may repeat in consecutive shots.
+- Prompt must not exceed `--max-chars`.
+- A `Location:` / `Style:` / `Audio:` metadata block must be present.
+
+Full framework rules and the variation guide: `vclaw video prompt-lib-show --name multi-shot-framework`.
+
 ## Prompt library
 
 `prompt-lib-list` and `prompt-lib-show` expose imported reference assets for:
@@ -673,6 +773,7 @@ available under the same root, the estimate reports `historical-telemetry` in
 7. dialogue duration preflight
 8. character reference sheets
 9. clone-ad template workflow
+10. multi-shot cinematic prompt framework
 
 ## Portfolio operations
 

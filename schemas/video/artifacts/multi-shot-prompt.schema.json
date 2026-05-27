@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "vclaw-video-core/video/artifacts/multi-shot-prompt",
+  "type": "object",
+  "required": ["preset", "location", "timeOfDay", "shots", "promptText", "charCount", "valid", "issues", "generatedAt"],
+  "properties": {
+    "preset": { "type": "string" },
+    "location": { "type": "string" },
+    "timeOfDay": { "type": "string" },
+    "shots": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["timecode", "start", "end", "shotSize", "lens", "angle", "movement", "description"],
+        "properties": {
+          "timecode": { "type": "string" },
+          "start": { "type": "number" },
+          "end": { "type": "number" },
+          "shotSize": { "type": "string" },
+          "lens": { "type": "string" },
+          "angle": { "type": "string" },
+          "movement": { "type": "string" },
+          "description": { "type": "string" }
+        },
+        "additionalProperties": false
+      }
+    },
+    "promptText": { "type": "string" },
+    "charCount": { "type": "integer" },
+    "valid": { "type": "boolean" },
+    "issues": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["code", "severity", "message"],
+        "properties": {
+          "code": { "type": "string" },
+          "severity": { "type": "string", "enum": ["warn", "error"] },
+          "message": { "type": "string" }
+        },
+        "additionalProperties": false
+      }
+    },
+    "generatedAt": { "type": "string" }
+  },
+  "additionalProperties": false
+}

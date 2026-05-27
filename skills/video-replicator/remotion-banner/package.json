@@ -1,0 +1,30 @@
+{
+  "name": "cta-banner",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Remotion-based CTA banner generator for video-replicator",
+  "scripts": {
+    "dev": "remotion studio",
+    "build": "remotion bundle",
+    "render": "remotion render",
+    "render:landscape": "remotion render CTABanner --props=\"$(cat props.json)\" --output=out/banner_landscape.mp4",
+    "render:portrait": "remotion render CTABannerPortrait --props=\"$(cat props.json)\" --output=out/banner_portrait.mp4",
+    "upgrade": "remotion upgrade"
+  },
+  "dependencies": {
+    "@remotion/bundler": "^4.0.0",
+    "@remotion/cli": "^4.0.0",
+    "@remotion/player": "^4.0.0",
+    "@remotion/renderer": "^4.0.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "remotion": "^4.0.0",
+    "qrcode": "^1.5.3"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/react": "^18.2.0",
+    "@types/qrcode": "^1.5.0",
+    "typescript": "^5.0.0"
+  }
+}

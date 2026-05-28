@@ -339,4 +339,63 @@ describe('multi-shot-prompt: runMultiShotChecks', () => {
       'expected multi-shot-repeated-parameter when consecutive shots both use spaced "push in"',
     );
   });
+
+  it('emits shot-count-out-of-range when too few shots (veo-8s requires minShots=2)', () => {
+    const text = [
+      '[00:00 - 00:08] Single static shot spanning the full duration.',
+      '',
+      'Location: Test, evening',
+      `Style: ${VEO_8S_PRESET.styleLine}`,
+      `Audio: ${VEO_8S_PRESET.audioLine}`,
+    ].join('\n');
+    const issues = runMultiShotChecks(text, VEO_8S_PRESET);
+    const match = issues.find((i: PromptQualityIssue) => i.code === 'multi-shot-shot-count-out-of-range');
+    assert.ok(match, `expected shot-count-out-of-range issue, got: ${JSON.stringify(issues)}`);
+    assert.equal(match!.severity, 'error');
+    assert.match(match!.message, /too few/i);
+  });
+
+  it('emits shot-count-out-of-range when too many shots (veo-8s requires maxShots=4)', () => {
+    // 5 shots × 2s each totals 10s — total mismatch will ALSO fire, but the shot-count check is what we assert.
+    const lines: string[] = [];
+    const fmt = (n: number) => `${String(Math.floor(n / 60)).padStart(2, '0')}:${String(n % 60).padStart(2, '0')}`;
+    for (let i = 0; i < 5; i += 1) {
+      const start = i * 2;
+      const end = (i + 1) * 2;
+      lines.push(`[${fmt(start)} - ${fmt(end)}] Shot ${i}.`);
+      lines.push('');
+    }
+    lines.push('Location: Test, evening');
+    lines.push(`Style: ${VEO_8S_PRESET.styleLine}`);
+    lines.push(`Audio: ${VEO_8S_PRESET.audioLine}`);
+    const issues = runMultiShotChecks(lines.join('\n'), VEO_8S_PRESET);
+    const match = issues.find((i: PromptQualityIssue) => i.code === 'multi-shot-shot-count-out-of-range');
+    assert.ok(match, `expected shot-count-out-of-range issue, got: ${JSON.stringify(issues)}`);
+    assert.equal(match!.severity, 'error');
+    assert.match(match!.message, /too many/i);
+  });
+
+  it('does NOT emit shot-count-out-of-range at the boundaries (cinematic-15s 3 and 7)', () => {
+    const fmt = (n: number) => `${String(Math.floor(n / 60)).padStart(2, '0')}:${String(n % 60).padStart(2, '0')}`;
+    const mkPrompt = (durations: number[]) => {
+      let cursor = 0;
+      const lines: string[] = [];
+      for (let i = 0; i < durations.length; i += 1) {
+        const start = cursor;
+        const end = cursor + durations[i];
+        cursor = end;
+        lines.push(`[${fmt(start)} - ${fmt(end)}] Shot ${i}.`);
+        lines.push('');
+      }
+      lines.push('Location: Test, evening');
+      lines.push(`Style: ${CINEMATIC_15S_PRESET.styleLine}`);
+      lines.push(`Audio: ${CINEMATIC_15S_PRESET.audioLine}`);
+      return lines.join('\n');
+    };
+    for (const durs of [[5, 5, 5], [2, 2, 2, 2, 2, 2, 3]]) {
+      const issues = runMultiShotChecks(mkPrompt(durs), CINEMATIC_15S_PRESET);
+      const match = issues.find((i: PromptQualityIssue) => i.code === 'multi-shot-shot-count-out-of-range');
+      assert.equal(match, undefined, `boundary count ${durs.length}: unexpected issue ${JSON.stringify(match)}`);
+    }
+  });
 });

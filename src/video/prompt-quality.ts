@@ -12,6 +12,7 @@ export type PromptQualityIssueCode =
   | 'multi-shot-timecode-gap'
   | 'multi-shot-timecode-total'
   | 'multi-shot-shot-duration'
+  | 'multi-shot-shot-count-out-of-range'
   | 'multi-shot-overlong'
   | 'multi-shot-repeated-parameter'
   | 'multi-shot-missing-metadata';
@@ -477,6 +478,21 @@ export function runMultiShotChecks(
       code: 'multi-shot-timecode-total',
       severity,
       message: `sequence totals ${total}s (must be exactly ${preset.totalSeconds}s)`,
+    });
+  }
+
+  // Shot-count window check. Branched message so operators see direction.
+  if (shots.length < preset.minShots) {
+    issues.push({
+      code: 'multi-shot-shot-count-out-of-range',
+      severity,
+      message: `too few shots: ${shots.length} < preset.minShots=${preset.minShots} (preset "${preset.name}")`,
+    });
+  } else if (shots.length > preset.maxShots) {
+    issues.push({
+      code: 'multi-shot-shot-count-out-of-range',
+      severity,
+      message: `too many shots: ${shots.length} > preset.maxShots=${preset.maxShots} (preset "${preset.name}")`,
     });
   }
 

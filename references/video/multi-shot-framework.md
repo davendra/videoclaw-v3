@@ -287,6 +287,71 @@ vclaw video multi-shot --auto --image ref.png --location "Paris rooftop" \
 
 ---
 
+## Anti-patterns (production-learned)
+
+These are prompt-side mistakes that pass the structural validator but
+produce unwanted output. The validator can't catch them — they're
+authoring failures the video model interprets too literally.
+
+### Negative direction doesn't work
+
+The video models (Runway, Seedance, Veo) treat negation as ambiguous and
+often honor the negated token anyway. **Do not write:**
+
+- ❌ `"no slow-motion"` → model still applies slow-mo
+- ❌ `"avoid handheld"` → may still come back handheld
+- ❌ `"not in slow motion"` → still slow
+
+**Use positive direction instead:**
+
+- ✅ `"natural real-time pace, decisive movement"`
+- ✅ `"locked-off camera, no rig motion"`
+- ✅ `"crisp tempo, action-forward"`
+
+Combining works too: `"natural real-time pace, decisive movement, no slow-motion"`
+(positive first, negation second).
+
+### Slow-motion creep
+
+If you do NOT want slow motion, scan the prompt for every instance of
+`slow-mo`, `slow motion`, `slow-motion`. Including these tokens — even
+inside the Style line — biases the output toward slow motion. The
+default `cinematic-15s` preset's `styleLine` contains "Slow-motion,
+handheld grit" — keep it for the cinematic look, override it via
+`--style-line` when the segment calls for natural pace.
+
+### Vague camera direction
+
+`"camera moves"` and `"dynamic shot"` and `"cinematic angle"` are
+under-specified — the model picks something average. **Use the
+framework's vocabulary**: a specific `shotSize`, a specific `lens`
+(24mm / 35mm / 50mm / 85mm), a specific `angle`, a specific
+`movement` (push-in / pull-out / dolly / handheld / locked-off / tilt /
+pan / track). The validator's repeated-parameter check enforces variety
+across shots; under-specification defeats it.
+
+### Over-stuffed shot lines
+
+Going much past ~120 chars per shot bleeds the budget and the model
+starts ignoring later words. If a shot needs more detail than that, it
+probably wants to be two shots.
+
+### "Cinematic" without anchor
+
+`"cinematic lighting, cinematic composition, cinematic mood"` — three
+words doing no work. Anchor instead: `"IMAX-scale composition, deep
+focus, practical lighting, high contrast"` (the default cinematic-15s
+styleLine does this).
+
+### Forgetting the metadata block
+
+A common drift in `--auto` Gemini output: the model writes shots fine,
+then drops the `Location:` / `Style:` / `Audio:` line labels at the end.
+The validator catches this as `multi-shot-missing-metadata`. Re-add the
+three labels exactly.
+
+---
+
 ## Validator Issue Codes
 
 `runMultiShotChecks` returns structured issues for the following conditions:

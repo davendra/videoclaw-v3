@@ -16,10 +16,26 @@ timecoded multi-shot cinematic video prompt — a sequence of shots with precise
 camera direction, designed for AI video generators (Seedance, Veo, Runway,
 Kling, Sora, and similar tools).
 
-**Hard rule: the final prompt must be 1,500 characters or fewer.** This is
-non-negotiable. The format is deliberately compressed to fit within prompt-length
-limits. The Style and Audio lines in the `cinematic-15s` preset account for ~280
-chars — plan the shot descriptions around the remaining ~1,170 chars.
+**Hard rule: the final prompt must stay under the resolved preset's `maxChars`.**
+For the default `cinematic-15s` preset that is 1,500 characters. The format is
+deliberately compressed to fit within provider prompt-length limits. The Style
+and Audio lines account for ~280 chars — plan the shot descriptions around the
+remaining budget.
+
+---
+
+## Presets
+
+| Preset | totalSeconds | shot range | shot count | maxChars | When to pick |
+|---|---|---|---|---|---|
+| `cinematic-15s` *(default)* | 15 s | 2–5 s | 3–7 | 1500 | Hand-authored cinematic clip not bound to one provider's clip duration |
+| `seedance-10s` | 10 s | 2–5 s | 2–5 | 1500 | Target Seedance 2.0 clips |
+| `veo-8s` | 8 s | 2–4 s | 2–4 | 1500 | Target Veo 3.x clips (standard 8 s output) |
+| `runway-10s` | 10 s | 2–5 s | 2–5 | 1000 | Target Runway clips (durations enum'd to `5\|8\|10\|15`) |
+
+All four presets share the same Nolan styleLine and diegetic audioLine — only
+the hard provider constraints differ. Override the lines with `--style-line` /
+`--audio-line` on the CLI if you want a different look.
 
 ---
 

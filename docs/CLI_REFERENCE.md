@@ -683,8 +683,8 @@ metadata block.
 
 | Flag | Default | Description |
 |---|---|---|
-| `--preset <name>` | `cinematic-15s` | Named preset to base the build on. The only preset today is `cinematic-15s`; passing any other name errors. Additional named presets (`seedance-*` / `veo-*` / `runway-*`) are Phase 2. |
-| `--shots <n>` | auto (3–7) | Exact shot count for `--plan`. |
+| `--preset <name>` | `cinematic-15s` | One of `cinematic-15s` (default, 15 s / 3–7 shots / 1500 chars), `seedance-10s` (10 s / 2–5 shots / 1500 chars), `veo-8s` (8 s / 2–4 shots / 1500 chars), `runway-10s` (10 s / 2–5 shots / 1000 chars). Each preset declares its own clip duration, shot-count window, per-shot duration bounds, and char budget; the Nolan `styleLine` and diegetic `audioLine` are shared. Override with `--style-line` / `--audio-line`. Unknown names fail fast. |
+| `--shots <n>` | auto (preset window) | Exact shot count for `--plan`. Must fall within the resolved preset's `[minShots, maxShots]`; out-of-range values fail fast. |
 | `--seed <n>` | random | PRNG seed for reproducible plans. |
 | `--total-seconds <n>` | 15 | Total clip duration in seconds. |
 | `--max-chars <n>` | 1500 | Character budget enforced by `--validate`. |

@@ -86,6 +86,61 @@ describe('multi-shot-prompt: preset registry', () => {
   });
 });
 
+const ALL_PRESETS: readonly MultiShotPreset[] = [
+  CINEMATIC_15S_PRESET,
+  SEEDANCE_10S_PRESET,
+  VEO_8S_PRESET,
+  RUNWAY_10S_PRESET,
+];
+
+describe('multi-shot-prompt: buildShotPlan invariants (all presets)', () => {
+  for (const preset of ALL_PRESETS) {
+    it(`invariants hold across 30 seeds — ${preset.name}`, () => {
+      for (let seed = 1; seed <= 30; seed += 1) {
+        const plan = buildShotPlan(preset, { seed });
+        const n = plan.shots.length;
+
+        assert.ok(
+          n >= preset.minShots && n <= preset.maxShots,
+          `${preset.name} seed=${seed}: shot count ${n} outside [${preset.minShots}, ${preset.maxShots}]`,
+        );
+
+        let cursor = 0;
+        let prevSize: string | undefined;
+        let prevLens: string | undefined;
+        let prevAngle: string | undefined;
+        let prevMove: string | undefined;
+        for (const shot of plan.shots) {
+          const dur = shot.end - shot.start;
+          assert.ok(
+            dur >= preset.minShotSeconds && dur <= preset.maxShotSeconds,
+            `${preset.name} seed=${seed} shot ${shot.index}: duration ${dur}s outside [${preset.minShotSeconds}, ${preset.maxShotSeconds}]`,
+          );
+          assert.equal(
+            shot.start,
+            cursor,
+            `${preset.name} seed=${seed} shot ${shot.index}: gap/overlap (start ${shot.start}, expected ${cursor})`,
+          );
+          cursor = shot.end;
+          assert.notStrictEqual(shot.shotSize, prevSize, `${preset.name} seed=${seed} shot ${shot.index}: shotSize repeats prev`);
+          assert.notStrictEqual(shot.lens, prevLens, `${preset.name} seed=${seed} shot ${shot.index}: lens repeats prev`);
+          assert.notStrictEqual(shot.angle, prevAngle, `${preset.name} seed=${seed} shot ${shot.index}: angle repeats prev`);
+          assert.notStrictEqual(shot.movement, prevMove, `${preset.name} seed=${seed} shot ${shot.index}: movement repeats prev`);
+          prevSize = shot.shotSize;
+          prevLens = shot.lens;
+          prevAngle = shot.angle;
+          prevMove = shot.movement;
+        }
+        assert.equal(
+          cursor,
+          preset.totalSeconds,
+          `${preset.name} seed=${seed}: total ${cursor}s != ${preset.totalSeconds}s`,
+        );
+      }
+    });
+  }
+});
+
 describe('multi-shot-prompt: buildShotPlan', () => {
   it('produces shots that sum to the preset total and stay within bounds', () => {
     for (let seed = 0; seed < 50; seed += 1) {

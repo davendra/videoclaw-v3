@@ -14,7 +14,7 @@ import { autoFixDirectorStoryboardContent, runDirectorPreflight } from '../video
 import { generateAnalyzeOutputWithGemini } from '../video/gemini-analyze.js';
 import { listPlaybooks, readPlaybook } from '../video/playbooks.js';
 import { listPromptReferences, readPromptReference } from '../video/prompt-library.js';
-import { CINEMATIC_15S_PRESET, buildShotPlan, generateMultiShotPromptText, type MultiShotPreset } from '../video/multi-shot-prompt.js';
+import { CINEMATIC_15S_PRESET, buildShotPlan, generateMultiShotPromptText, resolvePreset, type MultiShotPreset } from '../video/multi-shot-prompt.js';
 import { runMultiShotChecks } from '../video/prompt-quality.js';
 import { getBuiltinPipelineManifest } from '../video/pipeline-manifest.js';
 import { writeStageCheckpoint } from '../video/checkpoints.js';
@@ -1974,10 +1974,13 @@ function parsePositiveIntegerFlag(args: string[], flag: string): number | undefi
 
 function resolveMultiShotPreset(args: string[]): MultiShotPreset {
   const presetName = parseFlagValue(args, '--preset');
-  if (presetName !== undefined && presetName !== 'cinematic-15s') {
-    throw new Error(`video multi-shot: unknown --preset "${presetName}" (known: cinematic-15s)`);
+  let preset: MultiShotPreset;
+  try {
+    preset = { ...resolvePreset(presetName) };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    throw new Error(`video multi-shot: ${message}`);
   }
-  const preset: MultiShotPreset = { ...CINEMATIC_15S_PRESET };
   const totalSeconds = parsePositiveIntegerFlag(args, '--total-seconds');
   const maxChars = parsePositiveIntegerFlag(args, '--max-chars');
   const styleLine = parseFlagValue(args, '--style-line');
@@ -2075,6 +2078,11 @@ async function handleVideoMultiShot(args: string[]): Promise<void> {
   // Default: --plan (scaffold)
   void isPlan;
   const shots = parsePositiveIntegerFlag(args, '--shots');
+  if (shots !== undefined && (shots < preset.minShots || shots > preset.maxShots)) {
+    throw new Error(
+      `video multi-shot: --shots ${shots} outside preset "${preset.name}" window [${preset.minShots}, ${preset.maxShots}]`,
+    );
+  }
   const seedRaw = parseFlagValue(args, '--seed');
   let seed: number | undefined;
   if (seedRaw !== undefined) {

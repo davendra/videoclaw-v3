@@ -35,7 +35,45 @@ describe('vclaw video multi-shot --plan', () => {
   it('exits nonzero with a clear error for an unknown --preset', () => {
     const res = run(['video', 'multi-shot', '--plan', '--preset', 'bogus']);
     assert.notEqual(res.status, 0);
-    assert.match(res.stdout + res.stderr, /unknown --preset "bogus"/);
+    assert.match(res.stdout + res.stderr, /unknown preset "bogus".*cinematic-15s.*seedance-10s.*veo-8s.*runway-10s/);
+  });
+
+  it('--preset seedance-10s emits a 10s plan within seedance bounds', () => {
+    const res = run(['video', 'multi-shot', '--plan', '--preset', 'seedance-10s', '--seed', '7']);
+    assert.equal(res.status, 0, res.stderr);
+    const parsed = JSON.parse(res.stdout);
+    assert.equal(parsed.preset.name, 'seedance-10s');
+    assert.equal(parsed.preset.totalSeconds, 10);
+    assert.ok(parsed.shots.length >= 2 && parsed.shots.length <= 5);
+  });
+
+  it('--preset veo-8s emits an 8s plan within veo bounds', () => {
+    const res = run(['video', 'multi-shot', '--plan', '--preset', 'veo-8s', '--seed', '7']);
+    assert.equal(res.status, 0, res.stderr);
+    const parsed = JSON.parse(res.stdout);
+    assert.equal(parsed.preset.name, 'veo-8s');
+    assert.equal(parsed.preset.totalSeconds, 8);
+    assert.ok(parsed.shots.length >= 2 && parsed.shots.length <= 4);
+  });
+
+  it('--preset runway-10s emits a plan with the runway 1000-char budget', () => {
+    const res = run(['video', 'multi-shot', '--plan', '--preset', 'runway-10s', '--seed', '7']);
+    assert.equal(res.status, 0, res.stderr);
+    const parsed = JSON.parse(res.stdout);
+    assert.equal(parsed.preset.name, 'runway-10s');
+    assert.equal(parsed.preset.maxChars, 1000);
+  });
+
+  it('--shots above preset.maxShots is rejected for veo-8s', () => {
+    const res = run(['video', 'multi-shot', '--plan', '--preset', 'veo-8s', '--shots', '6']);
+    assert.notEqual(res.status, 0);
+    assert.match(res.stdout + res.stderr, /--shots 6 outside preset "veo-8s" window \[2, 4\]/);
+  });
+
+  it('--shots below preset.minShots is rejected for cinematic-15s', () => {
+    const res = run(['video', 'multi-shot', '--plan', '--preset', 'cinematic-15s', '--shots', '2']);
+    assert.notEqual(res.status, 0);
+    assert.match(res.stdout + res.stderr, /--shots 2 outside preset "cinematic-15s" window \[3, 7\]/);
   });
 });
 

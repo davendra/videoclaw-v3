@@ -125,12 +125,7 @@ function seedanceReferenceParams(referencePaths: string[]): Record<string, unkno
   } else if (classified.images.length === 1) {
     params.image_url = classified.images[0];
   } else if (classified.images.length > 1) {
-    const allAssets = classified.images.every((referencePath) => referencePath.startsWith('Asset://'));
-    if (allAssets) {
-      params.reference_images = classified.images;
-    } else {
-      params.image_url = classified.images[0];
-    }
+    params.reference_images = classified.images;
   }
 
   if (classified.videos.length > 0) {

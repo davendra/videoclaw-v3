@@ -157,4 +157,70 @@ describe('seedance-direct native transport', () => {
       await rm(root, { recursive: true, force: true });
     }
   });
+
+  it('sends multiple image references as ordered reference_images', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'vclaw-native-seedance-multi-image-'));
+    const capturedBodies: unknown[] = [];
+    try {
+      const result = await submitSeedanceDirectNative({
+        workspaceRoot: root,
+        projectSlug: 'alpha',
+        productionMode: 'director',
+        routeId: 'seedance-direct',
+        operationKind: 'image-to-video',
+        executionProfile: {
+          aspectRatio: '16:9',
+          quality: 'quality',
+          resolution: '720p',
+          generateAudio: true,
+          outputCount: 1,
+        },
+        generatedAt: new Date().toISOString(),
+        outputDir: join(root, 'outputs'),
+        tasks: [
+          {
+            sceneIndex: 0,
+            prompt: 'Read @image1 then @image2 as storyboard source references.',
+            inputKind: 'image',
+            referencePaths: [
+              'https://cdn.example.com/hero-sheet.jpg',
+              'https://cdn.example.com/storyboard-grid.jpg',
+              'Asset://scene-start-frame',
+            ],
+            sourceAssetIds: ['@image1', '@image2', 'scene-start-frame'],
+            backendHints: ['filmmaking-prompts'],
+            characters: ['hero'],
+          },
+        ],
+        promptGuidance: [],
+      }, {
+        env: { SUTUI_API_KEY: 'test-sutui' },
+        fetchImpl: async (_url, init) => {
+          capturedBodies.push(JSON.parse(init?.body ?? '{}') as unknown);
+          return {
+            ok: true,
+            status: 200,
+            text: async () => '',
+            json: async () => ({
+              data: {
+                task_id: 'seedance-task-1',
+              },
+            }),
+            arrayBuffer: async () => new ArrayBuffer(0),
+          };
+        },
+      });
+
+      assert.equal(result.externalJobId.startsWith('seedance-'), true);
+      const body = capturedBodies[0] as { params?: Record<string, unknown> };
+      assert.equal(body.params?.image_url, undefined);
+      assert.deepEqual(body.params?.reference_images, [
+        'https://cdn.example.com/hero-sheet.jpg',
+        'https://cdn.example.com/storyboard-grid.jpg',
+        'Asset://scene-start-frame',
+      ]);
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
 });

@@ -48,6 +48,8 @@ projects/<slug>/
 │   ├── multi-shot-prompt.json  # Written only when `vclaw video multi-shot
 │   │                             --project <slug>` is used; absent for
 │   │                             standalone (no --project) invocations.
+│   ├── filmmaking-prompts.json # Character sheet, 9-panel storyboard grid,
+│   │                             reference map, and Seedance prompt packets.
 │   └── history/                # Snapshots of artifacts/ files on overwrite.
 │                                 Append-only. One subdir per artifact:
 │                                 history/brief/<ts>.json.
@@ -75,6 +77,13 @@ projects/<slug>/
 │   ├── scene-0.mp4               Per-scene renders.
 │   ├── scene-1.mp4
 │   └── ...                       (Gitignored at project level.)
+│
+├── preview.html                # DERIVED. Final portal showcase.
+├── edit.html                   # DERIVED. Editor edit/check portal.
+├── review.html                 # DERIVED. Editor review portal.
+├── client-review.html          # DERIVED. Client review portal.
+├── compare.html                # DERIVED. Version/run comparison portal.
+├── project-audit.jsonl         # Append-only preview portal generation/publish audit.
 │
 ├── assets/                     # DERIVED. Intermediate visual assets.
 │   ├── storyboard/               Per-scene stills.
@@ -108,6 +117,8 @@ projects/<slug>/
 | `events/` | yes (empty `events.jsonl`) | line shape enforced | no |
 | `notes/` | on demand | no (MD) | no |
 | `outputs/` | on demand | n/a (media) | **yes** |
+| `preview.html` / `edit.html` / `review.html` / `client-review.html` / `compare.html` | on portal generation | n/a (static HTML) | no |
+| `project-audit.jsonl` | on portal generation/publish | JSONL event shape | no |
 | `assets/` | on demand | n/a (media) | **yes** |
 | `obsidian/` | opt-in command | n/a (MD mirror) | **yes** |
 | `.vclaw/` | on demand | internal | **yes** |

@@ -57,7 +57,8 @@ export type VideoStageArtifactName =
   | 'publish-report'
   | 'analyze-output'
   | 'assemble-report'
-  | 'multi-shot-prompt';
+  | 'multi-shot-prompt'
+  | 'filmmaking-prompts';
 
 export interface VideoPipelineStageManifest {
   name: 'brief' | 'storyboard' | 'assets' | 'review' | 'publish';
@@ -156,10 +157,17 @@ export interface VideoExecutionTask {
   prompt: string;
   inputKind: 'text' | 'image' | 'video';
   referencePaths: string[];
+  referenceSlots?: Array<{
+    slot: string;
+    role: string;
+    label: string;
+    path?: string;
+  }>;
   sourceAssetIds: string[];
   backendHints: string[];
   characters: string[];
   durationSeconds?: number;
+  promptPacketVariant?: string;
   /**
    * When a scene was resolved via chain-from-prev, this carries the source
    * candidate id so downstream adapters can record provenance. Absent when the

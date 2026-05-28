@@ -7,6 +7,7 @@ import { artifactPathFor } from './artifact-store.js';
 import { readSceneCandidatesArtifact } from './scene-candidate-store.js';
 import { readSceneSelectionArtifact } from './scene-selection-store.js';
 import { resolveProjectWorkspace } from './workspace.js';
+import type { FilmmakingPromptsArtifact, FilmmakingSeedancePacket } from './filmmaking-prompts.js';
 import type { ProviderRouteId } from './provider-platform/types.js';
 import type {
   VideoExecutionCancelResult,
@@ -112,6 +113,15 @@ export async function buildExecutionPayload(
         assets?: Array<{ id?: string; kind?: string; path?: string; sceneIndex?: number; backend?: string }>;
       }
     : { assets: [] };
+  const filmmakingPrompts = existsSync(artifactPathFor(workspace, 'filmmaking-prompts'))
+    ? JSON.parse(await readFile(artifactPathFor(workspace, 'filmmaking-prompts'), 'utf-8')) as FilmmakingPromptsArtifact
+    : null;
+  const readyPromptPacketsByScene = new Map<number, FilmmakingSeedancePacket>();
+  for (const packet of filmmakingPrompts?.seedancePackets ?? []) {
+    if (isExecutionReadyPromptPacket(packet)) {
+      readyPromptPacketsByScene.set(packet.sceneIndex, packet);
+    }
+  }
 
   const assetsByScene = new Map<number, Array<{ id?: string; kind?: string; path?: string; backend?: string }>>();
   for (const asset of assetManifest.assets ?? []) {
@@ -183,8 +193,12 @@ export async function buildExecutionPayload(
       const sceneIndex = scene.sceneIndex ?? 0;
       const sceneAssets = assetsByScene.get(sceneIndex) ?? [];
       const chainSeed = chainSeedsByScene.get(sceneIndex);
+      const promptPacket = readyPromptPacketsByScene.get(sceneIndex);
+      const promptPacketReferencePaths = promptPacket
+        ? promptPacket.references.map((reference) => reference.path ?? '')
+        : [];
       const hasVideo = !!chainSeed || sceneAssets.some((asset) => asset.kind === 'video');
-      const hasImage = sceneAssets.some((asset) => asset.kind === 'image');
+      const hasImage = sceneAssets.some((asset) => asset.kind === 'image') || promptPacketReferencePaths.length > 0;
 
       // When we chain from the previous scene's output, the seed video path
       // must lead `referencePaths` so downstream adapters pick it as the
@@ -194,19 +208,39 @@ export async function buildExecutionPayload(
           .filter((asset) => asset.kind === 'image' || asset.kind === 'video' || asset.kind === 'audio')
           .map((asset) => asset.path ?? ''),
       );
-      const referencePaths = chainSeed
-        ? unique([chainSeed.path, ...baseReferencePaths])
+      const packetOrBaseReferencePaths = promptPacketReferencePaths.length > 0
+        ? unique(promptPacketReferencePaths)
         : baseReferencePaths;
+      const referencePaths = chainSeed
+        ? unique([chainSeed.path, ...packetOrBaseReferencePaths])
+        : packetOrBaseReferencePaths;
+      const backendHints = unique([
+        ...sceneAssets.map((asset) => asset.backend ?? ''),
+        ...(promptPacket ? ['filmmaking-prompts', `prompt-variant:${promptPacket.variant}`] : []),
+      ]);
+      const durationSeconds = promptPacket?.durationSeconds ?? scene.durationSeconds;
 
       return {
         sceneIndex,
-        prompt: scene.scenePrompt?.animationPrompt?.trim() || scene.description || '',
+        prompt: promptPacket?.promptText.trim() || scene.scenePrompt?.animationPrompt?.trim() || scene.description || '',
         inputKind: hasVideo ? 'video' : hasImage ? 'image' : 'text',
         referencePaths,
-        sourceAssetIds: unique(sceneAssets.map((asset) => asset.id ?? '')),
-        backendHints: unique(sceneAssets.map((asset) => asset.backend ?? '')),
+        ...(promptPacket ? {
+          referenceSlots: promptPacket.references.map((reference) => ({
+            slot: reference.slot,
+            role: reference.role,
+            label: reference.label,
+            ...(reference.path ? { path: reference.path } : {}),
+          })),
+          promptPacketVariant: promptPacket.variant,
+        } : {}),
+        sourceAssetIds: unique([
+          ...sceneAssets.map((asset) => asset.id ?? ''),
+          ...(promptPacket ? promptPacket.references.map((reference) => reference.slot) : []),
+        ]),
+        backendHints,
         characters: unique(scene.characters ?? []),
-        ...(Number.isFinite(scene.durationSeconds) ? { durationSeconds: scene.durationSeconds } : {}),
+        ...(Number.isFinite(durationSeconds) ? { durationSeconds } : {}),
         ...(chainSeed ? { chainedFromCandidateId: chainSeed.sourceCandidateId } : {}),
       };
     });
@@ -226,6 +260,13 @@ export async function buildExecutionPayload(
     tasks,
     promptGuidance: plan.promptGuidance,
   };
+}
+
+function isExecutionReadyPromptPacket(packet: FilmmakingSeedancePacket): boolean {
+  if (!packet.promptText.trim()) return false;
+  if (packet.references.some((reference) => reference.status !== 'ready')) return false;
+  if (packet.references.some((reference) => !reference.path?.trim())) return false;
+  return true;
 }
 
 export async function submitExecutionPayload(

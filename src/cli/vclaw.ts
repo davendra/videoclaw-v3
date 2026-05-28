@@ -16,6 +16,7 @@ import type { BriefArtifact, StoryboardArtifact } from '../video/artifacts.js';
 import { listPlaybooks, readPlaybook } from '../video/playbooks.js';
 import { listPromptReferences, readPromptReference } from '../video/prompt-library.js';
 import { CINEMATIC_15S_PRESET, buildShotPlan, generateMultiShotPromptText, listMultiShotPresets, parseMultiShotPrompt, resolvePreset, type MultiShotPreset } from '../video/multi-shot-prompt.js';
+import { generateFilmmakingPrompts } from '../video/filmmaking-prompts.js';
 import { explainPromptQualityIssues, runMultiShotChecks } from '../video/prompt-quality.js';
 import { getBuiltinPipelineManifest } from '../video/pipeline-manifest.js';
 import { writeStageCheckpoint } from '../video/checkpoints.js';
@@ -93,6 +94,13 @@ import { appendVideoContextChangelog } from '../video/video-context.js';
 import { buildClonePlan, buildStoryboardFromClonePlan, listTemplates, readTemplate, saveTemplateFromAnalyzeOutput, validateTemplate } from '../video/template-store.js';
 import { buildStoryboardScenesFromTemplate, listStoryboardTemplates, readStoryboardTemplate } from '../video/storyboard-templates.js';
 import { launchReviewUi, runReviewAutopilot } from '../video/review-ui.js';
+import {
+  appendPreviewPortalAuditEvent,
+  generatePreviewPortalIndex,
+  generatePreviewPortalSurfaces,
+  publishPreviewPortal,
+  publishPreviewPortalIndex,
+} from '../video/preview-portal/index.js';
 import { buildProjectReadiness } from '../video/readiness.js';
 import { parseExecutionProfileInput, setExecutionProfileOverrides } from '../video/execution-profile.js';
 import { buildExecutionPlan } from '../video/execution-plan.js';
@@ -169,10 +177,15 @@ import {
 import type { VideoAnalyzeOutput, VideoProductionMode } from '../video/types.js';
 
 function printHelp(): void {
-  process.stdout.write(`vclaw - video-first clean-room core\n\nUsage:\n  vclaw video providers [--workspace-root <path>]\n  vclaw video verify-env [--root <path>] [--workspace-root <path>]\n  vclaw video init <slug> [--root <path>] [--mode storyboard|director]\n  vclaw video create "<intent>" [--project <slug>] [--root <path>] [--production-mode storyboard|director] [--title <title>] [--genre <genre-id>] [--runtime MM:SS|seconds] [--scenes <count>] [--clip-duration <seconds>] [--style <preset>] [--color-grading <preset>] [--platform <name>] [--gb-character <Name:ID> ...] [--import-library-characters] [--auto-create-characters <json-path>] [--api-url <url>] [--aspect-ratio 16:9|9:16|1:1] [--quality fast|quality] [--resolution 720p|1080p] [--audio on|off] [--outputs 1-4] [--apply-content-fixes] [--execute] [--dry-run]\n  vclaw video auto "<intent>" [--project <slug>] [--root <path>] [--title <title>] [--genre <genre-id>] [--runtime MM:SS|seconds] [--scenes <count>] [--clip-duration <seconds>] [--style <preset>] [--color-grading <preset>] [--platform <name>] [--gb-character <Name:ID> ...] [--import-library-characters] [--auto-create-characters <json-path>] [--api-url <url>] [--aspect-ratio 16:9|9:16|1:1] [--quality fast|quality] [--resolution 720p|1080p] [--audio on|off] [--outputs 1-4] [--apply-content-fixes] [--execute] [--dry-run]\n  vclaw video iterate "<intent>" [--project <slug>] [--root <path>] [--title <title>] [--genre <genre-id>] [--runtime MM:SS|seconds] [--scenes <count>] [--clip-duration <seconds>] [--style <preset>] [--color-grading <preset>] [--platform <name>] [--gb-character <Name:ID> ...] [--import-library-characters] [--auto-create-characters <json-path>] [--api-url <url>] [--aspect-ratio 16:9|9:16|1:1] [--quality fast|quality] [--resolution 720p|1080p] [--audio on|off] [--outputs 1-4] [--apply-content-fixes]\n  vclaw video run-pipeline "<intent>" [--project <slug>] [--root <path>] [--title <title>] [--genre <genre-id>] [--runtime MM:SS|seconds] [--scenes <count>] [--clip-duration <seconds>] [--style <preset>] [--color-grading <preset>] [--platform <name>] [--gb-character <Name:ID> ...] [--import-library-characters] [--auto-create-characters <json-path>] [--api-url <url>] [--aspect-ratio 16:9|9:16|1:1] [--quality fast|quality] [--resolution 720p|1080p] [--audio on|off] [--outputs 1-4] [--apply-content-fixes] [--dry-run]\n  vclaw video approve --project <slug> [--root <path>] [--mode storyboard|director] [--dry-run]\n  vclaw video cost-estimate [--project <slug>] [--root <path>] [--scenes <count>] [--clip-duration <seconds>] [--new-characters <count>] [--narration on|off]\n  vclaw video remix-narrated --project <slug> [--root <path>] [--output <path>]\n  vclaw video verify-final (--project <slug> | --file <path>) [--root <path>] [--output-dir <path>]\n  vclaw video make-vertical (--project <slug> | --file <path>) [--root <path>] [--output <path>]\n  vclaw video make-square (--project <slug> | --file <path>) [--root <path>] [--output <path>]\n  vclaw video make-loop (--project <slug> | --file <path>) [--root <path>] [--output <path>]\n  vclaw video thumbnail (--project <slug> | --file <path>) [--root <path>] [--output <path>] [--text <title>]\n  vclaw video archive-project --project <slug> [--root <path>] [--archive-dir <path>] [--cleanup]\n  vclaw video find-library --intent "<text>" [--api-url <url>]\n  vclaw video list-library [--name-regex <pattern>] [--root <path>]\n  vclaw video import-legacy --source <path> [--root <path>]\n  vclaw video set-meta --project <slug> [--root <path>] [--owner <name>] [--priority low|medium|high|critical] [--due YYYY-MM-DD] [--tag <value> ...] [--blocked-by <slug> ...] [--blocked-reason <text>]\n  vclaw video set-execution-profile --project <slug> [--root <path>] [--aspect-ratio 16:9|9:16|1:1] [--quality fast|quality] [--resolution 720p|1080p] [--audio on|off] [--outputs 1-4]\n  vclaw video character-add --project <slug> --name <name> [--gb-id <id>] [--description <text>] [--ref <path> ...] [--note <text> ...] [--root <path>]\n  vclaw video character-auto-create --project <slug> --input <json-path> [--root <path>] [--api-url <url>] [--dry-run]\n  vclaw video character-import-library --project <slug> --intent "<text>" [--root <path>] [--api-url <url>]\n  vclaw video character-list --project <slug> [--root <path>]\n  vclaw video character-show --project <slug> --name <name> [--root <path>]\n  vclaw video character-consistency --project <slug> [--root <path>]\n  vclaw video storyboard-review --project <slug> [--root <path>] [--mode storyboard|director] [--apply-content-fixes]\n  vclaw video director-preflight --project <slug> [--root <path>] [--apply-content-fixes]\n  vclaw video library find --intent "<text>" [--api-url <url>]\n  vclaw video library clean [options]\n  vclaw video playbook-list [--root <path>]\n  vclaw video playbook-show --name <playbook-name> [--root <path>]\n  vclaw video prompt-lib-list\n  vclaw video prompt-lib-show --name <reference-name> [--root <path>]\n  vclaw video multi-shot (--plan [--shots N] [--seed N] | --validate [--file <path>] | --auto --image <path> [--location <text>] [--time <text>] [--character <text>] [--action <text>]) [--preset <name>] [--total-seconds N] [--max-chars N] [--style-line <t>] [--audio-line <t>] [--project <slug>] [--raw]\n  vclaw video analyze-template --project <slug> --source <path-or-url> [options] [--auto]\n  vclaw video template-create --project <slug> --name <template-name> [--root <path>]\n  vclaw video template-save --project <slug> --name <template-name> [--root <path>]\n  vclaw video template-list [--root <path>]\n  vclaw video template-show --name <template-name> [--root <path>]\n  vclaw video template-validate --name <template-name> [--root <path>]\n  vclaw video storyboard-template-list\n  vclaw video storyboard-template-show --name <template-id>\n  vclaw video clone-ad --template <template-name> --project <slug> --intent <text> [--root <path>] [--mode storyboard|director] [--platform <name>] [--aspect-ratio 16:9|9:16|1:1] [--quality fast|quality] [--resolution 720p|1080p] [--audio on|off] [--outputs 1-4] [--dry-run]\n  vclaw video clone-plan --template <template-name> --project <slug> --intent <text> [--root <path>]\n  vclaw video clone-init --template <template-name> --project <slug> --intent <text> [--root <path>] [--mode storyboard|director] [--platform <name>] [--aspect-ratio 16:9|9:16|1:1] [--quality fast|quality] [--resolution 720p|1080p] [--audio on|off] [--outputs 1-4]\n  vclaw video storyboard-from-clone --project <slug> [--root <path>] [--mode storyboard|director]\n  vclaw video clone-execute --template <template-name> --project <slug> --intent <text> [--root <path>] [--mode storyboard|director] [--platform <name>] [--aspect-ratio 16:9|9:16|1:1] [--quality fast|quality] [--resolution 720p|1080p] [--audio on|off] [--outputs 1-4] [--dry-run]\n  vclaw video readiness --project <slug> [--root <path>] [--mode storyboard|director]\n  vclaw video plan --project <slug> [--root <path>] [--mode storyboard|director]\n  vclaw video execution-plan --project <slug> [--root <path>] [--mode storyboard|director]\n  vclaw video produce --project <slug> [--root <path>] [--mode storyboard|director] [--dry-run] [--scene <sceneIndex> ...]\n  vclaw video execute --project <slug> [--root <path>] [--mode storyboard|director] [--dry-run] [--scene <sceneIndex> ...]\n  vclaw video execute-status --project <slug> [--root <path>] [--mode storyboard|director]\n  vclaw video list [--root <path>]\n  vclaw video index [--root <path>] [--output <path>]\n  vclaw video metrics [--root <path>] [--mode storyboard|director]\n  vclaw video workload [--root <path>] [--mode storyboard|director]\n  vclaw video next-actions [--root <path>] [--mode storyboard|director]\n  vclaw video dependencies [--root <path>] [--mode storyboard|director]\n  vclaw video report [--root <path>] [--mode storyboard|director]\n  vclaw video report-snapshot [--root <path>] [--mode storyboard|director]\n  vclaw video report-history [--root <path>]\n  vclaw video report-diff [--root <path>] [--from <snapshot-path>] [--to <snapshot-path>]\n  vclaw video trends [--root <path>]\n  vclaw video export-csv [--root <path>] [--output-dir <path>] [--mode storyboard|director]\n  vclaw video status --project <slug> [--root <path>] [--mode storyboard|director]\n  vclaw video doctor-project --project <slug> [--root <path>] [--mode storyboard|director]\n  vclaw video doctor-portfolio [--root <path>] [--mode storyboard|director]\n  vclaw video artifact-history --project <slug> --artifact <name> [--root <path>]\n  vclaw video export-obsidian --project <slug> [--root <path>] [--output-dir <path>] [--mode storyboard|director]\n  vclaw video scaffold-obsidian-vault [--output-dir <path>]\n  vclaw video sync-obsidian [--root <path>] [--output-dir <path>] [--mode storyboard|director]\n  vclaw video brief --project <slug> --title <title> --intent <intent> [--root <path>] [--mode storyboard|director] [--platform <name>] [--aspect-ratio 16:9|9:16|1:1] [--quality fast|quality] [--resolution 720p|1080p] [--audio on|off] [--outputs 1-4]\n  vclaw video storyboard --project <slug> (--scene <text> [--scene <text> ...] | --template <template-id> [--environment <text>] [--character-a <name>] [--character-b <name>]) [--scene-character <sceneIndex:name> ...] [--root <path>] [--mode storyboard|director]\n  vclaw video assets --project <slug> --asset <kind:path[:sceneIndex][:backend]> [--asset ...] [--root <path>]\n  vclaw video review --project <slug> --verdict pass|retry|fail [--finding <text> ...] [--root <path>]\n  vclaw video publish --project <slug> --status ready|published|blocked [--final-output <path>] [--note <text> ...] [--root <path>]\n  vclaw video analyze --project <slug> --source <path-or-url> [options] [--auto]\n`);
+  process.stdout.write(`vclaw - video-first clean-room core\n\nUsage:\n  vclaw video providers [--workspace-root <path>]\n  vclaw video verify-env [--root <path>] [--workspace-root <path>]\n  vclaw video init <slug> [--root <path>] [--mode storyboard|director]\n  vclaw video create "<intent>" [--project <slug>] [--root <path>] [--production-mode storyboard|director] [--title <title>] [--genre <genre-id>] [--runtime MM:SS|seconds] [--scenes <count>] [--clip-duration <seconds>] [--style <preset>] [--color-grading <preset>] [--platform <name>] [--gb-character <Name:ID> ...] [--import-library-characters] [--auto-create-characters <json-path>] [--api-url <url>] [--aspect-ratio 16:9|9:16|1:1] [--quality fast|quality] [--resolution 720p|1080p] [--audio on|off] [--outputs 1-4] [--apply-content-fixes] [--execute] [--dry-run]\n  vclaw video auto "<intent>" [--project <slug>] [--root <path>] [--title <title>] [--genre <genre-id>] [--runtime MM:SS|seconds] [--scenes <count>] [--clip-duration <seconds>] [--style <preset>] [--color-grading <preset>] [--platform <name>] [--gb-character <Name:ID> ...] [--import-library-characters] [--auto-create-characters <json-path>] [--api-url <url>] [--aspect-ratio 16:9|9:16|1:1] [--quality fast|quality] [--resolution 720p|1080p] [--audio on|off] [--outputs 1-4] [--apply-content-fixes] [--execute] [--dry-run]\n  vclaw video iterate "<intent>" [--project <slug>] [--root <path>] [--title <title>] [--genre <genre-id>] [--runtime MM:SS|seconds] [--scenes <count>] [--clip-duration <seconds>] [--style <preset>] [--color-grading <preset>] [--platform <name>] [--gb-character <Name:ID> ...] [--import-library-characters] [--auto-create-characters <json-path>] [--api-url <url>] [--aspect-ratio 16:9|9:16|1:1] [--quality fast|quality] [--resolution 720p|1080p] [--audio on|off] [--outputs 1-4] [--apply-content-fixes]\n  vclaw video run-pipeline "<intent>" [--project <slug>] [--root <path>] [--title <title>] [--genre <genre-id>] [--runtime MM:SS|seconds] [--scenes <count>] [--clip-duration <seconds>] [--style <preset>] [--color-grading <preset>] [--platform <name>] [--gb-character <Name:ID> ...] [--import-library-characters] [--auto-create-characters <json-path>] [--api-url <url>] [--aspect-ratio 16:9|9:16|1:1] [--quality fast|quality] [--resolution 720p|1080p] [--audio on|off] [--outputs 1-4] [--apply-content-fixes] [--dry-run]\n  vclaw video approve --project <slug> [--root <path>] [--mode storyboard|director] [--dry-run]\n  vclaw video cost-estimate [--project <slug>] [--root <path>] [--scenes <count>] [--clip-duration <seconds>] [--new-characters <count>] [--narration on|off]\n  vclaw video remix-narrated --project <slug> [--root <path>] [--output <path>]\n  vclaw video verify-final (--project <slug> | --file <path>) [--root <path>] [--output-dir <path>]\n  vclaw video make-vertical (--project <slug> | --file <path>) [--root <path>] [--output <path>]\n  vclaw video make-square (--project <slug> | --file <path>) [--root <path>] [--output <path>]\n  vclaw video make-loop (--project <slug> | --file <path>) [--root <path>] [--output <path>]\n  vclaw video thumbnail (--project <slug> | --file <path>) [--root <path>] [--output <path>] [--text <title>]\n  vclaw video archive-project --project <slug> [--root <path>] [--archive-dir <path>] [--cleanup]\n  vclaw video find-library --intent "<text>" [--api-url <url>]\n  vclaw video list-library [--name-regex <pattern>] [--root <path>]\n  vclaw video import-legacy --source <path> [--root <path>]\n  vclaw video set-meta --project <slug> [--root <path>] [--owner <name>] [--priority low|medium|high|critical] [--due YYYY-MM-DD] [--tag <value> ...] [--blocked-by <slug> ...] [--blocked-reason <text>]\n  vclaw video set-execution-profile --project <slug> [--root <path>] [--aspect-ratio 16:9|9:16|1:1] [--quality fast|quality] [--resolution 720p|1080p] [--audio on|off] [--outputs 1-4]\n  vclaw video character-add --project <slug> --name <name> [--gb-id <id>] [--description <text>] [--ref <path> ...] [--note <text> ...] [--root <path>]\n  vclaw video character-auto-create --project <slug> --input <json-path> [--root <path>] [--api-url <url>] [--dry-run]\n  vclaw video character-import-library --project <slug> --intent "<text>" [--root <path>] [--api-url <url>]\n  vclaw video character-list --project <slug> [--root <path>]\n  vclaw video character-show --project <slug> --name <name> [--root <path>]\n  vclaw video character-consistency --project <slug> [--root <path>]\n  vclaw video storyboard-review --project <slug> [--root <path>] [--mode storyboard|director] [--apply-content-fixes]\n  vclaw video director-preflight --project <slug> [--root <path>] [--apply-content-fixes]\n  vclaw video library find --intent "<text>" [--api-url <url>]\n  vclaw video library clean [options]\n  vclaw video playbook-list [--root <path>]\n  vclaw video playbook-show --name <playbook-name> [--root <path>]\n  vclaw video prompt-lib-list\n  vclaw video prompt-lib-show --name <reference-name> [--root <path>]\n  vclaw video multi-shot (--presets | --plan [--shots N] [--seed N] | --validate [--file <path>] [--explain-issues] | --fix [--file <path>] | --auto --image <path> [--dry-run] [--retry-invalid N] [--location <text>] [--time <text>] [--character <text>] [--action <text>]) [--preset <name>] [--total-seconds N] [--max-chars N] [--style-line <t>] [--audio-line <t>] [--project <slug>] [--raw]\n  vclaw video analyze-template --project <slug> --source <path-or-url> [options] [--auto]\n  vclaw video template-create --project <slug> --name <template-name> [--root <path>]\n  vclaw video template-save --project <slug> --name <template-name> [--root <path>]\n  vclaw video template-list [--root <path>]\n  vclaw video template-show --name <template-name> [--root <path>]\n  vclaw video template-validate --name <template-name> [--root <path>]\n  vclaw video storyboard-template-list\n  vclaw video storyboard-template-show --name <template-id>\n  vclaw video clone-ad --template <template-name> --project <slug> --intent <text> [--root <path>] [--mode storyboard|director] [--platform <name>] [--aspect-ratio 16:9|9:16|1:1] [--quality fast|quality] [--resolution 720p|1080p] [--audio on|off] [--outputs 1-4] [--dry-run]\n  vclaw video clone-plan --template <template-name> --project <slug> --intent <text> [--root <path>]\n  vclaw video clone-init --template <template-name> --project <slug> --intent <text> [--root <path>] [--mode storyboard|director] [--platform <name>] [--aspect-ratio 16:9|9:16|1:1] [--quality fast|quality] [--resolution 720p|1080p] [--audio on|off] [--outputs 1-4]\n  vclaw video storyboard-from-clone --project <slug> [--root <path>] [--mode storyboard|director]\n  vclaw video clone-execute --template <template-name> --project <slug> --intent <text> [--root <path>] [--mode storyboard|director] [--platform <name>] [--aspect-ratio 16:9|9:16|1:1] [--quality fast|quality] [--resolution 720p|1080p] [--audio on|off] [--outputs 1-4] [--dry-run]\n  vclaw video readiness --project <slug> [--root <path>] [--mode storyboard|director]\n  vclaw video plan --project <slug> [--root <path>] [--mode storyboard|director]\n  vclaw video execution-plan --project <slug> [--root <path>] [--mode storyboard|director]\n  vclaw video produce --project <slug> [--root <path>] [--mode storyboard|director] [--dry-run] [--scene <sceneIndex> ...]\n  vclaw video execute --project <slug> [--root <path>] [--mode storyboard|director] [--dry-run] [--scene <sceneIndex> ...]\n  vclaw video execute-status --project <slug> [--root <path>] [--mode storyboard|director]\n  vclaw video list [--root <path>]\n  vclaw video index [--root <path>] [--output <path>]\n  vclaw video metrics [--root <path>] [--mode storyboard|director]\n  vclaw video workload [--root <path>] [--mode storyboard|director]\n  vclaw video next-actions [--root <path>] [--mode storyboard|director]\n  vclaw video dependencies [--root <path>] [--mode storyboard|director]\n  vclaw video report [--root <path>] [--mode storyboard|director]\n  vclaw video report-snapshot [--root <path>] [--mode storyboard|director]\n  vclaw video report-history [--root <path>]\n  vclaw video report-diff [--root <path>] [--from <snapshot-path>] [--to <snapshot-path>]\n  vclaw video trends [--root <path>]\n  vclaw video export-csv [--root <path>] [--output-dir <path>] [--mode storyboard|director]\n  vclaw video status --project <slug> [--root <path>] [--mode storyboard|director]\n  vclaw video doctor-project --project <slug> [--root <path>] [--mode storyboard|director]\n  vclaw video doctor-portfolio [--root <path>] [--mode storyboard|director]\n  vclaw video artifact-history --project <slug> --artifact <name> [--root <path>]\n  vclaw video export-obsidian --project <slug> [--root <path>] [--output-dir <path>] [--mode storyboard|director]\n  vclaw video scaffold-obsidian-vault [--output-dir <path>]\n  vclaw video sync-obsidian [--root <path>] [--output-dir <path>] [--mode storyboard|director]\n  vclaw video brief --project <slug> --title <title> --intent <intent> [--root <path>] [--mode storyboard|director] [--platform <name>] [--aspect-ratio 16:9|9:16|1:1] [--quality fast|quality] [--resolution 720p|1080p] [--audio on|off] [--outputs 1-4]\n  vclaw video storyboard --project <slug> (--scene <text> [--scene <text> ...] | --template <template-id> [--environment <text>] [--character-a <name>] [--character-b <name>]) [--scene-character <sceneIndex:name> ...] [--root <path>] [--mode storyboard|director]\n  vclaw video assets --project <slug> --asset <kind:path[:sceneIndex][:backend]> [--asset ...] [--root <path>]\n  vclaw video review --project <slug> --verdict pass|retry|fail [--finding <text> ...] [--root <path>]\n  vclaw video publish --project <slug> --status ready|published|blocked [--final-output <path>] [--note <text> ...] [--root <path>]\n  vclaw video analyze --project <slug> --source <path-or-url> [options] [--auto]\n`);
   process.stdout.write('  vclaw video execute-cancel --project <slug> [--root <path>] [--mode storyboard|director]\n');
   process.stdout.write('  vclaw video review-ui --project <slug> [--root <path>] [--host <host>] [--port <port>] [--ui-path <path>] [--dry-run]\n');
   process.stdout.write('  vclaw video review-autopilot --project <slug> [--root <path>] [--template <template-id>] [--character <name>] [--run-id <id>]\n');
+  process.stdout.write('  vclaw video filmmaking-prompts --project <slug> [--root <path>] [--duration <seconds>] [--storyboard-grid <path>] [--write]\n');
+  process.stdout.write('  vclaw video portal --project <slug> [--root <path>] [--client <name>] [--run <id>] [--surface edit|review|client-review|preview|compare|index]\n');
+  process.stdout.write('  vclaw video portal-index [--root <path>] [--client <name>] [--output <path>]\n');
+  process.stdout.write('  vclaw video publish-preview --project <slug> --client <name> --bucket <bucket> [--root <path>] [--run <id>] [--surface edit|review|client-review|preview|compare|index] [--public-base-url <url>] [--wrangler-bin <path>] [--dry-run]\n');
+  process.stdout.write('  vclaw video publish-portal-index --bucket <bucket> [--root <path>] [--client <name>] [--public-base-url <url>] [--wrangler-bin <path>] [--dry-run]\n');
   process.stdout.write('  vclaw video burn-subtitles (--project <slug> | --file <path>) --subtitle <path> [--root <path>] [--output <path>]\n');
   process.stdout.write('  vclaw video reference-sheet-add --project <slug> --type <type> --name <name> [--id <id>] [--description <text>] [--character-name <name>] [--ref <path>:<role>[:<note>] ...] [--gb-ref <kind>:<id>:<role>[:<note>] ...] [--binding <sceneIndex> ...] [--root <path>]\n');
   process.stdout.write('  vclaw video reference-sheet-list --project <slug> [--type <sheet-type>] [--root <path>]\n');
@@ -1963,6 +1976,24 @@ async function handleVideoPromptLibShow(args: string[]): Promise<void> {
   process.stdout.write(`${JSON.stringify({ root, reference }, null, 2)}\n`);
 }
 
+async function handleVideoFilmmakingPrompts(args: string[]): Promise<void> {
+  const projectSlug = parseFlagValue(args, '--project');
+  if (!projectSlug) {
+    throw new Error('video filmmaking-prompts requires --project <slug>');
+  }
+  const root = parseFlagValue(args, '--root') ?? process.cwd();
+  const durationSeconds = parsePositiveIntegerFlag(args, '--duration');
+  const storyboardGridPath = parseFlagValue(args, '--storyboard-grid');
+  const result = await generateFilmmakingPrompts({
+    root,
+    projectSlug,
+    ...(durationSeconds !== undefined ? { durationSeconds } : {}),
+    ...(storyboardGridPath ? { storyboardGridPath } : {}),
+    write: args.includes('--write'),
+  });
+  process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
+}
+
 function parsePositiveIntegerFlag(args: string[], flag: string): number | undefined {
   const raw = parseFlagValue(args, flag);
   if (raw === undefined) return undefined;
@@ -2589,6 +2620,125 @@ async function handleVideoReviewAutopilot(args: string[]): Promise<void> {
     ...(runId ? { runId } : {}),
   });
   process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
+}
+
+async function handleVideoPortal(args: string[]): Promise<void> {
+  const projectSlug = parseFlagValue(args, '--project');
+  if (!projectSlug) {
+    throw new Error('video portal requires --project <slug>');
+  }
+  const root = parseFlagValue(args, '--root') ?? process.cwd();
+  const client = parseFlagValue(args, '--client') ?? undefined;
+  const runId = parseFlagValue(args, '--run') ?? undefined;
+  const surfaceRaw = parseFlagValue(args, '--surface') ?? undefined;
+  const surface = surfaceRaw ? parsePortalSurface(surfaceRaw, 'video portal --surface') : undefined;
+  const result = await generatePreviewPortalSurfaces({
+    root,
+    projectSlug,
+    ...(client ? { client } : {}),
+    ...(runId ? { runId } : {}),
+    ...(surface ? { surfaces: [surface] } : {}),
+  });
+  process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
+}
+
+async function handleVideoPortalIndex(args: string[]): Promise<void> {
+  const root = parseFlagValue(args, '--root') ?? process.cwd();
+  const client = parseFlagValue(args, '--client') ?? undefined;
+  const outputPath = parseFlagValue(args, '--output') ?? undefined;
+  const result = await generatePreviewPortalIndex({
+    root,
+    ...(client ? { client } : {}),
+    ...(outputPath ? { outputPath } : {}),
+  });
+  process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
+}
+
+async function handleVideoPublishPreview(args: string[]): Promise<void> {
+  const projectSlug = parseFlagValue(args, '--project');
+  if (!projectSlug) {
+    throw new Error('video publish-preview requires --project <slug>');
+  }
+  const client = parseFlagValue(args, '--client');
+  if (!client) {
+    throw new Error('video publish-preview requires --client <name>');
+  }
+  const bucket = parseFlagValue(args, '--bucket');
+  if (!bucket) {
+    throw new Error('video publish-preview requires --bucket <bucket>');
+  }
+  const root = parseFlagValue(args, '--root') ?? process.cwd();
+  const runId = parseFlagValue(args, '--run') ?? 'run-001';
+  const surface = parsePortalSurface(parseFlagValue(args, '--surface') ?? 'preview', 'video publish-preview --surface');
+  const publicBaseUrl = parseFlagValue(args, '--public-base-url') ?? undefined;
+  const wranglerBin = parseFlagValue(args, '--wrangler-bin') ?? undefined;
+  const dryRun = args.includes('--dry-run');
+  const projectDir = join(root, 'projects', projectSlug);
+  const result = await publishPreviewPortal({
+    projectDir,
+    client,
+    projectSlug,
+    runId,
+    surface,
+    bucket,
+    ...(publicBaseUrl ? { publicBaseUrl } : {}),
+    ...(wranglerBin ? { wranglerBin } : {}),
+    dryRun,
+  });
+  if (!dryRun) {
+    const htmlItem = result.plan.items.find((item) => item.remoteKey.endsWith(`${surfaceFileNameForPortal(surface)}`));
+    await appendPreviewPortalAuditEvent(join(projectDir, 'project-audit.jsonl'), {
+      timestamp: new Date().toISOString(),
+      event: 'surface.published',
+      client,
+      project: projectSlug,
+      run: runId,
+      surface,
+      output: surfaceFileNameForPortal(surface),
+      assetCount: result.uploaded.length,
+      ...(result.plan.publicUrl ? { url: result.plan.publicUrl } : {}),
+      ...(htmlItem?.sha256 ? { htmlHash: htmlItem.sha256 } : {}),
+      status: 'published',
+    });
+  }
+  process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
+}
+
+async function handleVideoPublishPortalIndex(args: string[]): Promise<void> {
+  const bucket = parseFlagValue(args, '--bucket');
+  if (!bucket) {
+    throw new Error('video publish-portal-index requires --bucket <bucket>');
+  }
+  const root = parseFlagValue(args, '--root') ?? process.cwd();
+  const client = parseFlagValue(args, '--client') ?? undefined;
+  const publicBaseUrl = parseFlagValue(args, '--public-base-url') ?? undefined;
+  const wranglerBin = parseFlagValue(args, '--wrangler-bin') ?? undefined;
+  const dryRun = args.includes('--dry-run');
+  const result = await publishPreviewPortalIndex({
+    root,
+    bucket,
+    ...(client ? { client } : {}),
+    ...(publicBaseUrl ? { publicBaseUrl } : {}),
+    ...(wranglerBin ? { wranglerBin } : {}),
+    dryRun,
+  });
+  process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
+}
+
+function parsePortalSurface(value: string, label: string): 'edit' | 'review' | 'client-review' | 'preview' | 'compare' | 'index' {
+  if (['edit', 'review', 'client-review', 'preview', 'compare', 'index'].includes(value)) {
+    return value as 'edit' | 'review' | 'client-review' | 'preview' | 'compare' | 'index';
+  }
+  throw new Error(`${label} must be one of edit, review, client-review, preview, compare, index`);
+}
+
+function surfaceFileNameForPortal(surface: 'edit' | 'review' | 'client-review' | 'preview' | 'compare' | 'index'): string {
+  if (surface === 'edit') return 'edit.html';
+  if (surface === 'client-review') return 'client-review.html';
+  if (surface === 'review') return 'review.html';
+  if (surface === 'compare') return 'compare.html';
+  if (surface === 'index') return 'index.html';
+  return 'preview.html';
 }
 
 async function handleVideoExecutionPlan(args: string[]): Promise<void> {
@@ -3796,6 +3946,11 @@ export async function main(): Promise<void> {
     return;
   }
 
+  if (command === 'video' && subcommand === 'filmmaking-prompts') {
+    await handleVideoFilmmakingPrompts(rest);
+    return;
+  }
+
   if (command === 'video' && subcommand === 'import-legacy') {
     await handleVideoImportLegacy(rest);
     return;
@@ -3883,6 +4038,26 @@ export async function main(): Promise<void> {
 
   if (command === 'video' && subcommand === 'review-autopilot') {
     await handleVideoReviewAutopilot(rest);
+    return;
+  }
+
+  if (command === 'video' && subcommand === 'portal') {
+    await handleVideoPortal(rest);
+    return;
+  }
+
+  if (command === 'video' && subcommand === 'portal-index') {
+    await handleVideoPortalIndex(rest);
+    return;
+  }
+
+  if (command === 'video' && subcommand === 'publish-preview') {
+    await handleVideoPublishPreview(rest);
+    return;
+  }
+
+  if (command === 'video' && subcommand === 'publish-portal-index') {
+    await handleVideoPublishPortalIndex(rest);
     return;
   }
 

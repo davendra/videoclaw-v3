@@ -136,6 +136,10 @@ vclaw video storyboard --project <slug> (--scene <text> [--scene <text> ...] | -
 vclaw video assets --project <slug> --asset <kind:path[:sceneIndex][:backend]> [--asset ...] [--root <path>]
 vclaw video review-ui --project <slug> [--root <path>] [--host <host>] [--port <port>] [--ui-path <path>] [--dry-run]
 vclaw video review-autopilot --project <slug> [--root <path>] [--template <template-id>] [--character <name>] [--run-id <id>]
+vclaw video portal --project <slug> [--root <path>] [--client <name>] [--run <id>] [--surface edit|review|client-review|preview|compare|index]
+vclaw video portal-index [--root <path>] [--client <name>] [--output <path>]
+vclaw video publish-preview --project <slug> --client <name> --bucket <bucket> [--root <path>] [--run <id>] [--surface edit|review|client-review|preview|compare|index] [--public-base-url <url>] [--wrangler-bin <path>] [--dry-run]
+vclaw video publish-portal-index --bucket <bucket> [--root <path>] [--client <name>] [--public-base-url <url>] [--wrangler-bin <path>] [--dry-run]
 vclaw video review --project <slug> --verdict pass|retry|fail [--finding <text> ...] [--root <path>]
 vclaw video publish --project <slug> --status ready|published|blocked [--final-output <path>] [--note <text> ...] [--root <path>]
 ```
@@ -145,6 +149,65 @@ For production image-to-video handoff, prefer `review-ui` or
 that already have equivalent review evidence outside the browser station.
 Publishing remains blocked unless the saved `review-report.json` has
 `verdict: "pass"` and `metrics.publishReady: true`.
+
+## Preview review and delivery portal
+
+The preview portal is the standardized static HTML layer for generated video
+projects. It replaces one-off `preview.html`/`review.html` variants with
+repeatable surfaces:
+
+Portal rendering reads `template` or `previewTemplate` from `project.json` and
+uses the built-in registry for `music-video`, `story-film`, `documentary`,
+`product-ad`, `sports-recap`, and `generic-video` labels/section ordering.
+It also reads project-scoped image entries from `artifacts/asset-manifest.json`
+and renders them as generation inputs; Seedance-backed images appear under
+`Seedance Input Frames` for music-video projects so reviewers can inspect the
+exact start/upscaled frame being sent to Seedance 2.
+
+| Command | Output |
+|---|---|
+| `vclaw video portal --project <slug>` | Writes `edit.html`, `review.html`, `client-review.html`, and `preview.html` in the project directory. |
+| `vclaw video portal --project <slug> --surface compare` | Writes `compare.html` for version/run comparison. |
+| `vclaw video portal-index` | Writes `projects/index.html` across all projects. |
+| `vclaw video portal-index --client <name>` | Writes `projects/clients/<client>/index.html` for that client only. |
+| `vclaw video publish-preview --dry-run ...` | Prints the Cloudflare R2 upload plan without side effects. |
+| `vclaw video publish-preview ...` | Uploads referenced files with `wrangler r2 object put` and records a publish audit event. |
+| `vclaw video publish-portal-index --client <name> ...` | Uploads a client index to `clients/<client>/index.html` with links into each uploaded run folder. |
+
+Example local generation:
+
+```bash
+vclaw video portal \
+  --project 2026-05-27_dhuaan-music-video \
+  --root /path/to/video-workspace \
+  --client "Acme Studios" \
+  --run run-002
+```
+
+Example publish dry-run:
+
+```bash
+vclaw video publish-preview \
+  --project 2026-05-27_dhuaan-music-video \
+  --root /path/to/video-workspace \
+  --client "Acme Studios" \
+  --run run-002 \
+  --surface preview \
+  --bucket videoclaw-reviews \
+  --public-base-url https://reviews.example.com \
+  --dry-run
+```
+
+The publish plan includes the HTML file plus local `src`/`href` references,
+content types, R2 keys, SHA-256 hashes, and public URLs when a base URL is
+provided. Running without `--dry-run` requires `wrangler` to be installed and
+authenticated. `--wrangler-bin` can point to a specific Wrangler executable
+when running from automation.
+
+Project surfaces publish under
+`clients/<client>/<project>/runs/<run>/<surface>.html`. Published client
+indexes link to those run folders, so a client with six generations can open
+`clients/<client>/index.html` and choose among all six project/run previews.
 
 `vclaw video create` is the clean-room front door for the legacy “one command
 to start a project” mental model. In its current form it:
@@ -791,6 +854,65 @@ Validation rules enforced by `--validate` / `--auto`:
 - A `Location:` / `Style:` / `Audio:` metadata block must be present.
 
 Full framework rules and the variation guide: `vclaw video prompt-lib-show --name multi-shot-framework`.
+
+## Filmmaking prompt packets
+
+```bash
+vclaw video filmmaking-prompts --project <slug> [--root <path>] [--duration <seconds>] [--storyboard-grid <path>] [--write]
+```
+
+Generates the first-class prompt packet layer derived from the
+`ai-filmmaking` workflow. This command is deterministic: it reads existing
+project artifacts and writes no model output unless `--write` is provided.
+
+The packet includes:
+
+- `characterSheetPrompts[]` — 8-view character reference sheet prompts. When a
+  character already has reference assets, the prompt uses reference-image mode
+  and avoids re-describing the image; otherwise it uses a concise description.
+- `storyboardGridPrompt` — a 3x3 / 9-panel cinematic storyboard grid prompt
+  with CAM / MOVE / MOOD production-note strips.
+- `referenceMap[]` — stable `@image1`, `@image2`, ... slots for character
+  sheets, storyboard grid, and per-scene start frames.
+- `seedancePackets[]` — per-scene Seedance prompt packets. If character sheets
+  and a storyboard grid are available, the packet uses the higher-fidelity
+  character-sheets-plus-storyboard-grid variant; otherwise it falls back toward
+  grid-only or text-driven prompting.
+- `issues[]` — prompt-authoring warnings such as missing character
+  descriptions, pending storyboard-grid images, or the default `NO MUSIC`
+  policy.
+
+By default Seedance packets use `15` seconds, matching the ai-filmmaking rule
+that Seedance 2.0 generations should use the full available runtime unless the
+operator explicitly requests a shorter duration.
+
+Use `--storyboard-grid <path>` after the 9-panel board image has been generated
+from `storyboardGridPrompt.promptText`. That path marks the storyboard-grid slot
+as `ready`, removes the pending-grid warning, and makes the grid eligible for
+Seedance execution. Without it, the slot remains reserved but pending.
+
+Example:
+
+```bash
+vclaw video filmmaking-prompts \
+  --project 2026-05-27_dhuaan-music-video \
+  --root /path/to/video-workspace \
+  --storyboard-grid projects/2026-05-27_dhuaan-music-video/assets/storyboard-grid.png \
+  --write
+```
+
+With `--write`, the packet is saved to
+`projects/<slug>/artifacts/filmmaking-prompts.json` and snapshotted in artifact
+history. This artifact is intended to feed the preview portal and Seedance
+execution layer so the operator can inspect exactly which prompt variant,
+reference slots, duration, and start frames are being used.
+
+During execution, videoclaw only consumes Seedance packets whose references are
+all marked `ready` and have concrete paths. Ready packets override the scene
+animation prompt, duration, and reference list; pending packets are ignored and
+execution falls back to the normal storyboard plus asset manifest inputs. This
+prevents incomplete prompts such as `@image3` storyboard-grid references from
+being submitted before the matching image exists.
 
 ## Prompt library
 

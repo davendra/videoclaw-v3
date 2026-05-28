@@ -226,6 +226,200 @@ describe('executeProject', () => {
     }
   });
 
+  it('uses ready filmmaking prompt packets when building the execution payload', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'vclaw-execute-filmmaking-packet-'));
+    try {
+      await seedReadyProject(root);
+      const workspace = await ensureProjectWorkspace('alpha', root);
+      await writeArtifact(workspace, 'filmmaking-prompts', {
+        schemaVersion: 1,
+        projectSlug: 'alpha',
+        generatedAt: new Date().toISOString(),
+        sourceSkill: 'ai-filmmaking',
+        durationDefaultSeconds: 15,
+        referenceMap: [
+          {
+            slot: '@image1',
+            role: 'character-sheet',
+            label: 'Hero character sheet',
+            path: '/tmp/hero-sheet.jpg',
+            status: 'ready',
+          },
+          {
+            slot: '@image2',
+            role: 'storyboard-grid',
+            label: 'Scene 1 storyboard grid',
+            path: '/tmp/scene-grid.jpg',
+            status: 'ready',
+          },
+        ],
+        characterSheetPrompts: [],
+        storyboardGridPrompt: null,
+        seedancePackets: [
+          {
+            sceneIndex: 0,
+            variant: 'character-sheets-plus-storyboard-grid',
+            durationSeconds: 15,
+            references: [
+              {
+                slot: '@image1',
+                role: 'character-sheet',
+                label: 'Hero character sheet',
+                path: '/tmp/hero-sheet.jpg',
+                status: 'ready',
+              },
+              {
+                slot: '@image2',
+                role: 'storyboard-grid',
+                label: 'Scene 1 storyboard grid',
+                path: '/tmp/scene-grid.jpg',
+                status: 'ready',
+              },
+            ],
+            promptText: 'Use @image1 and @image2 as source-of-truth references. NO MUSIC.',
+            warnings: [],
+          },
+        ],
+        issues: [],
+      });
+      const adapterPath = join(root, 'seedance-adapter.sh');
+      await writeFile(adapterPath, [
+        '#!/bin/sh',
+        'cat > "$1"',
+        'printf \'{"externalJobId":"job-123","status":"submitted"}\'',
+        '',
+      ].join('\n'));
+      await chmod(adapterPath, 0o755);
+
+      const stdinCapturePath = join(root, 'adapter-stdin.json');
+      const result = await executeProject('alpha', {
+        root,
+        dryRun: false,
+        env: {
+          ...process.env,
+          VCLAW_VEO_USEAPI_ADAPTER: `${adapterPath} ${stdinCapturePath}`,
+        },
+      });
+
+      assert.equal(result.report.status, 'live-submitted');
+      const capturedPayload = JSON.parse(await readFile(stdinCapturePath, 'utf-8')) as {
+        tasks?: Array<{
+          prompt?: string;
+          durationSeconds?: number;
+          inputKind?: string;
+          referencePaths?: string[];
+          sourceAssetIds?: string[];
+          backendHints?: string[];
+          promptPacketVariant?: string;
+          referenceSlots?: Array<{ slot?: string; role?: string; label?: string; path?: string }>;
+        }>;
+      };
+      const task = capturedPayload.tasks?.[0];
+      assert.equal(task?.prompt, 'Use @image1 and @image2 as source-of-truth references. NO MUSIC.');
+      assert.equal(task?.durationSeconds, 15);
+      assert.equal(task?.inputKind, 'image');
+      assert.deepEqual(task?.referencePaths, ['/tmp/hero-sheet.jpg', '/tmp/scene-grid.jpg']);
+      assert.deepEqual(task?.sourceAssetIds, ['image-a', '@image1', '@image2']);
+      assert.equal(task?.promptPacketVariant, 'character-sheets-plus-storyboard-grid');
+      assert.deepEqual(task?.referenceSlots, [
+        { slot: '@image1', role: 'character-sheet', label: 'Hero character sheet', path: '/tmp/hero-sheet.jpg' },
+        { slot: '@image2', role: 'storyboard-grid', label: 'Scene 1 storyboard grid', path: '/tmp/scene-grid.jpg' },
+      ]);
+      assert.ok(task?.backendHints?.includes('filmmaking-prompts'));
+      assert.ok(task?.backendHints?.includes('prompt-variant:character-sheets-plus-storyboard-grid'));
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  it('ignores filmmaking prompt packets with pending references during execution', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'vclaw-execute-filmmaking-pending-'));
+    try {
+      await seedReadyProject(root);
+      const workspace = await ensureProjectWorkspace('alpha', root);
+      await writeArtifact(workspace, 'storyboard', createStoryboardArtifact({
+        projectSlug: 'alpha',
+        productionMode: 'storyboard',
+        scenes: [{
+          sceneIndex: 0,
+          description: 'Scene one',
+          scenePrompt: {
+            animationPrompt: 'Use the original single image prompt.',
+          },
+        }],
+      }));
+      await writeArtifact(workspace, 'filmmaking-prompts', {
+        schemaVersion: 1,
+        projectSlug: 'alpha',
+        generatedAt: new Date().toISOString(),
+        sourceSkill: 'ai-filmmaking',
+        durationDefaultSeconds: 15,
+        referenceMap: [
+          {
+            slot: '@image1',
+            role: 'storyboard-grid',
+            label: 'Scene 1 storyboard grid',
+            status: 'pending',
+          },
+        ],
+        characterSheetPrompts: [],
+        storyboardGridPrompt: null,
+        seedancePackets: [
+          {
+            sceneIndex: 0,
+            variant: 'storyboard-grid-reference',
+            durationSeconds: 15,
+            references: [
+              {
+                slot: '@image1',
+                role: 'storyboard-grid',
+                label: 'Scene 1 storyboard grid',
+                status: 'pending',
+              },
+            ],
+            promptText: 'This prompt requires @image1 and should not be submitted yet.',
+            warnings: ['Storyboard grid image is pending.'],
+          },
+        ],
+        issues: [],
+      });
+      const adapterPath = join(root, 'seedance-adapter.sh');
+      await writeFile(adapterPath, [
+        '#!/bin/sh',
+        'cat > "$1"',
+        'printf \'{"externalJobId":"job-123","status":"submitted"}\'',
+        '',
+      ].join('\n'));
+      await chmod(adapterPath, 0o755);
+
+      const stdinCapturePath = join(root, 'adapter-stdin.json');
+      await executeProject('alpha', {
+        root,
+        dryRun: false,
+        env: {
+          ...process.env,
+          VCLAW_VEO_USEAPI_ADAPTER: `${adapterPath} ${stdinCapturePath}`,
+        },
+      });
+
+      const capturedPayload = JSON.parse(await readFile(stdinCapturePath, 'utf-8')) as {
+        tasks?: Array<{
+          prompt?: string;
+          referencePaths?: string[];
+          promptPacketVariant?: string;
+          backendHints?: string[];
+        }>;
+      };
+      const task = capturedPayload.tasks?.[0];
+      assert.equal(task?.prompt, 'Use the original single image prompt.');
+      assert.deepEqual(task?.referencePaths, ['/tmp/image.png']);
+      assert.equal(task?.promptPacketVariant, undefined);
+      assert.equal(task?.backendHints?.includes('filmmaking-prompts'), false);
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
   it('falls back to the built-in veo-useapi adapter when only route commands are configured', async () => {
     const root = await mkdtemp(join(tmpdir(), 'vclaw-execute-'));
     try {

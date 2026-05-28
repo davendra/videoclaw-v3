@@ -1,0 +1,126 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "vclaw-video-core/video/artifacts/filmmaking-prompts",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "projectSlug",
+    "generatedAt",
+    "sourceSkill",
+    "durationDefaultSeconds",
+    "referenceMap",
+    "characterSheetPrompts",
+    "storyboardGridPrompt",
+    "seedancePackets",
+    "issues"
+  ],
+  "properties": {
+    "schemaVersion": { "type": "integer", "const": 1 },
+    "projectSlug": { "type": "string" },
+    "generatedAt": { "type": "string" },
+    "sourceSkill": { "type": "string", "const": "ai-filmmaking" },
+    "durationDefaultSeconds": { "type": "integer", "minimum": 1 },
+    "referenceMap": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/referenceSlot" }
+    },
+    "characterSheetPrompts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["characterName", "mode", "referenceSlots", "promptText"],
+        "properties": {
+          "characterName": { "type": "string" },
+          "mode": { "type": "string", "enum": ["reference-image", "description-only"] },
+          "referenceSlots": { "type": "array", "items": { "type": "string" } },
+          "promptText": { "type": "string" }
+        },
+        "additionalProperties": false
+      }
+    },
+    "storyboardGridPrompt": {
+      "anyOf": [
+        { "type": "null" },
+        {
+          "type": "object",
+          "required": ["variant", "panelCount", "promptText", "panels"],
+          "properties": {
+            "variant": { "type": "string", "const": "storyboard-grid" },
+            "panelCount": { "type": "integer", "const": 9 },
+            "promptText": { "type": "string" },
+            "panels": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["panel", "position", "beat", "cam", "move", "mood"],
+                "properties": {
+                  "panel": { "type": "integer" },
+                  "position": { "type": "string" },
+                  "beat": { "type": "string" },
+                  "cam": { "type": "string" },
+                  "move": { "type": "string" },
+                  "mood": { "type": "string" }
+                },
+                "additionalProperties": false
+              }
+            }
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
+    "seedancePackets": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["sceneIndex", "variant", "durationSeconds", "references", "promptText", "warnings"],
+        "properties": {
+          "sceneIndex": { "type": "integer" },
+          "variant": {
+            "type": "string",
+            "enum": ["text-driven", "storyboard-grid-reference", "character-sheets-plus-storyboard-grid"]
+          },
+          "durationSeconds": { "type": "integer", "minimum": 1 },
+          "references": { "type": "array", "items": { "$ref": "#/$defs/referenceSlot" } },
+          "promptText": { "type": "string" },
+          "warnings": { "type": "array", "items": { "type": "string" } }
+        },
+        "additionalProperties": false
+      }
+    },
+    "issues": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["code", "severity", "message"],
+        "properties": {
+          "code": { "type": "string" },
+          "severity": { "type": "string", "enum": ["warning", "error"] },
+          "message": { "type": "string" },
+          "path": { "type": "string" }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "referenceSlot": {
+      "type": "object",
+      "required": ["slot", "role", "label", "status"],
+      "properties": {
+        "slot": { "type": "string" },
+        "role": {
+          "type": "string",
+          "enum": ["character-sheet", "storyboard-grid", "start-frame", "end-frame", "reference-image"]
+        },
+        "label": { "type": "string" },
+        "path": { "type": "string" },
+        "characterName": { "type": "string" },
+        "sceneIndex": { "type": "integer" },
+        "status": { "type": "string", "enum": ["ready", "pending"] }
+      },
+      "additionalProperties": false
+    }
+  }
+}

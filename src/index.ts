@@ -379,6 +379,23 @@ export {
   saveReviewDecision,
 } from './video/review-ui.js';
 
+export {
+  appendPreviewPortalAuditEvent,
+  buildPreviewPortalPublishPlan,
+  discoverPreviewPortalPortfolio,
+  discoverPreviewPortalProject,
+  generatePreviewPortalIndex,
+  generatePreviewPortalSurfaces,
+  PREVIEW_PORTAL_STATUSES,
+  PREVIEW_PORTAL_SURFACES,
+  PREVIEW_PORTAL_TEMPLATES,
+  readPreviewPortalAuditEvents,
+  renderPreviewPortalHtml,
+  renderPreviewPortalIndexHtml,
+  publishPreviewPortal,
+  publishPreviewPortalIndex,
+} from './video/preview-portal/index.js';
+
 export type {
   ReviewAutopilotOptions,
   ReviewAutopilotResult,
@@ -395,6 +412,48 @@ export type {
   ReviewUiLaunch,
   ReviewUiOptions,
 } from './video/review-ui.js';
+
+export type {
+  DiscoverPreviewPortalPortfolioOptions,
+  DiscoverPreviewPortalProjectOptions,
+  BuildPreviewPortalPublishPlanOptions,
+  GeneratePreviewPortalIndexOptions,
+  GeneratePreviewPortalIndexResult,
+  GeneratePreviewPortalSurfacesOptions,
+  GeneratePreviewPortalSurfacesResult,
+  PreviewPortalAsset,
+  PreviewPortalAuditEvent,
+  PreviewPortalCard,
+  PreviewPortalProject,
+  PreviewPortalIndexRenderOptions,
+  PreviewPortalRenderOptions,
+  PreviewPortalRun,
+  PreviewPortalStatus,
+  PreviewPortalSurface,
+  PreviewPortalTemplateId,
+  PreviewPortalPublishItem,
+  PreviewPortalPublishPlan,
+  PreviewPortalPublishResult,
+  PublishPreviewPortalIndexOptions,
+  PublishPreviewPortalOptions,
+} from './video/preview-portal/index.js';
+
+export {
+  generateFilmmakingPrompts,
+} from './video/filmmaking-prompts.js';
+
+export type {
+  FilmmakingCharacterSheetPrompt,
+  FilmmakingPromptIssue,
+  FilmmakingPromptsArtifact,
+  FilmmakingPromptVariant,
+  FilmmakingReferenceSlot,
+  FilmmakingSeedancePacket,
+  FilmmakingStoryboardGridPrompt,
+  FilmmakingStoryboardPanel,
+  GenerateFilmmakingPromptsOptions,
+  GenerateFilmmakingPromptsResult,
+} from './video/filmmaking-prompts.js';
 
 export {
   readSceneSelectionArtifact,

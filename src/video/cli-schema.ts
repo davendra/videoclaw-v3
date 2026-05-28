@@ -88,6 +88,10 @@ const COMMANDS: CommandSpec[] = [
   // --- review UI ---
   { name: 'video review-ui', usage: 'vclaw video review-ui --project <slug> [--root <path>] [--host <host>] [--port <port>] [--ui-path <path>] [--dry-run]' },
   { name: 'video review-autopilot', usage: 'vclaw video review-autopilot --project <slug> [--root <path>] [--template <template-id>] [--character <name>] [--run-id <id>]' },
+  { name: 'video portal', usage: 'vclaw video portal --project <slug> [--root <path>] [--client <name>] [--run <id>] [--surface edit|review|client-review|preview|compare|index]' },
+  { name: 'video portal-index', usage: 'vclaw video portal-index [--root <path>] [--client <name>] [--output <path>]' },
+  { name: 'video publish-preview', usage: 'vclaw video publish-preview --project <slug> --client <name> --bucket <bucket> [--root <path>] [--run <id>] [--surface edit|review|client-review|preview|compare|index] [--public-base-url <url>] [--wrangler-bin <path>] [--dry-run]' },
+  { name: 'video publish-portal-index', usage: 'vclaw video publish-portal-index --bucket <bucket> [--root <path>] [--client <name>] [--public-base-url <url>] [--wrangler-bin <path>] [--dry-run]' },
 
   // --- character management ---
   { name: 'video character-add', usage: 'vclaw video character-add --project <slug> --name <name> [--gb-id <id>] [...] [--root <path>]' },
@@ -123,6 +127,11 @@ const COMMANDS: CommandSpec[] = [
     name: 'video multi-shot',
     usage: 'vclaw video multi-shot (--presets | --plan [--shots N] [--seed N] | --validate [--file <path>] [--explain-issues] | --fix [--file <path>] | --auto --image <path> [--dry-run] [--retry-invalid N] [...]) [--preset <name>] [--provider <name>] [--route <name>] [--from-storyboard --project <slug> --scene <sceneIndex>] [--total-seconds N] [--max-chars N] [--root <path>] [--raw]',
     description: 'Scaffold, validate, and Gemini-author timecoded multi-shot cinematic prompts, including project storyboard scene hydration.',
+  },
+  {
+    name: 'video filmmaking-prompts',
+    usage: 'vclaw video filmmaking-prompts --project <slug> [--root <path>] [--duration <seconds>] [--storyboard-grid <path>] [--write]',
+    description: 'Generate ai-filmmaking prompt packets: character sheet prompts, optional attached 9-panel storyboard grid, reference map, and Seedance Variant A/B/C packets.',
   },
 
   // --- portfolio + status ---

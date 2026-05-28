@@ -116,26 +116,33 @@ structural requirements of the multi-shot format, not stylistic
 guidelines, so they cannot be downgraded to warnings by omitting
 `DIRECTOR_STRICT_PROMPT_QUALITY`.
 
-### Preset: `cinematic-15s`
+### Presets
 
-The `cinematic-15s` preset defines:
+Four presets ship today, each declaring its own duration, shot-count
+window, per-shot duration bounds, and character budget. The default
+remains `cinematic-15s`; the others target a specific provider's clip
+duration:
 
-- total duration: **15 s**
-- per-shot duration range: **2–5 s**
-- character budget: **≤ 1500** characters total
+| Preset | total | shot range | shot count | maxChars |
+|---|---|---|---|---|
+| `cinematic-15s` *(default)* | 15 s | 2–5 s | 3–7 | 1500 |
+| `seedance-10s` | 10 s | 2–5 s | 2–5 | 1500 |
+| `veo-8s` | 8 s | 2–4 s | 2–4 | 1500 |
+| `runway-10s` | 10 s | 2–5 s | 2–5 | 1000 |
 
 ### Issue codes
 
 | Code | What it catches |
 |---|---|
 | `multi-shot-timecode-parse` | A timecode in the prompt cannot be parsed |
-| `multi-shot-timecodes-not-contiguous` | Timecodes have gaps or are not in order |
-| `multi-shot-must-start-at-zero` | First timecode is not `00:00` |
-| `multi-shot-duration-mismatch` | Timecodes do not sum to the preset total (15 s for `cinematic-15s`) |
-| `multi-shot-shot-duration-out-of-range` | A shot's duration falls outside the preset bounds (2–5 s) |
-| `multi-shot-character-budget-exceeded` | Total prompt character count exceeds the preset budget (1500) |
-| `multi-shot-consecutive-shot-repeat` | A consecutive pair of shots shares the same shot size, lens, angle, or camera movement |
-| `multi-shot-missing-metadata-block` | The required `Location / Style / Audio` metadata block is absent |
+| `multi-shot-timecode-start` | First timecode is not `00:00` |
+| `multi-shot-timecode-gap` | Consecutive timecodes overlap or leave a gap |
+| `multi-shot-timecode-total` | Timecodes do not sum to the preset's `totalSeconds` |
+| `multi-shot-shot-duration` | A shot's duration falls outside the preset's `[minShotSeconds, maxShotSeconds]` |
+| `multi-shot-shot-count-out-of-range` | Parsed shot count is outside the preset's `[minShots, maxShots]` window. Message branches on under vs over |
+| `multi-shot-overlong` | Total prompt character count exceeds the preset's `maxChars` |
+| `multi-shot-repeated-parameter` | A consecutive pair of shots shares the same shot size, lens, angle, or camera movement |
+| `multi-shot-missing-metadata` | The required `Location / Style / Audio` metadata block is absent |
 
 Matching for consecutive-shot-repeat checks is hyphen/space-insensitive,
 so `push in` and `push-in` are treated as the same value.

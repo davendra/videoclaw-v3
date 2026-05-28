@@ -12,6 +12,8 @@ export interface MultiShotPreset {
   totalSeconds: number;
   minShotSeconds: number;
   maxShotSeconds: number;
+  minShots: number;
+  maxShots: number;
   maxChars: number;
   styleLine: string;
   audioLine: string;
@@ -22,12 +24,72 @@ export const CINEMATIC_15S_PRESET: MultiShotPreset = {
   totalSeconds: 15,
   minShotSeconds: 2,
   maxShotSeconds: 5,
+  minShots: 3,
+  maxShots: 7,
   maxChars: 1500,
   styleLine:
     'Cool shadows, natural skin tones. IMAX-scale composition, deep focus, practical lighting. High contrast, grounded realism. In the style of a Christopher Nolan movie.',
   audioLine:
     'Diegetic sound only — natural ambience, environmental foley, and subject-driven sound.',
 };
+
+export const SEEDANCE_10S_PRESET: MultiShotPreset = {
+  name: 'seedance-10s',
+  totalSeconds: 10,
+  minShotSeconds: 2,
+  maxShotSeconds: 5,
+  minShots: 2,
+  maxShots: 5,
+  maxChars: 1500,
+  styleLine: CINEMATIC_15S_PRESET.styleLine,
+  audioLine: CINEMATIC_15S_PRESET.audioLine,
+};
+
+export const VEO_8S_PRESET: MultiShotPreset = {
+  name: 'veo-8s',
+  totalSeconds: 8,
+  minShotSeconds: 2,
+  maxShotSeconds: 4,
+  minShots: 2,
+  maxShots: 4,
+  maxChars: 1500,
+  styleLine: CINEMATIC_15S_PRESET.styleLine,
+  audioLine: CINEMATIC_15S_PRESET.audioLine,
+};
+
+export const RUNWAY_10S_PRESET: MultiShotPreset = {
+  name: 'runway-10s',
+  totalSeconds: 10,
+  minShotSeconds: 2,
+  maxShotSeconds: 5,
+  minShots: 2,
+  maxShots: 5,
+  maxChars: 1000,
+  styleLine: CINEMATIC_15S_PRESET.styleLine,
+  audioLine: CINEMATIC_15S_PRESET.audioLine,
+};
+
+const PRESET_REGISTRY: ReadonlyMap<string, MultiShotPreset> = new Map([
+  [CINEMATIC_15S_PRESET.name, CINEMATIC_15S_PRESET],
+  [SEEDANCE_10S_PRESET.name, SEEDANCE_10S_PRESET],
+  [VEO_8S_PRESET.name, VEO_8S_PRESET],
+  [RUNWAY_10S_PRESET.name, RUNWAY_10S_PRESET],
+]);
+
+export function knownPresetNames(): readonly string[] {
+  return Array.from(PRESET_REGISTRY.keys());
+}
+
+export function resolvePreset(name?: string): MultiShotPreset {
+  if (name === undefined) return CINEMATIC_15S_PRESET;
+  const preset = PRESET_REGISTRY.get(name);
+  if (!preset) {
+    throw new Error(
+      `unknown preset "${name}" (known: ${knownPresetNames().join(', ')})`,
+    );
+  }
+  return preset;
+}
 
 // Suggested camera-grid vocabularies. Shot sizes/angles/lenses are local to the
 // framework; prompt-quality's SHOT_TYPE_VOCABULARY is only re-exported for
@@ -113,8 +175,15 @@ export function buildShotPlan(
   options: BuildShotPlanOptions = {},
 ): ShotPlan {
   const rand = mulberry32(options.seed ?? Math.floor(Math.random() * 1e9));
-  const minCount = Math.max(3, Math.ceil(preset.totalSeconds / preset.maxShotSeconds));
-  const maxCount = Math.min(7, Math.floor(preset.totalSeconds / preset.minShotSeconds));
+  const arithMin = Math.ceil(preset.totalSeconds / preset.maxShotSeconds);
+  const arithMax = Math.floor(preset.totalSeconds / preset.minShotSeconds);
+  const minCount = Math.max(preset.minShots, arithMin);
+  const maxCount = Math.min(preset.maxShots, arithMax);
+  if (minCount > maxCount) {
+    throw new Error(
+      `preset "${preset.name}": shot-count window [${preset.minShots}, ${preset.maxShots}] cannot satisfy duration partition [${arithMin}, ${arithMax}]`,
+    );
+  }
   let count = options.shots ?? minCount + Math.floor(rand() * (maxCount - minCount + 1));
   // Clamp to [minCount, maxCount] so an explicit --shots stays feasible.
   if (count < minCount) count = minCount;

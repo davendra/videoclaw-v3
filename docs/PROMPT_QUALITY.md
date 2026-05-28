@@ -116,7 +116,7 @@ structural requirements of the multi-shot format, not stylistic
 guidelines, so they cannot be downgraded to warnings by omitting
 `DIRECTOR_STRICT_PROMPT_QUALITY`.
 
-### Preset: `cinematic-15s`
+### Presets
 
 Four presets ship today, each declaring its own duration, shot-count
 window, per-shot duration bounds, and character budget. The default

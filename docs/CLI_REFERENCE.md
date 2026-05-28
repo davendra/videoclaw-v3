@@ -701,7 +701,7 @@ metadata block.
 
 ### Output
 
-`--plan` emits JSON: `{ preset, shots[] }` where each shot has `index`, `start`, `end`, `timecode`, `shotSize`, `lens`, `angle`, `movement`.
+`--plan` emits JSON: `{ preset, shots[] }`. The `preset` object carries `name`, `totalSeconds`, `minShotSeconds`, `maxShotSeconds`, `minShots`, `maxShots`, `maxChars`, `styleLine`, and `audioLine`. Each shot has `index`, `start`, `end`, `timecode`, `shotSize`, `lens`, `angle`, `movement`.
 
 `--validate` emits JSON: `{ valid, charCount, issues[] }` where each issue has `code`, `severity`, `message`. Exit code `1` when any issue has `severity: "error"`.
 

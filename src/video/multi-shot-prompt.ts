@@ -33,6 +33,64 @@ export const CINEMATIC_15S_PRESET: MultiShotPreset = {
     'Diegetic sound only — natural ambience, environmental foley, and subject-driven sound.',
 };
 
+export const SEEDANCE_10S_PRESET: MultiShotPreset = {
+  name: 'seedance-10s',
+  totalSeconds: 10,
+  minShotSeconds: 2,
+  maxShotSeconds: 5,
+  minShots: 2,
+  maxShots: 5,
+  maxChars: 1500,
+  styleLine: CINEMATIC_15S_PRESET.styleLine,
+  audioLine: CINEMATIC_15S_PRESET.audioLine,
+};
+
+export const VEO_8S_PRESET: MultiShotPreset = {
+  name: 'veo-8s',
+  totalSeconds: 8,
+  minShotSeconds: 2,
+  maxShotSeconds: 4,
+  minShots: 2,
+  maxShots: 4,
+  maxChars: 1500,
+  styleLine: CINEMATIC_15S_PRESET.styleLine,
+  audioLine: CINEMATIC_15S_PRESET.audioLine,
+};
+
+export const RUNWAY_10S_PRESET: MultiShotPreset = {
+  name: 'runway-10s',
+  totalSeconds: 10,
+  minShotSeconds: 2,
+  maxShotSeconds: 5,
+  minShots: 2,
+  maxShots: 5,
+  maxChars: 1000,
+  styleLine: CINEMATIC_15S_PRESET.styleLine,
+  audioLine: CINEMATIC_15S_PRESET.audioLine,
+};
+
+const PRESET_REGISTRY: ReadonlyMap<string, MultiShotPreset> = new Map([
+  [CINEMATIC_15S_PRESET.name, CINEMATIC_15S_PRESET],
+  [SEEDANCE_10S_PRESET.name, SEEDANCE_10S_PRESET],
+  [VEO_8S_PRESET.name, VEO_8S_PRESET],
+  [RUNWAY_10S_PRESET.name, RUNWAY_10S_PRESET],
+]);
+
+export function knownPresetNames(): readonly string[] {
+  return Array.from(PRESET_REGISTRY.keys());
+}
+
+export function resolvePreset(name?: string): MultiShotPreset {
+  if (name === undefined) return CINEMATIC_15S_PRESET;
+  const preset = PRESET_REGISTRY.get(name);
+  if (!preset) {
+    throw new Error(
+      `unknown preset "${name}" (known: ${knownPresetNames().join(', ')})`,
+    );
+  }
+  return preset;
+}
+
 // Suggested camera-grid vocabularies. Shot sizes/angles/lenses are local to the
 // framework; prompt-quality's SHOT_TYPE_VOCABULARY is only re-exported for
 // consumers (it is not used when building the plan — SHOT_SIZES is).

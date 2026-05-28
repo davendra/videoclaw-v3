@@ -2,6 +2,10 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   CINEMATIC_15S_PRESET,
+  SEEDANCE_10S_PRESET,
+  VEO_8S_PRESET,
+  RUNWAY_10S_PRESET,
+  resolvePreset,
   buildShotPlan,
   formatTimecode,
   assembleMetadataBlock,
@@ -26,6 +30,59 @@ describe('multi-shot-prompt: preset shot bounds', () => {
       const plan = buildShotPlan(narrowed, { seed });
       assert.equal(plan.shots.length, 4, `seed=${seed}`);
     }
+  });
+});
+
+describe('multi-shot-prompt: preset registry', () => {
+  it('SEEDANCE_10S_PRESET constants', () => {
+    assert.equal(SEEDANCE_10S_PRESET.name, 'seedance-10s');
+    assert.equal(SEEDANCE_10S_PRESET.totalSeconds, 10);
+    assert.equal(SEEDANCE_10S_PRESET.minShotSeconds, 2);
+    assert.equal(SEEDANCE_10S_PRESET.maxShotSeconds, 5);
+    assert.equal(SEEDANCE_10S_PRESET.minShots, 2);
+    assert.equal(SEEDANCE_10S_PRESET.maxShots, 5);
+    assert.equal(SEEDANCE_10S_PRESET.maxChars, 1500);
+    assert.equal(SEEDANCE_10S_PRESET.styleLine, CINEMATIC_15S_PRESET.styleLine);
+    assert.equal(SEEDANCE_10S_PRESET.audioLine, CINEMATIC_15S_PRESET.audioLine);
+  });
+
+  it('VEO_8S_PRESET constants', () => {
+    assert.equal(VEO_8S_PRESET.name, 'veo-8s');
+    assert.equal(VEO_8S_PRESET.totalSeconds, 8);
+    assert.equal(VEO_8S_PRESET.minShotSeconds, 2);
+    assert.equal(VEO_8S_PRESET.maxShotSeconds, 4);
+    assert.equal(VEO_8S_PRESET.minShots, 2);
+    assert.equal(VEO_8S_PRESET.maxShots, 4);
+    assert.equal(VEO_8S_PRESET.maxChars, 1500);
+  });
+
+  it('RUNWAY_10S_PRESET constants', () => {
+    assert.equal(RUNWAY_10S_PRESET.name, 'runway-10s');
+    assert.equal(RUNWAY_10S_PRESET.totalSeconds, 10);
+    assert.equal(RUNWAY_10S_PRESET.minShotSeconds, 2);
+    assert.equal(RUNWAY_10S_PRESET.maxShotSeconds, 5);
+    assert.equal(RUNWAY_10S_PRESET.minShots, 2);
+    assert.equal(RUNWAY_10S_PRESET.maxShots, 5);
+    assert.equal(RUNWAY_10S_PRESET.maxChars, 1000);
+  });
+
+  it('resolvePreset defaults to cinematic-15s when name is undefined', () => {
+    assert.strictEqual(resolvePreset(), CINEMATIC_15S_PRESET);
+    assert.strictEqual(resolvePreset(undefined), CINEMATIC_15S_PRESET);
+  });
+
+  it('resolvePreset returns the registered preset for each known name', () => {
+    assert.strictEqual(resolvePreset('cinematic-15s'), CINEMATIC_15S_PRESET);
+    assert.strictEqual(resolvePreset('seedance-10s'), SEEDANCE_10S_PRESET);
+    assert.strictEqual(resolvePreset('veo-8s'), VEO_8S_PRESET);
+    assert.strictEqual(resolvePreset('runway-10s'), RUNWAY_10S_PRESET);
+  });
+
+  it('resolvePreset throws on unknown names with the full known list', () => {
+    assert.throws(
+      () => resolvePreset('bogus-99s'),
+      /unknown preset "bogus-99s".*cinematic-15s.*seedance-10s.*veo-8s.*runway-10s/,
+    );
   });
 });
 

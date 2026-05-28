@@ -17,6 +17,7 @@ import { listPlaybooks, readPlaybook } from '../video/playbooks.js';
 import { listPromptReferences, readPromptReference } from '../video/prompt-library.js';
 import { CINEMATIC_15S_PRESET, buildShotPlan, generateMultiShotPromptText, listMultiShotPresets, parseMultiShotPrompt, resolvePreset, type MultiShotPreset } from '../video/multi-shot-prompt.js';
 import { generateFilmmakingPrompts } from '../video/filmmaking-prompts.js';
+import { renderStoryboardGrid } from '../video/storyboard-grid.js';
 import { explainPromptQualityIssues, runMultiShotChecks } from '../video/prompt-quality.js';
 import { getBuiltinPipelineManifest } from '../video/pipeline-manifest.js';
 import { writeStageCheckpoint } from '../video/checkpoints.js';
@@ -182,6 +183,7 @@ function printHelp(): void {
   process.stdout.write('  vclaw video review-ui --project <slug> [--root <path>] [--host <host>] [--port <port>] [--ui-path <path>] [--dry-run]\n');
   process.stdout.write('  vclaw video review-autopilot --project <slug> [--root <path>] [--template <template-id>] [--character <name>] [--run-id <id>]\n');
   process.stdout.write('  vclaw video filmmaking-prompts --project <slug> [--root <path>] [--duration <seconds>] [--storyboard-grid <path>] [--write]\n');
+  process.stdout.write('  vclaw video storyboard-grid --project <slug> [--root <path>] [--output <path>] [--width <px>] [--height <px>] [--dry-run]\n');
   process.stdout.write('  vclaw video portal --project <slug> [--root <path>] [--client <name>] [--run <id>] [--surface edit|review|client-review|preview|compare|index]\n');
   process.stdout.write('  vclaw video portal-index [--root <path>] [--client <name>] [--output <path>]\n');
   process.stdout.write('  vclaw video publish-preview --project <slug> --client <name> --bucket <bucket> [--root <path>] [--run <id>] [--surface edit|review|client-review|preview|compare|index] [--public-base-url <url>] [--wrangler-bin <path>] [--dry-run]\n');
@@ -1990,6 +1992,26 @@ async function handleVideoFilmmakingPrompts(args: string[]): Promise<void> {
     ...(durationSeconds !== undefined ? { durationSeconds } : {}),
     ...(storyboardGridPath ? { storyboardGridPath } : {}),
     write: args.includes('--write'),
+  });
+  process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
+}
+
+async function handleVideoStoryboardGrid(args: string[]): Promise<void> {
+  const projectSlug = parseFlagValue(args, '--project');
+  if (!projectSlug) {
+    throw new Error('video storyboard-grid requires --project <slug>');
+  }
+  const root = parseFlagValue(args, '--root') ?? process.cwd();
+  const output = parseFlagValue(args, '--output');
+  const width = parsePositiveIntegerFlag(args, '--width');
+  const height = parsePositiveIntegerFlag(args, '--height');
+  const result = await renderStoryboardGrid({
+    root,
+    projectSlug,
+    ...(output ? { output } : {}),
+    ...(width !== undefined ? { width } : {}),
+    ...(height !== undefined ? { height } : {}),
+    dryRun: args.includes('--dry-run'),
   });
   process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
 }
@@ -3948,6 +3970,11 @@ export async function main(): Promise<void> {
 
   if (command === 'video' && subcommand === 'filmmaking-prompts') {
     await handleVideoFilmmakingPrompts(rest);
+    return;
+  }
+
+  if (command === 'video' && subcommand === 'storyboard-grid') {
+    await handleVideoStoryboardGrid(rest);
     return;
   }
 

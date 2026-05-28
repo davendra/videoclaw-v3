@@ -136,6 +136,7 @@ vclaw video storyboard --project <slug> (--scene <text> [--scene <text> ...] | -
 vclaw video assets --project <slug> --asset <kind:path[:sceneIndex][:backend]> [--asset ...] [--root <path>]
 vclaw video review-ui --project <slug> [--root <path>] [--host <host>] [--port <port>] [--ui-path <path>] [--dry-run]
 vclaw video review-autopilot --project <slug> [--root <path>] [--template <template-id>] [--character <name>] [--run-id <id>]
+vclaw video storyboard-grid --project <slug> [--root <path>] [--output <path>] [--width <px>] [--height <px>] [--dry-run]
 vclaw video portal --project <slug> [--root <path>] [--client <name>] [--run <id>] [--surface edit|review|client-review|preview|compare|index]
 vclaw video portal-index [--root <path>] [--client <name>] [--output <path>]
 vclaw video publish-preview --project <slug> --client <name> --bucket <bucket> [--root <path>] [--run <id>] [--surface edit|review|client-review|preview|compare|index] [--public-base-url <url>] [--wrangler-bin <path>] [--dry-run]
@@ -890,6 +891,21 @@ Use `--storyboard-grid <path>` after the 9-panel board image has been generated
 from `storyboardGridPrompt.promptText`. That path marks the storyboard-grid slot
 as `ready`, removes the pending-grid warning, and makes the grid eligible for
 Seedance execution. Without it, the slot remains reserved but pending.
+
+To generate a deterministic local review board from the packet panels:
+
+```bash
+vclaw video storyboard-grid \
+  --project 2026-05-27_dhuaan-music-video \
+  --root /path/to/video-workspace
+```
+
+This writes `projects/<slug>/assets/storyboard-grid.png`, updates the
+storyboard-grid slot in `filmmaking-prompts.json` to `ready`, removes the
+pending-grid warnings, and snapshots the updated artifact. The rendered board is
+not a replacement for an image-model-generated cinematic grid; it is the
+reviewable production-board fallback and a stable attachment point for the
+Seedance reference workflow.
 
 Example:
 

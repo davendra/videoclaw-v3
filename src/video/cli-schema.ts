@@ -133,6 +133,11 @@ const COMMANDS: CommandSpec[] = [
     usage: 'vclaw video filmmaking-prompts --project <slug> [--root <path>] [--duration <seconds>] [--storyboard-grid <path>] [--write]',
     description: 'Generate ai-filmmaking prompt packets: character sheet prompts, optional attached 9-panel storyboard grid, reference map, and Seedance Variant A/B/C packets.',
   },
+  {
+    name: 'video storyboard-grid',
+    usage: 'vclaw video storyboard-grid --project <slug> [--root <path>] [--output <path>] [--width <px>] [--height <px>] [--dry-run]',
+    description: 'Render a deterministic 3x3 storyboard grid PNG from filmmaking prompt panels and mark the grid reference ready for execution.',
+  },
 
   // --- portfolio + status ---
   { name: 'video list', usage: 'vclaw video list [--root <path>]' },

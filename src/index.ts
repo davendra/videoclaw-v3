@@ -442,6 +442,10 @@ export {
   generateFilmmakingPrompts,
 } from './video/filmmaking-prompts.js';
 
+export {
+  renderStoryboardGrid,
+} from './video/storyboard-grid.js';
+
 export type {
   FilmmakingCharacterSheetPrompt,
   FilmmakingPromptIssue,
@@ -454,6 +458,11 @@ export type {
   GenerateFilmmakingPromptsOptions,
   GenerateFilmmakingPromptsResult,
 } from './video/filmmaking-prompts.js';
+
+export type {
+  RenderStoryboardGridOptions,
+  RenderStoryboardGridResult,
+} from './video/storyboard-grid.js';
 
 export {
   readSceneSelectionArtifact,

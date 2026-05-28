@@ -86,6 +86,8 @@ projects/<slug>/
 ├── project-audit.jsonl         # Append-only preview portal generation/publish audit.
 │
 ├── assets/                     # DERIVED. Intermediate visual assets.
+│   ├── storyboard-grid.png       Deterministic 3x3 production board from
+│   │                             `vclaw video storyboard-grid`.
 │   ├── storyboard/               Per-scene stills.
 │   ├── upscaled/                 Upscaled variants.
 │   └── ...                       (Gitignored.)

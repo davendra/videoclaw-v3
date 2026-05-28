@@ -12,6 +12,8 @@ export interface MultiShotPreset {
   totalSeconds: number;
   minShotSeconds: number;
   maxShotSeconds: number;
+  minShots: number;
+  maxShots: number;
   maxChars: number;
   styleLine: string;
   audioLine: string;
@@ -22,6 +24,8 @@ export const CINEMATIC_15S_PRESET: MultiShotPreset = {
   totalSeconds: 15,
   minShotSeconds: 2,
   maxShotSeconds: 5,
+  minShots: 3,
+  maxShots: 7,
   maxChars: 1500,
   styleLine:
     'Cool shadows, natural skin tones. IMAX-scale composition, deep focus, practical lighting. High contrast, grounded realism. In the style of a Christopher Nolan movie.',
@@ -113,8 +117,15 @@ export function buildShotPlan(
   options: BuildShotPlanOptions = {},
 ): ShotPlan {
   const rand = mulberry32(options.seed ?? Math.floor(Math.random() * 1e9));
-  const minCount = Math.max(3, Math.ceil(preset.totalSeconds / preset.maxShotSeconds));
-  const maxCount = Math.min(7, Math.floor(preset.totalSeconds / preset.minShotSeconds));
+  const arithMin = Math.ceil(preset.totalSeconds / preset.maxShotSeconds);
+  const arithMax = Math.floor(preset.totalSeconds / preset.minShotSeconds);
+  const minCount = Math.max(preset.minShots, arithMin);
+  const maxCount = Math.min(preset.maxShots, arithMax);
+  if (minCount > maxCount) {
+    throw new Error(
+      `preset "${preset.name}": shot-count window [${preset.minShots}, ${preset.maxShots}] cannot satisfy duration partition [${arithMin}, ${arithMax}]`,
+    );
+  }
   let count = options.shots ?? minCount + Math.floor(rand() * (maxCount - minCount + 1));
   // Clamp to [minCount, maxCount] so an explicit --shots stays feasible.
   if (count < minCount) count = minCount;

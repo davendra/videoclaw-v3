@@ -6,7 +6,28 @@ import {
   formatTimecode,
   assembleMetadataBlock,
   composePromptText,
+  type MultiShotPreset,
 } from '../video/multi-shot-prompt.js';
+
+import { test } from 'node:test';
+
+test('CINEMATIC_15S_PRESET declares explicit shot-count bounds', () => {
+  assert.equal(CINEMATIC_15S_PRESET.minShots, 3);
+  assert.equal(CINEMATIC_15S_PRESET.maxShots, 7);
+});
+
+test('buildShotPlan respects preset.minShots / preset.maxShots when --shots not given', () => {
+  const narrowed: MultiShotPreset = {
+    ...CINEMATIC_15S_PRESET,
+    name: 'narrowed-test',
+    minShots: 4,
+    maxShots: 4,
+  };
+  for (let seed = 1; seed <= 30; seed += 1) {
+    const plan = buildShotPlan(narrowed, { seed });
+    assert.equal(plan.shots.length, 4, `seed=${seed}`);
+  }
+});
 
 describe('multi-shot-prompt: buildShotPlan', () => {
   it('produces shots that sum to the preset total and stay within bounds', () => {

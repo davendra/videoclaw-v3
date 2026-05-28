@@ -13,7 +13,7 @@ Use these canonical surfaces first:
 
 | Goal | Start With | Then Specialize Into |
 |---|---|---|
-| Generic video request | `video-framework` | `video-storyboard`, `video-analyze-template`, `video-clone-ad`, `video-replicator`, `movie-director`, `video-production-handoff`, `video-review-ui-qa`, `video-portfolio-ops`, `video-release-readiness`, `ugc` |
+| Generic video request | `video-framework` | `video-storyboard`, `video-analyze-template`, `video-clone-ad`, `video-replicator`, `movie-director`, `video-production-handoff`, `video-review-ui-qa`, `video-portfolio-ops`, `video-release-readiness`, `higgsfield-generate`, `ugc` |
 | Narrated presenter / host-led deck video | `brand-presenter` | `davendra-presenter`, `nex-presenter`, `bunty` |
 
 Compatibility/deep-reference surfaces remain available, but the preferred UX is:
@@ -34,6 +34,7 @@ Compatibility/deep-reference surfaces remain available, but the preferred UX is:
 - `video-portfolio-ops`
 - `video-release-readiness`
 - `movie-director`
+- `higgsfield-generate`
 - `seedance-prompts`
 - `ugc`
 - `character-library`
@@ -96,7 +97,10 @@ Compatibility/deep-reference surfaces remain available, but the preferred UX is:
    `video-release-readiness` split the production surface into browser QA,
    slate management, and release handoff so advanced commands remain intact but
    operators get clear workflows.
-8. Local repo paths should be preferred over old `.claude/...` path assumptions
+8. `higgsfield-generate` is an external bridge over Higgsfield's MIT-licensed
+   public skills and official CLI. Keep it optional and thin; do not vendor the
+   upstream setup script or make Higgsfield a required runtime dependency.
+9. Local repo paths should be preferred over old `.claude/...` path assumptions
    when adapting or extending these skills further.
 
 ## Machine-Readable Catalog

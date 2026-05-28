@@ -94,6 +94,13 @@
       "status": "imported"
     },
     {
+      "id": "higgsfield-generate",
+      "category": "video",
+      "status": "external-bridge",
+      "specializes": "video-framework",
+      "role": "specialist"
+    },
+    {
       "id": "hud",
       "category": "workflow",
       "status": "imported"
@@ -230,6 +237,7 @@
         "video-review-ui-qa",
         "video-portfolio-ops",
         "video-release-readiness",
+        "higgsfield-generate",
         "ugc"
       ]
     },

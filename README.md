@@ -357,7 +357,7 @@ sane.
 ### Quick skill map
 
 <details>
-<summary><strong>🎬 Video skills</strong> (14 — click to expand)</summary>
+<summary><strong>🎬 Video skills</strong> (15 — click to expand)</summary>
 
 | Skill | Role | One-liner |
 |---|---|---|
@@ -370,6 +370,7 @@ sane.
 | [`movie-director`](./skills/movie-director) | imported | Multi-scene Director-mode (12 genres, two-phase approval, structured entry modes). |
 | [`video-replicator`](./skills/video-replicator) | imported (deep) | 7-mode legacy pipeline (COPY/CREATE/NARRATED/PRESENTATION/LONG-FORM/FILM/UGC). |
 | [`video-post`](./skills/video-post) | imported | Post-render verify, variants, thumbnails, archive. |
+| [`higgsfield-generate`](./skills/higgsfield-generate) | external bridge | Higgsfield CLI bridge for Marketing Studio, product photoshoots, Soul IDs, and virality scoring. |
 | [`character-creator`](./skills/character-creator) | imported | Go Bananas characters with multi-view reference sheets. |
 | [`character-library`](./skills/character-library) | imported | Audit / patch / delete entries in the shared GB library. |
 | [`seedance-prompts`](./skills/seedance-prompts) | imported | Seedance prompt reference library (incl. music-video patterns). |

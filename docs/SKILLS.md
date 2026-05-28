@@ -41,6 +41,7 @@ aliases as discovery handles rather than first-choice workflows.
 | 🎬 Video | [`movie-director`](#movie-director) | imported | Short-film production across 12 genres with interview/auto/hybrid entry modes. |
 | 🎬 Video | [`video-replicator`](#video-replicator) | imported (deep-surface) | 7-mode professional pipeline: COPY/CREATE/NARRATED/PRESENTATION/LONG-FORM/FILM/UGC. |
 | 🎬 Video | [`video-post`](#video-post) | imported | Post-render verify, social variants, thumbnails, archival. |
+| 🎬 Video | [`higgsfield-generate`](#higgsfield-generate) | external bridge | Higgsfield CLI bridge for Marketing Studio, product photoshoots, Soul IDs, and virality scoring. |
 | 🎭 Cast | [`character-creator`](#character-creator) | imported | Create Go Bananas characters with profile + multi-view reference sheets. |
 | 🎭 Cast | [`character-library`](#character-library) | imported | Audit, list, patch, and delete entries in the shared Go Bananas library. |
 | 🎞️ Prompts | [`seedance-prompts`](#seedance-prompts) | imported | Browse and apply the clean-room Seedance prompt reference library. |
@@ -67,7 +68,7 @@ clean adapter boundaries. Picks the right specialist instead of forcing the user
 **Key features:**
 - Single intake surface for both clone-style and from-scratch video requests
 - Adapter pattern preserves legacy engine quality without inheriting legacy mess
-- Hands off to a specialist (storyboard, clone-ad, movie-director, replicator, ugc, ...) once the mode is decided
+- Hands off to a specialist (storyboard, clone-ad, movie-director, replicator, Higgsfield bridge, ugc, ...) once the mode is decided
 - Useful as the default first-touch when the user's intent is ambiguous
 
 **When to reach for it:** Any open-ended video request — *"I want to make a video"*, *"can you do a video for X?"* —
@@ -300,6 +301,25 @@ the full sequence without manual authoring steps.
 **When to reach for it:** *"multi-shot prompt"*, *"shot sequence"*, *"cinematic prompt"*, *"video prompt from this image"*, *"shot breakdown"*.
 
 **Full guide:** [`skills/multi-shot-prompt/SKILL.md`](../skills/multi-shot-prompt/SKILL.md)
+
+---
+
+### higgsfield-generate
+
+**Role:** External-provider bridge for Higgsfield AI generation.
+**What it does:** Reuses the public MIT-licensed `higgsfield-ai/skills` command intelligence as a thin
+videoclaw skill. It routes agents to the official `higgsfield` CLI for Marketing Studio ad videos,
+product photoshoots, marketplace cards, Soul Character identity training, generic image/video generation,
+and finished-video virality scoring.
+**Key features:**
+- Keeps `higgsfield` optional rather than making it a videoclaw dependency
+- Uses Higgsfield's dedicated product-photoshoot and Marketing Studio commands instead of generic prompt guessing
+- Gives agents a clean hand-off rule: standalone Higgsfield URLs directly, project-tracked outputs through existing videoclaw artifacts
+- Captures the upstream source commit and MIT reuse boundary in the skill itself
+
+**When to reach for it:** *"use Higgsfield"*, *"make a UGC ad in Marketing Studio"*, *"product photoshoot"*, *"train Soul ID"*, *"score this video's virality"*.
+
+**Full guide:** [`skills/higgsfield-generate/SKILL.md`](../skills/higgsfield-generate/SKILL.md)
 
 ---
 

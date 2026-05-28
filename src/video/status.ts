@@ -11,6 +11,7 @@ import { summarizeArtifact, type ArtifactSummary } from './reference-sheets.js';
 import { readSceneCandidatesArtifact } from './scene-candidate-store.js';
 import { readSceneSelectionArtifact } from './scene-selection-store.js';
 import { summarizeSceneSelection, type SceneSelectionSummary } from './scene-selection.js';
+import { readMultiShotPromptArtifactSummary, type MultiShotPromptArtifactSummary } from './multi-shot-artifact.js';
 import { readProjectManifest, resolveProjectWorkspace } from './workspace.js';
 import type { LegacyImportSummary, VideoProductionMode } from './types.js';
 
@@ -75,6 +76,7 @@ export interface VideoProjectStatusReport {
   }>;
   referenceSheets: ArtifactSummary;
   sceneSelection: SceneSelectionSummary;
+  multiShotPrompt?: MultiShotPromptArtifactSummary;
 }
 
 export async function buildProjectStatusReport(
@@ -117,6 +119,7 @@ export async function buildProjectStatusReport(
     await readSceneCandidatesArtifact(workspace.root, slug),
     await readSceneSelectionArtifact(workspace.root, slug),
   );
+  const multiShotPrompt = await readMultiShotPromptArtifactSummary(workspace);
 
   const checkpoints = [];
   let completedStages: string[] = [];
@@ -291,6 +294,7 @@ export async function buildProjectStatusReport(
     checkpoints,
     referenceSheets,
     sceneSelection,
+    ...(multiShotPrompt ? { multiShotPrompt } : {}),
   };
 }
 

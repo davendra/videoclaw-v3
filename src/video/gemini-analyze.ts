@@ -154,6 +154,7 @@ export async function generateMultiShotWithGemini(input: {
   action?: string;
   location: string;
   timeOfDay: string;
+  repairInstructions?: string;
 }): Promise<string> {
   const endpoint =
     process.env.VCLAW_GEMINI_API_ENDPOINT ?? DEFAULT_GEMINI_ANALYZE_ENDPOINT;
@@ -164,6 +165,7 @@ export async function generateMultiShotWithGemini(input: {
     `Location: ${input.location}, ${input.timeOfDay}`,
     ...(input.character ? [`Character: ${input.character}`] : []),
     ...(input.action ? [`Action: ${input.action}`] : []),
+    ...(input.repairInstructions ? [`Repair required: ${input.repairInstructions}`] : []),
   ].join('\n');
   const promptText = `You are a cinematographer authoring a compressed timecoded multi-shot prompt for an AI video generator, conditioned on the attached reference image.\n\nRules:\n- Use timecodes in [MM:SS - MM:SS] format, contiguous from 00:00 to ${String(Math.floor(input.preset.totalSeconds / 60)).padStart(2,'0')}:${String(input.preset.totalSeconds % 60).padStart(2,'0')}\n- Each shot: ${input.preset.minShotSeconds}-${input.preset.maxShotSeconds}s; vary shot size, lens, angle, movement shot-to-shot (never repeat consecutively)\n- End with three metadata lines: Location, Style, Audio\n- Total prompt under ${input.preset.maxChars} characters\n- Return ONLY the prompt body, no explanation\n\nBrief:\n${brief}`;
 

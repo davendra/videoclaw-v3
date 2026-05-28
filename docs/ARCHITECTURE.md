@@ -65,7 +65,7 @@ extend it:
    - native in-process transports: `native-veo.ts` (→ `vclaw-cli`/Bun), `native-seedance.ts` (SUTUI_API_KEY), `native-runway.ts` (UseAPI Bearer, pure-Node fetch)
    - `review-ui.ts` — HTTP server (port 4317) that drives the browser-based storyboard review station at `tmp/review-station/index.html`. See `docs/REVIEW_UI_STORYBOARD_WORKFLOW.md`.
    - `prompt-quality.ts` — six Seedance-handbook anti-pattern checks (adjective soup, multiple actions, multiple camera moves, style-word overload, literary emotion language, overlong prompts) wired into `director-preflight`, warnings by default and promotable to blocking errors via `DIRECTOR_STRICT_PROMPT_QUALITY=1`; also houses `runMultiShotChecks`, the validator for the multi-shot prompt framework
-   - `multi-shot-prompt.ts` — standalone multi-shot cinematic prompt authoring utility: `cinematic-15s` preset (15 s total, 3–7 shots, ≤1500 chars, fixed Nolan/IMAX style + diegetic audio), `buildShotPlan` (deterministic timecode scaffold, non-repeating camera grid), and `generateMultiShotPromptText` (Gemini-backed or stub). Phase 1 only — per-scene integration into scene-candidates / storyboard is deferred to Phase 2.
+   - `multi-shot-prompt.ts` — multi-shot cinematic prompt authoring utility: provider-aware presets (`cinematic-15s`, `seedance-10s`, `veo-8s`, `runway-10s`), `buildShotPlan` (deterministic timecode scaffold, non-repeating camera grid), parsed `shots[]`, and `generateMultiShotPromptText` (Gemini-backed or stub). `video multi-shot --from-storyboard` hydrates prompts from project storyboard scenes and persists source metadata.
    - `dialogue-fit.ts` — short-clip dialogue duration checks wired into `director-preflight`, warnings by default and promotable to blocking errors via `DIRECTOR_STRICT_DIALOGUE_FIT=1`
    - `generation-telemetry.ts` — route/task/config/cost/timing/output telemetry recorded into project event ledgers and used by cost estimates when completed Seedance USD samples exist
 7. `src/video/providers/`
@@ -140,11 +140,13 @@ extend it:
 22. `video cost-estimate`
     - static default estimate with optional historical Seedance USD telemetry override
 23. `video multi-shot`
-    - standalone cinematic prompt-authoring utility (Phase 1; not yet wired into per-scene pipeline)
+    - cinematic prompt-authoring utility with standalone and project-storyboard entry paths
     - `--plan` generates a deterministic timecode scaffold + non-repeating camera grid
     - `--validate` (--file or stdin) checks prompt quality via `runMultiShotChecks`; nonzero exit on errors
     - `--auto --image <path>` calls Gemini to author prose from a reference image (offline-stubbable via `VCLAW_MULTISHOT_AUTO_STUB`)
-    - `--project <slug>` persists the result as a `multi-shot-prompt` artifact; omitting it runs standalone without touching any project
+    - `--from-storyboard --project <slug> --scene <sceneIndex>` derives action, characters, and default location from the project artifacts
+    - `--provider` / `--route` resolve provider-shaped presets when `--preset` is omitted
+    - `--project <slug>` persists the result as a `multi-shot-prompt` artifact; status/readiness summarize the latest artifact for review
 
 Compatibility aliases:
 

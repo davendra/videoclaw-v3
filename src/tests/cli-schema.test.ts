@@ -9,7 +9,7 @@ describe('cli-schema', () => {
     const dump = buildSchemaDump();
     assert.equal(typeof dump.version, 'string', 'version present');
     assert.ok(Array.isArray(dump.commands), 'commands is an array');
-    assert.equal(dump.commands.length, 70, 'expect exactly 70 curated commands; update this count when adding/removing entries');
+    assert.equal(dump.commands.length, 71, 'expect exactly 71 curated commands; update this count when adding/removing entries');
     const names = dump.commands.map((c) => c.name);
     const uniqueNames = new Set(names);
     assert.equal(uniqueNames.size, names.length, 'command names must be unique');
@@ -19,6 +19,11 @@ describe('cli-schema', () => {
     assert.equal(typeof dump.artifactSchemas, 'object');
     assert.ok('brief' in dump.artifactSchemas, 'brief schema embedded');
     assert.ok('storyboard' in dump.artifactSchemas, 'storyboard schema embedded');
+    assert.deepEqual(
+      dump.multiShot.presets.map((preset) => preset.name),
+      ['cinematic-15s', 'seedance-10s', 'veo-8s', 'runway-10s'],
+    );
+    assert.ok(dump.multiShot.issueExplanations.some((issue) => issue.code === 'multi-shot-timecode-total'));
   });
 
   it('every command has at least a name and a usage string', () => {

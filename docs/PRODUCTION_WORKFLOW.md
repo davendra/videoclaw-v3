@@ -93,19 +93,20 @@ building. Installed users should see `vclaw ...` examples.
 
 ## Authoring aid: multi-shot prompts
 
-For a single 15s cinematic clip, `vclaw video multi-shot` scaffolds a timecoded,
-non-repeating-camera shot plan (the `cinematic-15s` preset), validates the hard
-rules (char budget, contiguous timecodes, metadata block), and can author prose
-end-to-end with `--auto`:
+For a compressed cinematic clip, `vclaw video multi-shot` scaffolds a timecoded,
+non-repeating-camera shot plan (`cinematic-15s`, `seedance-10s`, `veo-8s`, or
+`runway-10s`), validates the hard rules (char budget, contiguous timecodes,
+metadata block), and can author prose end-to-end with `--auto`:
 
 ```bash
 vclaw video multi-shot --plan                       # timecode scaffold + camera grid
 vclaw video multi-shot --validate --file prompt.txt # enforce the rules (nonzero exit on error)
+vclaw video multi-shot --plan --from-storyboard --project demo --scene 0 --route seedance-direct
 ```
 
-This is a **standalone** authoring aid in Phase 1 — it sits beside the
-init→brief→…→publish pipeline rather than inside it. Phase 2 will integrate it
-into the per-scene flow (see [`docs/SCENE_CANDIDATES.md`](./SCENE_CANDIDATES.md)).
+It can run standalone, or hydrate action/characters/location defaults from a
+project storyboard scene with `--from-storyboard`. Project status/readiness
+summarize the latest persisted `multi-shot-prompt` artifact for review.
 Full reference: [`docs/CLI_REFERENCE.md`](./CLI_REFERENCE.md#multi-shot-prompt).
 
 ## Production Readiness Rules

@@ -163,6 +163,57 @@ describe('buildProjectReadiness', () => {
     }
   });
 
+  it('warns but does not block when an optional multi-shot prompt artifact is invalid', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'vclaw-readiness-multishot-'));
+    try {
+      const workspace = await ensureProjectWorkspace('alpha', root);
+      const now = new Date().toISOString();
+      await writeProjectManifest(workspace, {
+        slug: 'alpha',
+        productionMode: 'storyboard',
+        createdAt: now,
+        updatedAt: now,
+        pipeline: getBuiltinPipelineManifest('storyboard'),
+        currentStage: 'assets',
+        lastCompletedStage: 'storyboard',
+        lastCheckpointStatus: 'completed',
+      });
+      await writeArtifact(workspace, 'brief', createBriefArtifact({
+        title: 'Alpha',
+        intent: 'Alpha intent',
+        productionMode: 'storyboard',
+      }));
+      await writeArtifact(workspace, 'storyboard', createStoryboardArtifact({
+        projectSlug: 'alpha',
+        productionMode: 'storyboard',
+        scenes: [{ sceneIndex: 0, description: 'Scene one' }],
+      }));
+      await writeArtifact(workspace, 'asset-manifest', {
+        projectSlug: 'alpha',
+        assets: [],
+      });
+      await writeArtifact(workspace, 'multi-shot-prompt', {
+        preset: 'cinematic-15s',
+        location: 'Alpha',
+        timeOfDay: 'night',
+        shots: [],
+        promptText: 'bad prompt',
+        charCount: 10,
+        valid: false,
+        issues: [{ code: 'multi-shot-timecode-parse', severity: 'error', message: 'No parseable timecodes.' }],
+        generatedAt: now,
+      });
+
+      const readiness = await buildProjectReadiness('alpha', root);
+      assert.equal(readiness.ready, true);
+      assert.equal(readiness.multiShotPrompt?.valid, false);
+      assert.equal(readiness.multiShotPrompt?.issueCount, 1);
+      assert.ok(readiness.warnings.some((warning) => warning.includes('multi-shot-prompt-invalid')));
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
   it('warns when director identity sheets have thin coverage', async () => {
     const root = await mkdtemp(join(tmpdir(), 'vclaw-readiness-refsheet-'));
     try {

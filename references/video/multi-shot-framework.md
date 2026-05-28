@@ -37,6 +37,31 @@ All four presets share the same Nolan styleLine and diegetic audioLine — only
 the hard provider constraints differ. Override the lines with `--style-line` /
 `--audio-line` on the CLI if you want a different look.
 
+For machine-readable discovery, use:
+
+```
+vclaw video multi-shot --presets
+vclaw schema --json
+```
+
+The schema dump embeds the same preset registry and stable repair guidance for
+multi-shot validation issue codes.
+
+For existing videoclaw projects, hydrate the prompt request from a storyboard
+scene instead of retyping context:
+
+```
+vclaw video multi-shot --plan --from-storyboard \
+  --project <slug> --scene <sceneIndex> --route seedance-direct
+
+vclaw video multi-shot --auto --image ref.png --from-storyboard \
+  --project <slug> --scene <sceneIndex> --provider veo
+```
+
+This reads the project brief and storyboard artifact, carries scene characters
+into the request, uses the scene description as the default action, and records
+`source` metadata on generated `multi-shot-prompt` artifacts.
+
 ---
 
 ## 5-Step Workflow
@@ -167,11 +192,21 @@ structure chosen and one tweak to try if the first generation doesn't land.
 To validate a finished prompt against the `cinematic-15s` preset rules:
 
 ```
-vclaw video multi-shot --validate --file <path>
+vclaw video multi-shot --validate --file <path> --explain-issues
 ```
 
 Exit 0 = clean. Issues are returned as structured JSON with `code`, `severity`,
-and `message` fields.
+and `message` fields. With `--explain-issues`, the JSON also includes stable
+`summary` / `suggestedFix` guidance for each unique issue code.
+
+For conservative deterministic repair:
+
+```
+vclaw video multi-shot --fix --file <path> --location "Tokyo alley" --time "night"
+```
+
+The fix path normalizes spacing and can append missing Location/Style/Audio
+metadata. It intentionally does not rewrite shot prose or timecodes.
 
 ---
 

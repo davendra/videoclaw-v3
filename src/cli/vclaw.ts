@@ -12,10 +12,11 @@ import { addCharacterProfile, listCharacterProfiles, readCharacterProfile } from
 import { buildCharacterConsistencyReport } from '../video/character-consistency.js';
 import { autoFixDirectorStoryboardContent, runDirectorPreflight } from '../video/director-preflight.js';
 import { generateAnalyzeOutputWithGemini } from '../video/gemini-analyze.js';
+import type { BriefArtifact, StoryboardArtifact } from '../video/artifacts.js';
 import { listPlaybooks, readPlaybook } from '../video/playbooks.js';
 import { listPromptReferences, readPromptReference } from '../video/prompt-library.js';
-import { CINEMATIC_15S_PRESET, buildShotPlan, generateMultiShotPromptText, resolvePreset, type MultiShotPreset } from '../video/multi-shot-prompt.js';
-import { runMultiShotChecks } from '../video/prompt-quality.js';
+import { CINEMATIC_15S_PRESET, buildShotPlan, generateMultiShotPromptText, listMultiShotPresets, parseMultiShotPrompt, resolvePreset, type MultiShotPreset } from '../video/multi-shot-prompt.js';
+import { explainPromptQualityIssues, runMultiShotChecks } from '../video/prompt-quality.js';
 import { getBuiltinPipelineManifest } from '../video/pipeline-manifest.js';
 import { writeStageCheckpoint } from '../video/checkpoints.js';
 import { buildProjectStatusReport } from '../video/status.js';
@@ -1972,8 +1973,29 @@ function parsePositiveIntegerFlag(args: string[], flag: string): number | undefi
   return value;
 }
 
+function parseNonNegativeIntegerFlag(args: string[], flag: string): number | undefined {
+  const raw = parseFlagValue(args, flag);
+  if (raw === undefined) return undefined;
+  const value = Number(raw);
+  if (!Number.isInteger(value) || value < 0) {
+    throw new Error(`video multi-shot: ${flag} must be a non-negative integer, got: ${raw}`);
+  }
+  return value;
+}
+
+function multiShotPresetNameForProviderHint(hint: string | undefined): string | undefined {
+  if (!hint) return undefined;
+  const normalized = hint.toLowerCase();
+  if (normalized.includes('seedance')) return 'seedance-10s';
+  if (normalized.includes('veo') || normalized.includes('google-flow') || normalized.includes('flow')) return 'veo-8s';
+  if (normalized.includes('runway')) return 'runway-10s';
+  return undefined;
+}
+
 function resolveMultiShotPreset(args: string[]): MultiShotPreset {
-  const presetName = parseFlagValue(args, '--preset');
+  const presetName =
+    parseFlagValue(args, '--preset') ??
+    multiShotPresetNameForProviderHint(parseFlagValue(args, '--provider') ?? parseFlagValue(args, '--route'));
   let preset: MultiShotPreset;
   try {
     preset = { ...resolvePreset(presetName) };
@@ -1992,32 +2014,259 @@ function resolveMultiShotPreset(args: string[]): MultiShotPreset {
   return preset;
 }
 
+interface MultiShotStoryboardSource {
+  kind: 'storyboard-scene';
+  projectSlug: string;
+  sceneIndex: number;
+  storyboardDescription: string;
+  characters: string[];
+  briefTitle?: string;
+  presetSource: 'explicit' | 'provider-route' | 'default';
+}
+
+interface MultiShotStoryboardContext {
+  source: MultiShotStoryboardSource;
+  location: string;
+  timeOfDay: string;
+  character: string | undefined;
+  action: string;
+}
+
+function multiShotPresetSource(args: string[]): MultiShotStoryboardSource['presetSource'] {
+  if (parseFlagValue(args, '--preset')) return 'explicit';
+  if (multiShotPresetNameForProviderHint(parseFlagValue(args, '--provider') ?? parseFlagValue(args, '--route'))) {
+    return 'provider-route';
+  }
+  return 'default';
+}
+
+async function readOptionalJsonArtifact<T>(
+  workspace: Awaited<ReturnType<typeof ensureProjectWorkspace>>,
+  name: Parameters<typeof artifactPathFor>[1],
+): Promise<T | undefined> {
+  const path = artifactPathFor(workspace, name);
+  if (!existsSync(path)) return undefined;
+  return JSON.parse(await readFile(path, 'utf-8')) as T;
+}
+
+async function buildMultiShotStoryboardContext(
+  args: string[],
+): Promise<MultiShotStoryboardContext | undefined> {
+  if (!args.includes('--from-storyboard')) return undefined;
+  const projectSlug = parseFlagValue(args, '--project');
+  if (!projectSlug) {
+    throw new Error('video multi-shot --from-storyboard requires --project <slug>');
+  }
+  const sceneIndex = parseNonNegativeIntegerFlag(args, '--scene');
+  if (sceneIndex === undefined) {
+    throw new Error('video multi-shot --from-storyboard requires --scene <sceneIndex>');
+  }
+  const root = parseFlagValue(args, '--root') ?? process.cwd();
+  const workspace = await ensureProjectWorkspace(projectSlug, root);
+  const storyboard = await readOptionalJsonArtifact<StoryboardArtifact>(workspace, 'storyboard');
+  if (!storyboard) {
+    throw new Error(`video multi-shot --from-storyboard: missing storyboard artifact for project ${projectSlug}`);
+  }
+  const scene = storyboard.scenes.find((entry) => entry.sceneIndex === sceneIndex);
+  if (!scene) {
+    const available = storyboard.scenes.map((entry) => entry.sceneIndex).join(', ');
+    throw new Error(
+      `video multi-shot --from-storyboard: scene ${sceneIndex} not found in project ${projectSlug}. ` +
+      `Available scene indices: ${available || '(none)'}`,
+    );
+  }
+  const brief = await readOptionalJsonArtifact<BriefArtifact>(workspace, 'brief');
+  const characters = scene.characters ?? [];
+  const action = parseFlagValue(args, '--action') ?? scene.scenePrompt?.animationPrompt ?? scene.description;
+  const character = parseFlagValue(args, '--character') ?? (characters.length > 0 ? characters.join(', ') : undefined);
+  const location = parseFlagValue(args, '--location') ?? brief?.title ?? `Project ${projectSlug}`;
+  const timeOfDay = parseFlagValue(args, '--time') ?? 'natural daylight';
+  return {
+    source: {
+      kind: 'storyboard-scene',
+      projectSlug,
+      sceneIndex,
+      storyboardDescription: scene.description,
+      characters,
+      ...(brief?.title ? { briefTitle: brief.title } : {}),
+      presetSource: multiShotPresetSource(args),
+    },
+    location,
+    timeOfDay,
+    character,
+    action,
+  };
+}
+
+function buildMultiShotRepairInstructions(issues: ReturnType<typeof runMultiShotChecks>): string {
+  if (issues.length === 0) return '';
+  const lines = issues.map((issue) => `${issue.code}: ${issue.message}`);
+  const fixes = explainPromptQualityIssues(issues).map((explanation) => `${explanation.code}: ${explanation.suggestedFix}`);
+  return [...lines, ...fixes].join(' | ');
+}
+
+function normalizePromptSpacing(promptText: string): string {
+  return promptText
+    .split('\n')
+    .map((line) => line.trimEnd())
+    .join('\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+
+function applyConservativeMultiShotFixes(
+  promptText: string,
+  preset: MultiShotPreset,
+  location: string | undefined,
+  timeOfDay: string | undefined,
+): { promptText: string; appliedFixes: string[] } {
+  let fixed = normalizePromptSpacing(promptText);
+  const appliedFixes: string[] = [];
+  if (fixed !== promptText.trim()) appliedFixes.push('normalized-spacing');
+
+  const metadataLines: string[] = [];
+  if (!/^Location:\s*\S/m.test(fixed) && location) {
+    metadataLines.push(`Location: ${timeOfDay ? `${location}, ${timeOfDay}` : location}`);
+  }
+  if (!/^Style:\s*\S/m.test(fixed)) {
+    metadataLines.push(`Style: ${preset.styleLine}`);
+  }
+  if (!/^Audio:\s*\S/m.test(fixed)) {
+    metadataLines.push(`Audio: ${preset.audioLine}`);
+  }
+  if (metadataLines.length > 0) {
+    fixed = `${fixed}\n\n${metadataLines.join('\n')}`;
+    appliedFixes.push('added-metadata');
+  }
+  return { promptText: fixed, appliedFixes };
+}
+
 async function handleVideoMultiShot(args: string[]): Promise<void> {
   const preset = resolveMultiShotPreset(args);
   const isValidate = args.includes('--validate');
   const isPlan = args.includes('--plan');
 
+  if (args.includes('--presets')) {
+    process.stdout.write(`${JSON.stringify({ presets: listMultiShotPresets() }, null, 2)}\n`);
+    return;
+  }
+
+  if (args.includes('--fix')) {
+    const file = parseFlagValue(args, '--file');
+    let promptText: string;
+    if (file) {
+      if (!existsSync(file)) {
+        throw new Error(`video multi-shot --fix: file not found: ${file}`);
+      }
+      promptText = await readFile(file, 'utf-8');
+    } else {
+      if (process.stdin.isTTY) {
+        throw new Error('video multi-shot --fix: pipe a prompt via stdin or use --file <path>');
+      }
+      promptText = await new Promise<string>((resolve) => {
+        let buf = '';
+        process.stdin.setEncoding('utf-8');
+        process.stdin.on('data', (chunk) => (buf += chunk));
+        process.stdin.on('end', () => resolve(buf));
+      });
+    }
+    const originalIssues = runMultiShotChecks(promptText, preset);
+    const originalValid = originalIssues.every((i) => i.severity !== 'error');
+    const fixed = applyConservativeMultiShotFixes(
+      promptText,
+      preset,
+      parseFlagValue(args, '--location'),
+      parseFlagValue(args, '--time'),
+    );
+    const fixedIssues = runMultiShotChecks(fixed.promptText, preset);
+    const fixedValid = fixedIssues.every((i) => i.severity !== 'error');
+    process.stdout.write(`${JSON.stringify({
+      original: {
+        valid: originalValid,
+        charCount: promptText.length,
+        issues: originalIssues,
+        explanations: explainPromptQualityIssues(originalIssues),
+      },
+      fixed: {
+        promptText: fixed.promptText,
+        shots: parseMultiShotPrompt(fixed.promptText),
+        valid: fixedValid,
+        charCount: fixed.promptText.length,
+        issues: fixedIssues,
+        explanations: explainPromptQualityIssues(fixedIssues),
+      },
+      appliedFixes: fixed.appliedFixes,
+    }, null, 2)}\n`);
+    if (!fixedValid) process.exitCode = 1;
+    return;
+  }
+
+  const storyboardContext = await buildMultiShotStoryboardContext(args);
+
   if (args.includes('--auto')) {
     const image = parseFlagValue(args, '--image');
     if (!image) throw new Error('video multi-shot --auto requires --image <path>');
+    const location = storyboardContext?.location ?? parseFlagValue(args, '--location') ?? '';
+    const timeOfDay = storyboardContext?.timeOfDay ?? parseFlagValue(args, '--time') ?? 'natural daylight';
+    const character = storyboardContext?.character ?? parseFlagValue(args, '--character');
+    const action = storyboardContext?.action ?? parseFlagValue(args, '--action');
+
+    if (args.includes('--dry-run')) {
+      process.stdout.write(`${JSON.stringify({
+        mode: 'auto',
+        dryRun: true,
+        preset,
+        ...(storyboardContext ? { source: storyboardContext.source } : {}),
+        input: {
+          imagePath: image,
+          imageExists: existsSync(image),
+          character: character ?? null,
+          action: action ?? null,
+          location,
+          timeOfDay,
+        },
+        validationContract: {
+          totalSeconds: preset.totalSeconds,
+          shotDuration: [preset.minShotSeconds, preset.maxShotSeconds],
+          shotCount: [preset.minShots, preset.maxShots],
+          maxChars: preset.maxChars,
+          requiresMetadata: ['Location', 'Style', 'Audio'],
+        },
+      }, null, 2)}\n`);
+      return;
+    }
+
     // The live Gemini path reads the image bytes, so the file must exist. Skip
     // this check on the stub path (VCLAW_MULTISHOT_AUTO_STUB), which never reads
     // the image and is how the offline tests exercise --auto.
     if (!process.env.VCLAW_MULTISHOT_AUTO_STUB && !existsSync(image)) {
       throw new Error(`video multi-shot --auto: image not found: ${image}`);
     }
-    const location = parseFlagValue(args, '--location') ?? '';
-    const timeOfDay = parseFlagValue(args, '--time') ?? 'natural daylight';
-    const promptText = await generateMultiShotPromptText({
-      preset,
-      imagePath: image,
-      character: parseFlagValue(args, '--character'),
-      action: parseFlagValue(args, '--action'),
-      location,
-      timeOfDay,
-    });
-    const issues = runMultiShotChecks(promptText, preset);
-    const valid = issues.every((i) => i.severity !== 'error');
+    const retryInvalid = parseNonNegativeIntegerFlag(args, '--retry-invalid') ?? 0;
+    const attempts: Array<{
+      attempt: number;
+      valid: boolean;
+      charCount: number;
+      issues: ReturnType<typeof runMultiShotChecks>;
+    }> = [];
+    let promptText = '';
+    let issues: ReturnType<typeof runMultiShotChecks> = [];
+    let valid = false;
+    for (let attempt = 1; attempt <= retryInvalid + 1; attempt += 1) {
+      promptText = await generateMultiShotPromptText({
+        preset,
+        imagePath: image,
+        character,
+        action,
+        location,
+        timeOfDay,
+        ...(attempt > 1 ? { repairInstructions: buildMultiShotRepairInstructions(issues) } : {}),
+      });
+      issues = runMultiShotChecks(promptText, preset);
+      valid = issues.every((i) => i.severity !== 'error');
+      attempts.push({ attempt, valid, charCount: promptText.length, issues });
+      if (valid) break;
+    }
 
     if (args.includes('--raw')) {
       process.stdout.write(`${promptText}\n`);
@@ -2030,13 +2279,13 @@ async function handleVideoMultiShot(args: string[]): Promise<void> {
       preset: preset.name,
       location,
       timeOfDay,
-      // Intentionally empty in this phase: the Gemini path returns prose only.
-      // Structured per-shot parsing of the authored prompt is Phase 2 work.
-      shots: [] as unknown[],
+      ...(storyboardContext ? { source: storyboardContext.source } : {}),
+      shots: parseMultiShotPrompt(promptText),
       promptText,
       charCount: promptText.length,
       valid,
       issues,
+      attempts,
       generatedAt: new Date().toISOString(),
     };
     if (projectSlug) {
@@ -2070,7 +2319,12 @@ async function handleVideoMultiShot(args: string[]): Promise<void> {
     }
     const issues = runMultiShotChecks(promptText, preset);
     const valid = issues.every((i) => i.severity !== 'error');
-    process.stdout.write(`${JSON.stringify({ valid, charCount: promptText.length, issues }, null, 2)}\n`);
+    process.stdout.write(`${JSON.stringify({
+      valid,
+      charCount: promptText.length,
+      issues,
+      ...(args.includes('--explain-issues') ? { explanations: explainPromptQualityIssues(issues) } : {}),
+    }, null, 2)}\n`);
     if (!valid) process.exitCode = 1;
     return;
   }
@@ -2092,7 +2346,19 @@ async function handleVideoMultiShot(args: string[]): Promise<void> {
     }
   }
   const plan = buildShotPlan(preset, { shots, seed });
-  process.stdout.write(`${JSON.stringify({ preset, shots: plan.shots }, null, 2)}\n`);
+  process.stdout.write(`${JSON.stringify({
+    preset,
+    ...(storyboardContext ? {
+      source: storyboardContext.source,
+      input: {
+        location: storyboardContext.location,
+        timeOfDay: storyboardContext.timeOfDay,
+        character: storyboardContext.character ?? null,
+        action: storyboardContext.action,
+      },
+    } : {}),
+    shots: plan.shots,
+  }, null, 2)}\n`);
 }
 
 async function handleVideoImportLegacy(args: string[]): Promise<void> {

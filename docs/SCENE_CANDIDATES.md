@@ -494,7 +494,7 @@ you genuinely want to re-migrate, remove
 ## Where to read next
 
 - [`docs/CLI_REFERENCE.md`](./CLI_REFERENCE.md) — full command reference, including the scene-candidates commands in the lifecycle.
-- [`vclaw video multi-shot`](./CLI_REFERENCE.md#multi-shot-prompt) — standalone timecoded multi-shot prompt authoring aid (the `cinematic-15s` preset). Today it runs independently of a project; **Phase 2 will wire it into the per-scene flow** so a scene candidate can carry a multi-shot prompt directly. See [`docs/PROMPT_QUALITY.md`](./PROMPT_QUALITY.md) for the enforcement rules.
+- [`vclaw video multi-shot`](./CLI_REFERENCE.md#multi-shot-prompt) — timecoded multi-shot prompt authoring aid with standalone and project-storyboard entry paths. Use `--from-storyboard --project <slug> --scene <sceneIndex>` to derive the prompt context from a scene and persist `source` metadata on the `multi-shot-prompt` artifact. See [`docs/PROMPT_QUALITY.md`](./PROMPT_QUALITY.md) for the enforcement rules.
 - [`docs/ARCHITECTURE.md`](./ARCHITECTURE.md) — where scene candidates sit in the layered flow.
 - [`docs/REFERENCE_SHEETS.md`](./REFERENCE_SHEETS.md) — the input-layer counterpart.
 - [`docs/OBSIDIAN.md`](./OBSIDIAN.md) — how the Obsidian vault exposes candidate counts, per-scene notes, and selection-coverage.

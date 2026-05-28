@@ -16,6 +16,17 @@ function run(args: string[], input?: string) {
 }
 
 describe('vclaw video multi-shot --plan', () => {
+  it('--presets emits machine-readable preset metadata', () => {
+    const res = run(['video', 'multi-shot', '--presets']);
+    assert.equal(res.status, 0, res.stderr);
+    const parsed = JSON.parse(res.stdout);
+    assert.deepEqual(
+      parsed.presets.map((preset: any) => preset.name),
+      ['cinematic-15s', 'seedance-10s', 'veo-8s', 'runway-10s'],
+    );
+    assert.equal(parsed.presets.find((preset: any) => preset.name === 'runway-10s').maxChars, 1000);
+  });
+
   it('emits a plan whose shots total 15s', () => {
     const res = run(['video', 'multi-shot', '--plan', '--shots', '5', '--seed', '7']);
     assert.equal(res.status, 0, res.stderr);
@@ -117,6 +128,16 @@ describe('vclaw video multi-shot --validate', () => {
     assert.equal(parsed.valid, false);
     assert.ok(parsed.issues.some((i: any) => i.code === 'multi-shot-timecode-total'));
   });
+
+  it('--explain-issues adds stable repair guidance for validation failures', () => {
+    const bad = VALID.replace('[00:12 - 00:15]', '[00:12 - 00:14]');
+    const res = run(['video', 'multi-shot', '--validate', '--explain-issues'], bad);
+    assert.notEqual(res.status, 0);
+    const parsed = JSON.parse(res.stdout);
+    assert.equal(parsed.valid, false);
+    assert.ok(parsed.explanations.some((i: any) => i.code === 'multi-shot-timecode-total'));
+    assert.match(parsed.explanations[0].suggestedFix, /\S/);
+  });
 });
 
 describe('vclaw video multi-shot --auto (stubbed) + --project', () => {
@@ -131,6 +152,67 @@ describe('vclaw video multi-shot --auto (stubbed) + --project', () => {
     'Style: Grounded realism. In the style of a Christopher Nolan movie.',
     'Audio: Diegetic sound only.',
   ].join('\n');
+
+  const VEO_STUB_PROMPT = [
+    '[00:00 - 00:03] Wide, 24mm, low angle, static — Meera pulls Rani away from the rooftop edge.',
+    '',
+    '[00:03 - 00:06] Medium, 50mm, eye-level, push-in — lightning flashes behind them as they recover.',
+    '',
+    '[00:06 - 00:08] Close-up, 85mm, high angle, handheld — Rani looks back toward the skyline.',
+    '',
+    'Location: Rooftop Rescue, natural daylight.',
+    'Style: Grounded realism. In the style of a Christopher Nolan movie.',
+    'Audio: Diegetic sound only.',
+  ].join('\n');
+
+  it('--from-storyboard hydrates a plan from a project scene and provider route', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'vclaw-ms-story-'));
+    try {
+      assert.equal(run(['video', 'init', 'ms-story', '--root', root]).status, 0);
+      assert.equal(
+        run([
+          'video', 'brief',
+          '--project', 'ms-story',
+          '--root', root,
+          '--title', 'Market Chase',
+          '--intent', 'A kinetic rooftop chase.',
+        ]).status,
+        0,
+      );
+      assert.equal(
+        run([
+          'video', 'storyboard',
+          '--project', 'ms-story',
+          '--root', root,
+          '--scene', 'Tara sprints across a crowded neon market while guards close in.',
+          '--scene-character', '0:Tara',
+        ]).status,
+        0,
+      );
+
+      const res = run([
+        'video', 'multi-shot',
+        '--plan',
+        '--from-storyboard',
+        '--project', 'ms-story',
+        '--root', root,
+        '--scene', '0',
+        '--route', 'seedance-direct',
+        '--seed', '3',
+      ]);
+      assert.equal(res.status, 0, res.stdout + res.stderr);
+      const parsed = JSON.parse(res.stdout);
+      assert.equal(parsed.preset.name, 'seedance-10s');
+      assert.equal(parsed.source.kind, 'storyboard-scene');
+      assert.equal(parsed.source.sceneIndex, 0);
+      assert.equal(parsed.source.presetSource, 'provider-route');
+      assert.equal(parsed.input.location, 'Market Chase');
+      assert.equal(parsed.input.character, 'Tara');
+      assert.match(parsed.input.action, /Tara sprints/);
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
 
   it('authors via stub, validates, persists artifact under --project', async () => {
     const root = await mkdtemp(join(tmpdir(), 'vclaw-ms-proj-'));
@@ -151,6 +233,9 @@ describe('vclaw video multi-shot --auto (stubbed) + --project', () => {
       assert.equal(res.status, 0, res.stdout + res.stderr);
       const parsed = JSON.parse(res.stdout);
       assert.equal(parsed.valid, true);
+      assert.equal(parsed.shots.length, 3);
+      assert.equal(parsed.shots[1].movement, 'push-in');
+      assert.equal(parsed.attempts.length, 1);
 
       const artifact = JSON.parse(
         await readFile(join(root, 'projects', 'ms-demo', 'artifacts', 'multi-shot-prompt.json'), 'utf-8'),
@@ -158,6 +243,123 @@ describe('vclaw video multi-shot --auto (stubbed) + --project', () => {
       assert.equal(artifact.preset, 'cinematic-15s');
       assert.equal(artifact.location, 'Open field');
       assert.ok(artifact.promptText.includes('00:00 - 00:05'));
+      assert.equal(artifact.shots.length, 3);
+      assert.equal(artifact.shots[0].description, 'a figure stands in a field.');
+      assert.equal(artifact.attempts.length, 1);
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  it('--dry-run prints the resolved auto contract without requiring an image or Gemini key', () => {
+    const res = run([
+      'video', 'multi-shot', '--auto', '--dry-run',
+      '--image', '/tmp/does-not-exist.png',
+      '--preset', 'veo-8s',
+      '--location', 'Rooftop',
+      '--time', 'night',
+    ]);
+    assert.equal(res.status, 0, res.stderr);
+    const parsed = JSON.parse(res.stdout);
+    assert.equal(parsed.dryRun, true);
+    assert.equal(parsed.preset.name, 'veo-8s');
+    assert.equal(parsed.input.imageExists, false);
+    assert.deepEqual(parsed.validationContract.shotCount, [2, 4]);
+  });
+
+  it('--from-storyboard --auto persists source metadata and hydrated inputs', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'vclaw-ms-story-auto-'));
+    try {
+      assert.equal(run(['video', 'init', 'ms-story-auto', '--root', root]).status, 0);
+      assert.equal(
+        run([
+          'video', 'brief',
+          '--project', 'ms-story-auto',
+          '--root', root,
+          '--title', 'Rooftop Rescue',
+          '--intent', 'A rescue scene on a rain-soaked rooftop.',
+        ]).status,
+        0,
+      );
+      assert.equal(
+        run([
+          'video', 'storyboard',
+          '--project', 'ms-story-auto',
+          '--root', root,
+          '--scene', 'Meera pulls Rani away from the rooftop edge as lightning hits the skyline.',
+          '--scene-character', '0:Meera',
+          '--scene-character', '0:Rani',
+        ]).status,
+        0,
+      );
+
+      const stubFile = join(root, 'stub.txt');
+      await writeFile(stubFile, VEO_STUB_PROMPT, 'utf-8');
+      const res = spawnSync(
+        process.execPath,
+        [
+          cliPath, 'video', 'multi-shot',
+          '--auto',
+          '--image', '/tmp/ref.png',
+          '--from-storyboard',
+          '--project', 'ms-story-auto',
+          '--root', root,
+          '--scene', '0',
+          '--provider', 'veo',
+        ],
+        { cwd: process.cwd(), encoding: 'utf-8', env: { ...process.env, VCLAW_MULTISHOT_AUTO_STUB: stubFile } },
+      );
+      assert.equal(res.status, 0, res.stdout + res.stderr);
+      const parsed = JSON.parse(res.stdout);
+      assert.equal(parsed.preset, 'veo-8s');
+      assert.equal(parsed.source.projectSlug, 'ms-story-auto');
+      assert.equal(parsed.source.characters.length, 2);
+      assert.equal(parsed.location, 'Rooftop Rescue');
+
+      const artifact = JSON.parse(
+        await readFile(join(root, 'projects', 'ms-story-auto', 'artifacts', 'multi-shot-prompt.json'), 'utf-8'),
+      );
+      assert.equal(artifact.source.kind, 'storyboard-scene');
+      assert.equal(artifact.source.sceneIndex, 0);
+      assert.equal(artifact.source.presetSource, 'provider-route');
+      assert.equal(artifact.location, 'Rooftop Rescue');
+      assert.equal(artifact.timeOfDay, 'natural daylight');
+      assert.equal(artifact.shots.length, 3);
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  it('--retry-invalid retries stubbed invalid output and persists only the final attempt', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'vclaw-ms-retry-'));
+    try {
+      const init = run(['video', 'init', 'ms-retry', '--root', root]);
+      assert.equal(init.status, 0, init.stderr);
+
+      const badPrompt = STUB_PROMPT.replace('[00:10 - 00:15]', '[00:10 - 00:14]');
+      const stubFile = join(root, 'stub-sequence.json');
+      await writeFile(stubFile, JSON.stringify([badPrompt, STUB_PROMPT]), 'utf-8');
+
+      const res = spawnSync(
+        process.execPath,
+        [cliPath, 'video', 'multi-shot', '--auto', '--image', '/tmp/ref.png',
+         '--location', 'Open field', '--time', 'golden hour',
+         '--retry-invalid', '1', '--project', 'ms-retry', '--root', root],
+        { cwd: process.cwd(), encoding: 'utf-8', env: { ...process.env, VCLAW_MULTISHOT_AUTO_STUB: stubFile } },
+      );
+      assert.equal(res.status, 0, res.stdout + res.stderr);
+      const parsed = JSON.parse(res.stdout);
+      assert.equal(parsed.valid, true);
+      assert.equal(parsed.attempts.length, 2);
+      assert.equal(parsed.attempts[0].valid, false);
+      assert.equal(parsed.attempts[1].valid, true);
+
+      const artifact = JSON.parse(
+        await readFile(join(root, 'projects', 'ms-retry', 'artifacts', 'multi-shot-prompt.json'), 'utf-8'),
+      );
+      assert.equal(artifact.valid, true);
+      assert.equal(artifact.attempts.length, 2);
+      assert.ok(artifact.promptText.includes('[00:10 - 00:15]'));
     } finally {
       await rm(root, { recursive: true, force: true });
     }
@@ -176,6 +378,32 @@ describe('vclaw video multi-shot --auto (stubbed) + --project', () => {
       assert.equal(res.status, 0, res.stderr);
       assert.ok(res.stdout.trimStart().startsWith('[00:00'));
       assert.ok(!res.stdout.includes('"valid"'));
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
+});
+
+describe('vclaw video multi-shot --fix', () => {
+  it('adds missing metadata and returns a valid fixed prompt when deterministic inputs are supplied', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'vclaw-ms-fix-'));
+    try {
+      const file = join(dir, 'prompt.txt');
+      const missingMetadata = [
+        '[00:00 - 00:05] Wide, 24mm, low angle, static — a figure stands in a field.',
+        '',
+        '[00:05 - 00:10] Medium, 50mm, eye-level, push-in — wind moves the grass.',
+        '',
+        '[00:10 - 00:15] Close-up, 85mm, high angle, handheld — the figure turns to camera.',
+      ].join('\n');
+      await writeFile(file, missingMetadata, 'utf-8');
+      const res = run(['video', 'multi-shot', '--fix', '--file', file, '--location', 'Open field', '--time', 'golden hour']);
+      assert.equal(res.status, 0, res.stdout + res.stderr);
+      const parsed = JSON.parse(res.stdout);
+      assert.equal(parsed.original.valid, false);
+      assert.equal(parsed.fixed.valid, true);
+      assert.ok(parsed.appliedFixes.includes('added-metadata'));
+      assert.equal(parsed.fixed.shots.length, 3);
     } finally {
       await rm(dir, { recursive: true, force: true });
     }

@@ -80,6 +80,10 @@ export function knownPresetNames(): readonly string[] {
   return Array.from(PRESET_REGISTRY.keys());
 }
 
+export function listMultiShotPresets(): readonly MultiShotPreset[] {
+  return Array.from(PRESET_REGISTRY.values());
+}
+
 export function resolvePreset(name?: string): MultiShotPreset {
   if (name === undefined) return CINEMATIC_15S_PRESET;
   const preset = PRESET_REGISTRY.get(name);
@@ -108,6 +112,10 @@ export interface ShotSlot {
   lens: string;
   angle: string;
   movement: string;
+}
+
+export interface ParsedMultiShotShot extends ShotSlot {
+  description: string;
 }
 
 export interface ShotPlan {
@@ -253,6 +261,58 @@ export function composePromptText(
 
 export { SHOT_SIZES, LENSES, ANGLES, MOVEMENTS, SHOT_TYPE_VOCABULARY };
 
+let stubSequenceIndex = 0;
+
+const TIMECODE_LINE_RE = /^\s*\[(\d{2}):(\d{2})\s*-\s*(\d{2}):(\d{2})\]\s*(.*)$/;
+
+function secondsFromParts(mm: string, ss: string): number {
+  return Number(mm) * 60 + Number(ss);
+}
+
+function findCanonicalTerm(haystack: string, pool: readonly string[]): string {
+  const normalizedHaystack = haystack.toLowerCase().replace(/-/g, ' ');
+  for (const term of [...pool].sort((a, b) => b.length - a.length)) {
+    const normalizedTerm = term.toLowerCase().replace(/-/g, ' ');
+    if (normalizedHaystack.includes(normalizedTerm)) return term;
+  }
+  return '';
+}
+
+function stripShotLead(text: string): string {
+  const dashIndex = text.search(/\s[—–-]\s/);
+  if (dashIndex >= 0) {
+    return text.slice(dashIndex + 3).trim();
+  }
+  return text
+    .replace(/^(?:[^,.]+,\s*){1,4}/, '')
+    .replace(/^[:.]\s*/, '')
+    .trim();
+}
+
+export function parseMultiShotPrompt(promptText: string): ParsedMultiShotShot[] {
+  const shots: ParsedMultiShotShot[] = [];
+  const lines = promptText.split('\n').filter((line) => line.trim().length > 0);
+  for (const line of lines) {
+    const match = TIMECODE_LINE_RE.exec(line);
+    if (!match) continue;
+    const start = secondsFromParts(match[1], match[2]);
+    const end = secondsFromParts(match[3], match[4]);
+    const body = match[5].trim();
+    shots.push({
+      index: shots.length,
+      start,
+      end,
+      timecode: `[${formatTimecode(start)} - ${formatTimecode(end)}]`,
+      shotSize: findCanonicalTerm(body, SHOT_SIZES),
+      lens: findCanonicalTerm(body, LENSES),
+      angle: findCanonicalTerm(body, ANGLES),
+      movement: findCanonicalTerm(body, MOVEMENTS),
+      description: stripShotLead(body),
+    });
+  }
+  return shots;
+}
+
 // Authors a finished prompt body. When VCLAW_MULTISHOT_AUTO_STUB points to a file,
 // its contents are returned verbatim (test/offline path). Otherwise calls Gemini.
 export async function generateMultiShotPromptText(input: {
@@ -262,10 +322,22 @@ export async function generateMultiShotPromptText(input: {
   action?: string;
   location: string;
   timeOfDay: string;
+  repairInstructions?: string;
 }): Promise<string> {
   const stub = process.env.VCLAW_MULTISHOT_AUTO_STUB;
   if (stub) {
-    return (await readFile(stub, 'utf-8')).trim();
+    const raw = (await readFile(stub, 'utf-8')).trim();
+    try {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.every((item) => typeof item === 'string')) {
+        const item = parsed[Math.min(stubSequenceIndex, parsed.length - 1)];
+        stubSequenceIndex += 1;
+        return item.trim();
+      }
+    } catch {
+      // Plain-text stubs remain the default offline path.
+    }
+    return raw;
   }
   // Real path: delegate to the shared Gemini analyze plumbing. Dynamic import so
   // the Gemini module is only loaded on the live path (avoids a static import edge).
@@ -277,5 +349,6 @@ export async function generateMultiShotPromptText(input: {
     action: input.action,
     location: input.location,
     timeOfDay: input.timeOfDay,
+    repairInstructions: input.repairInstructions,
   });
 }

@@ -8,6 +8,7 @@ import { readReferenceSheetsArtifact } from './reference-sheet-store.js';
 import { sheetsCoveringScene } from './reference-sheets.js';
 import { readSceneCandidatesArtifact, sceneCandidatesPathFor } from './scene-candidate-store.js';
 import { readSceneSelectionArtifact } from './scene-selection-store.js';
+import { readMultiShotPromptArtifactSummary, type MultiShotPromptArtifactSummary } from './multi-shot-artifact.js';
 import { readProjectManifest, resolveProjectWorkspace } from './workspace.js';
 import type { CharacterConsistencyReport, VideoProductionMode } from './types.js';
 import type { ReferenceSheet } from './types.js';
@@ -21,6 +22,7 @@ export interface VideoProjectReadiness {
   presentArtifacts: string[];
   missingArtifacts: string[];
   characterConsistency: CharacterConsistencyReport;
+  multiShotPrompt?: MultiShotPromptArtifactSummary;
   blockers: string[];
   warnings: string[];
   nextAction: string;
@@ -140,6 +142,12 @@ export async function buildProjectReadiness(
   }
   const characterConsistency = await buildCharacterConsistencyReport(slug, root);
   blockers.push(...characterConsistency.issues);
+  const multiShotPrompt = await readMultiShotPromptArtifactSummary(workspace);
+  if (multiShotPrompt && multiShotPrompt.valid === false) {
+    warnings.push(
+      `multi-shot-prompt-invalid: ${multiShotPrompt.issueCount} issue(s) recorded; rerun \`vclaw video multi-shot --validate --explain-issues\` before rendering this prompt`,
+    );
+  }
 
   // Reference-sheet readiness (director-mode only): any scene that binds at least one
   // character must be covered by at least one Identity Sheet.
@@ -268,6 +276,7 @@ export async function buildProjectReadiness(
     presentArtifacts,
     missingArtifacts,
     characterConsistency,
+    ...(multiShotPrompt ? { multiShotPrompt } : {}),
     blockers,
     warnings,
     nextAction,

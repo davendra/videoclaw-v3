@@ -10,6 +10,8 @@ import {
   formatTimecode,
   assembleMetadataBlock,
   composePromptText,
+  listMultiShotPresets,
+  parseMultiShotPrompt,
   type MultiShotPreset,
 } from '../video/multi-shot-prompt.js';
 
@@ -34,6 +36,13 @@ describe('multi-shot-prompt: preset shot bounds', () => {
 });
 
 describe('multi-shot-prompt: preset registry', () => {
+  it('listMultiShotPresets returns every registered preset in registry order', () => {
+    assert.deepEqual(
+      listMultiShotPresets().map((preset) => preset.name),
+      ['cinematic-15s', 'seedance-10s', 'veo-8s', 'runway-10s'],
+    );
+  });
+
   it('SEEDANCE_10S_PRESET constants', () => {
     assert.equal(SEEDANCE_10S_PRESET.name, 'seedance-10s');
     assert.equal(SEEDANCE_10S_PRESET.totalSeconds, 10);
@@ -213,6 +222,77 @@ describe('multi-shot-prompt: composePromptText', () => {
       text,
       '[00:00 - 00:04] Wide, a man walks.\n\n[00:04 - 00:08] Medium, he turns.\n\nLocation: X\nStyle: Y\nAudio: Z',
     );
+  });
+});
+
+describe('multi-shot-prompt: parseMultiShotPrompt', () => {
+  it('parses authored prompt text into structured shot rows', () => {
+    const prompt = [
+      '[00:00 - 00:04] Wide, 24mm, low angle, tracking — a man walks through a Tokyo alley.',
+      '',
+      '[00:04 - 00:07] Medium, 50mm, eye-level, handheld — he moves between food stalls.',
+      '',
+      '[00:07 - 00:09] Close-up, 85mm, high angle, static — his hand brushes a lantern.',
+      '',
+      '[00:09 - 00:12] Wide, 35mm, Dutch angle, push-in — he emerges into a broad street.',
+      '',
+      '[00:12 - 00:15] Medium close-up, 50mm, low angle, pull-out — he looks up at a sign.',
+      '',
+      'Location: Narrow Tokyo alley, night.',
+      'Style: Cool shadows, natural skin tones. In the style of a Christopher Nolan movie.',
+      'Audio: Diegetic sound only — natural ambience.',
+    ].join('\n');
+    const shots = parseMultiShotPrompt(prompt);
+    assert.equal(shots.length, 5);
+    assert.deepEqual(
+      {
+        index: shots[0].index,
+        timecode: shots[0].timecode,
+        start: shots[0].start,
+        end: shots[0].end,
+        shotSize: shots[0].shotSize,
+        lens: shots[0].lens,
+        angle: shots[0].angle,
+        movement: shots[0].movement,
+      },
+      {
+        index: 0,
+        timecode: '[00:00 - 00:04]',
+        start: 0,
+        end: 4,
+        shotSize: 'wide',
+        lens: '24mm',
+        angle: 'low angle',
+        movement: 'tracking',
+      },
+    );
+    assert.equal(shots[0].description, 'a man walks through a Tokyo alley.');
+  });
+
+  it('normalizes spaced and hyphenated camera terms without corrupting descriptions', () => {
+    const text = [
+      '[00:00 - 00:04] Wide, 24mm, eye level, push in — a woman crosses frame.',
+      '',
+      '[00:04 - 00:08] Medium close up, 50mm, eye-level, pull-out — she turns back.',
+      '',
+      'Location: X, day',
+      'Style: Y',
+      'Audio: Z',
+    ].join('\n');
+    const shots = parseMultiShotPrompt(text);
+    assert.equal(shots[0].angle, 'eye-level');
+    assert.equal(shots[0].movement, 'push-in');
+    assert.equal(shots[1].shotSize, 'medium close-up');
+    assert.equal(shots[1].description, 'she turns back.');
+  });
+
+  it('keeps parseable rows even when a camera field is absent', () => {
+    const shots = parseMultiShotPrompt('[00:00 - 00:04] Wide shot only — no full camera grid.');
+    assert.equal(shots.length, 1);
+    assert.equal(shots[0].shotSize, 'wide');
+    assert.equal(shots[0].lens, '');
+    assert.equal(shots[0].angle, '');
+    assert.equal(shots[0].movement, '');
   });
 });
 

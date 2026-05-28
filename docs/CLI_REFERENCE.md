@@ -663,7 +663,7 @@ available under the same root, the estimate reports `historical-telemetry` in
 ## Multi-shot prompt
 
 ```bash
-vclaw video multi-shot (--plan | --validate | --auto) [flags]
+vclaw video multi-shot (--presets | --plan | --validate | --fix | --auto) [flags]
 ```
 
 Scaffolds, validates, and (via Gemini) authors **compressed timecoded multi-shot
@@ -675,8 +675,10 @@ metadata block.
 
 | Flag | Purpose |
 |---|---|
+| `--presets` | List the registered preset contracts as JSON for agents and UIs. |
 | `--plan` | Scaffold a shot grid (timecodes + suggested camera parameters) without prose. |
 | `--validate` | Check an existing prompt text against the preset rules. Reads from `--file <path>` or stdin. Exits `0` if valid, `1` if errors are found. |
+| `--fix` | Apply conservative deterministic fixes and return a before/after validation report. Reads from `--file <path>` or stdin. |
 | `--auto` | Author the full prompt via Gemini (requires `--image <path>` and a configured Gemini key pool, or `VCLAW_MULTISHOT_AUTO_STUB` for offline/testing). |
 
 ### Flags
@@ -684,6 +686,8 @@ metadata block.
 | Flag | Default | Description |
 |---|---|---|
 | `--preset <name>` | `cinematic-15s` | One of `cinematic-15s` (default, 15 s / 3–7 shots / 1500 chars), `seedance-10s` (10 s / 2–5 shots / 1500 chars), `veo-8s` (8 s / 2–4 shots / 1500 chars), `runway-10s` (10 s / 2–5 shots / 1000 chars). Each preset declares its own clip duration, shot-count window, per-shot duration bounds, and char budget; the Nolan `styleLine` and diegetic `audioLine` are shared. Override with `--style-line` / `--audio-line`. Unknown names fail fast. |
+| `--provider <name>` / `--route <name>` | — | Provider hint used when `--preset` is omitted. `seedance*` resolves to `seedance-10s`, `veo` / `flow` resolves to `veo-8s`, and `runway*` resolves to `runway-10s`. |
+| `--from-storyboard` | false | Hydrate `--plan` or `--auto` from a project storyboard scene. Requires `--project <slug>` and `--scene <sceneIndex>`. |
 | `--shots <n>` | auto (preset window) | Exact shot count for `--plan`. Must fall within the resolved preset's `[minShots, maxShots]`; out-of-range values fail fast. |
 | `--seed <n>` | random | PRNG seed for reproducible plans. |
 | `--total-seconds <n>` | 15 | Total clip duration in seconds. |
@@ -695,40 +699,68 @@ metadata block.
 | `--time <text>` | `natural daylight` | Time of day written into `Location:` block. |
 | `--character <text>` | — | Character description hint passed to Gemini. |
 | `--action <text>` | — | Action description hint passed to Gemini. |
+| `--dry-run` | false | With `--auto`: print the resolved request and validation contract without reading the image or calling Gemini. |
+| `--explain-issues` | false | With `--validate`: add stable repair guidance for each unique issue code. |
+| `--retry-invalid <n>` | `0` | With `--auto`: retry validation failures up to `n` extra times, feeding the previous issue codes/messages back into the authoring request. |
 | `--project <slug>` | — | Persist the result as a `multi-shot-prompt` artifact under the named project. |
 | `--root <path>` | `cwd` | Workspace root (used with `--project`). |
 | `--raw` | false | With `--auto`: print only the prompt body, no JSON envelope. |
 
 ### Output
 
-`--plan` emits JSON: `{ preset, shots[] }`. The `preset` object carries `name`, `totalSeconds`, `minShotSeconds`, `maxShotSeconds`, `minShots`, `maxShots`, `maxChars`, `styleLine`, and `audioLine`. Each shot has `index`, `start`, `end`, `timecode`, `shotSize`, `lens`, `angle`, `movement`.
+`--presets` emits JSON: `{ presets[] }` with every registered preset and its duration, shot-count, per-shot-duration, character-budget, style, and audio contract.
 
-`--validate` emits JSON: `{ valid, charCount, issues[] }` where each issue has `code`, `severity`, `message`. Exit code `1` when any issue has `severity: "error"`.
+`--plan` emits JSON: `{ preset, shots[] }`. The `preset` object carries `name`, `totalSeconds`, `minShotSeconds`, `maxShotSeconds`, `minShots`, `maxShots`, `maxChars`, `styleLine`, and `audioLine`. Each shot has `index`, `start`, `end`, `timecode`, `shotSize`, `lens`, `angle`, `movement`. With `--from-storyboard`, output also includes `source` and resolved `input` so agents can see exactly which scene, characters, action, location, and time of day were used.
 
-`--auto` emits JSON: `{ preset, location, timeOfDay, shots, promptText, charCount, valid, issues, generatedAt }`. With `--raw`, prints only `promptText`.
+`--validate` emits JSON: `{ valid, charCount, issues[] }` where each issue has `code`, `severity`, `message`. With `--explain-issues`, it also emits `explanations[]` containing `code`, `summary`, and `suggestedFix`. Exit code `1` when any issue has `severity: "error"`.
+
+`--fix` emits JSON: `{ original, fixed, appliedFixes[] }`. The first version is deliberately conservative: it normalizes whitespace and can add missing metadata from the resolved preset plus `--location` / `--time`. It does not creatively rewrite shot prose or timecodes.
+
+`--auto` emits JSON: `{ preset, location, timeOfDay, shots, promptText, charCount, valid, issues, attempts, generatedAt }`. The `shots[]` array is parsed from the authored prompt so project artifacts are usable by downstream review and execution code. `attempts[]` records every validation attempt when `--retry-invalid` is used. With `--from-storyboard`, output and persisted artifacts also include `source`. With `--raw`, prints only `promptText`. With `--dry-run`, it emits `{ mode, dryRun, preset, source?, input, validationContract }` and makes no model call.
 
 > **Note:** When `--project` is supplied, the artifact is persisted to disk even when validation fails (`valid: false`); the issues array is recorded and the process exits with code `1`. A persisted artifact does **not** imply the prompt passed validation — always check the `valid` field.
+
+Project `status` and `readiness` surfaces summarize the latest `multi-shot-prompt` artifact with preset, validity, shot count, issue count, generation time, and storyboard source metadata. Invalid multi-shot artifacts are warnings, not hard readiness blockers, because the artifact is optional until a workflow explicitly chooses to render from it.
 
 ### Worked example
 
 ```bash
+# 0. Discover preset contracts
+vclaw video multi-shot --presets
+
 # 1. Generate a 5-shot plan (reproducible with --seed)
 vclaw video multi-shot --plan --shots 5 --seed 42
 
+# 1b. Generate a provider-shaped plan from storyboard scene 0
+vclaw video multi-shot --plan --from-storyboard \
+  --project my-project --scene 0 --route seedance-direct
+
 # 2. Validate an existing prompt file — exits 0 if clean
-vclaw video multi-shot --validate --file my-prompt.txt
+vclaw video multi-shot --validate --file my-prompt.txt --explain-issues
 
 # 3. Validate from stdin
 cat my-prompt.txt | vclaw video multi-shot --validate
 
-# 4. Author and validate via Gemini (requires GEMINI_API_KEYS)
+# 4. Apply conservative deterministic fixes
+vclaw video multi-shot --fix --file my-prompt.txt --location "Tokyo alley" --time "night"
+
+# 5. Author and validate via Gemini (requires GEMINI_API_KEYS)
 vclaw video multi-shot --auto \
   --image /path/to/ref.png \
   --location "Tokyo back alley" \
   --time "night" \
+  --retry-invalid 2 \
   --project my-project
 
-# 5. Print only the raw prompt body (no JSON wrapper)
+# 5b. Author from storyboard scene context and persist source metadata
+vclaw video multi-shot --auto \
+  --image /path/to/ref.png \
+  --from-storyboard \
+  --project my-project \
+  --scene 0 \
+  --provider veo
+
+# 6. Print only the raw prompt body (no JSON wrapper)
 vclaw video multi-shot --auto --image /path/to/ref.png \
   --location "Tokyo back alley" --time "night" --raw
 ```

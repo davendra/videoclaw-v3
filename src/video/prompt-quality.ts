@@ -23,6 +23,90 @@ export interface PromptQualityIssue {
   message: string;
 }
 
+export interface PromptQualityIssueExplanation {
+  code: PromptQualityIssueCode;
+  summary: string;
+  suggestedFix: string;
+}
+
+const MULTI_SHOT_ISSUE_EXPLANATIONS: Record<
+  Extract<PromptQualityIssueCode, `multi-shot-${string}`>,
+  PromptQualityIssueExplanation
+> = {
+  'multi-shot-timecode-parse': {
+    code: 'multi-shot-timecode-parse',
+    summary: 'No valid multi-shot timecode lines were found.',
+    suggestedFix: 'Start each shot paragraph with a bracketed range like [00:00 - 00:04].',
+  },
+  'multi-shot-timecode-start': {
+    code: 'multi-shot-timecode-start',
+    summary: 'The first shot does not begin at the start of the clip.',
+    suggestedFix: 'Change the first shot start time to 00:00 and adjust following ranges contiguously.',
+  },
+  'multi-shot-timecode-gap': {
+    code: 'multi-shot-timecode-gap',
+    summary: 'The shot ranges have a gap or overlap.',
+    suggestedFix: 'Make every shot start exactly where the previous shot ends.',
+  },
+  'multi-shot-timecode-total': {
+    code: 'multi-shot-timecode-total',
+    summary: 'The final shot does not end at the preset clip duration.',
+    suggestedFix: 'Adjust shot durations so the sequence total exactly matches the selected preset.',
+  },
+  'multi-shot-shot-duration': {
+    code: 'multi-shot-shot-duration',
+    summary: 'At least one shot is outside the preset per-shot duration bounds.',
+    suggestedFix: 'Resize that shot to fit the preset minimum and maximum duration, then rebalance adjacent shots.',
+  },
+  'multi-shot-shot-count-out-of-range': {
+    code: 'multi-shot-shot-count-out-of-range',
+    summary: 'The number of shots is outside the selected preset window.',
+    suggestedFix: 'Add or remove shot paragraphs until the count is inside the preset min/max shot range.',
+  },
+  'multi-shot-overlong': {
+    code: 'multi-shot-overlong',
+    summary: 'The prompt exceeds the selected preset character budget.',
+    suggestedFix: 'Shorten adjectives first, then compress repeated subject references and shared location details.',
+  },
+  'multi-shot-repeated-parameter': {
+    code: 'multi-shot-repeated-parameter',
+    summary: 'Two consecutive shots repeat a camera parameter.',
+    suggestedFix: 'Vary the repeated shot size, lens, angle, or movement in one of the adjacent shots.',
+  },
+  'multi-shot-missing-metadata': {
+    code: 'multi-shot-missing-metadata',
+    summary: 'The required Location, Style, or Audio metadata block is incomplete.',
+    suggestedFix: 'End the prompt with Location:, Style:, and Audio: lines after the final shot paragraph.',
+  },
+};
+
+export function explainPromptQualityIssue(
+  code: PromptQualityIssueCode,
+): PromptQualityIssueExplanation | undefined {
+  if (code.startsWith('multi-shot-')) {
+    return MULTI_SHOT_ISSUE_EXPLANATIONS[code as Extract<PromptQualityIssueCode, `multi-shot-${string}`>];
+  }
+  return undefined;
+}
+
+export function explainPromptQualityIssues(
+  issues: readonly PromptQualityIssue[],
+): PromptQualityIssueExplanation[] {
+  const seen = new Set<PromptQualityIssueCode>();
+  const out: PromptQualityIssueExplanation[] = [];
+  for (const issue of issues) {
+    if (seen.has(issue.code)) continue;
+    seen.add(issue.code);
+    const explanation = explainPromptQualityIssue(issue.code);
+    if (explanation) out.push(explanation);
+  }
+  return out;
+}
+
+export function listMultiShotIssueExplanations(): PromptQualityIssueExplanation[] {
+  return Object.values(MULTI_SHOT_ISSUE_EXPLANATIONS);
+}
+
 export const ADJECTIVE_SOUP_THRESHOLD = 4;
 export const STYLE_WORDS_THRESHOLD = 3;
 export const OVERLONG_WORDS_THRESHOLD = 120;

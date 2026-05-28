@@ -45,7 +45,7 @@ aliases as discovery handles rather than first-choice workflows.
 | 🎭 Cast | [`character-creator`](#character-creator) | imported | Create Go Bananas characters with profile + multi-view reference sheets. |
 | 🎭 Cast | [`character-library`](#character-library) | imported | Audit, list, patch, and delete entries in the shared Go Bananas library. |
 | 🎞️ Prompts | [`seedance-prompts`](#seedance-prompts) | imported | Browse and apply the clean-room Seedance prompt reference library. |
-| 🎞️ Prompts | [`multi-shot-prompt`](#multi-shot-prompt) | native clean-room | Reference image → timed multi-shot cinematic prompt sequence, validated against the videoclaw cinematic-15s preset. |
+| 🎞️ Prompts | [`multi-shot-prompt`](#multi-shot-prompt) | native clean-room | Reference image or storyboard scene → timed multi-shot cinematic prompt sequence, validated against provider-aware videoclaw presets. |
 | 📺 Audio | [`youtube-audio`](#youtube-audio) | imported | Download audio (MP3) or video (MP4) from YouTube using `yt-dlp` + FFmpeg. |
 | 📣 UGC | [`ugc`](#ugc) | imported | Belief-driven UGC campaign generator (E5 method) with multi-video output. |
 | 🎤 Aliases | `davendra-presenter` · `nex-presenter` · `bunty` | aliases | All delegate into `brand-presenter` with a personal/brand profile. |
@@ -291,11 +291,14 @@ guidance to Seedance prompt writing. Built on the actual `prompt-lib-list` / `pr
 timed shot sequence validated against the videoclaw `cinematic-15s` preset. Drives the real CLI:
 `vclaw video multi-shot --plan` to scaffold the shot structure, author cinematic prose per shot, then
 `vclaw video multi-shot --validate` to enforce the hard rules. An `--auto --image <path>` path runs
-the full sequence without manual authoring steps.
+the full sequence without manual authoring steps. Existing projects can use `--from-storyboard
+--project <slug> --scene <sceneIndex>` to hydrate action, characters, location defaults, and source
+metadata from the storyboard artifact.
 **Key features:**
 - Timed shot sequences anchored to the `cinematic-15s` preset with hard-rule validation
 - Image-grounded prompting — reference image drives visual continuity across shots
 - Manual (scaffold → author → validate) and automated (`--auto --image`) entry paths
+- Machine-readable preset discovery, provider-shaped defaults, issue explanations, and parsed `shots[]` artifacts for downstream agents
 - Prompt-library reference via `vclaw video prompt-lib-show --name multi-shot-framework`
 
 **When to reach for it:** *"multi-shot prompt"*, *"shot sequence"*, *"cinematic prompt"*, *"video prompt from this image"*, *"shot breakdown"*.

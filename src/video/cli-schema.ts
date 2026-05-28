@@ -14,6 +14,8 @@ import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { ALL_ERROR_CODES } from './errors.js';
 import { ExitCode } from './cli-output.js';
+import { listMultiShotPresets, type MultiShotPreset } from './multi-shot-prompt.js';
+import { listMultiShotIssueExplanations, type PromptQualityIssueExplanation } from './prompt-quality.js';
 
 export interface CommandFlag {
   name: string;
@@ -38,6 +40,10 @@ export interface SchemaDump {
   errorCodes: ReadonlyArray<string>;
   commands: CommandSpec[];
   artifactSchemas: Record<string, unknown>;
+  multiShot: {
+    presets: readonly MultiShotPreset[];
+    issueExplanations: readonly PromptQualityIssueExplanation[];
+  };
 }
 
 /**
@@ -112,6 +118,13 @@ const COMMANDS: CommandSpec[] = [
   { name: 'video template-show', usage: 'vclaw video template-show --name <template-name> [--root <path>]' },
   { name: 'video clone-plan', usage: 'vclaw video clone-plan --template <template-name> --project <slug> --intent <text> [--root <path>]' },
 
+  // --- authoring aids ---
+  {
+    name: 'video multi-shot',
+    usage: 'vclaw video multi-shot (--presets | --plan [--shots N] [--seed N] | --validate [--file <path>] [--explain-issues] | --fix [--file <path>] | --auto --image <path> [--dry-run] [--retry-invalid N] [...]) [--preset <name>] [--provider <name>] [--route <name>] [--from-storyboard --project <slug> --scene <sceneIndex>] [--total-seconds N] [--max-chars N] [--root <path>] [--raw]',
+    description: 'Scaffold, validate, and Gemini-author timecoded multi-shot cinematic prompts, including project storyboard scene hydration.',
+  },
+
   // --- portfolio + status ---
   { name: 'video list', usage: 'vclaw video list [--root <path>]' },
   { name: 'video index', usage: 'vclaw video index [--root <path>] [--output <path>]' },
@@ -182,5 +195,9 @@ export function buildSchemaDump(): SchemaDump {
     errorCodes: ALL_ERROR_CODES,
     commands: COMMANDS,
     artifactSchemas: loadArtifactSchemas(),
+    multiShot: {
+      presets: listMultiShotPresets(),
+      issueExplanations: listMultiShotIssueExplanations(),
+    },
   };
 }

@@ -131,6 +131,45 @@ describe('buildProjectStatusReport', () => {
     }
   });
 
+  it('summarizes the latest multi-shot prompt artifact for review surfaces', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'vclaw-status-'));
+    try {
+      const workspace = await ensureProjectWorkspace('launch-teaser', root);
+      await writeArtifact(workspace, 'multi-shot-prompt', {
+        preset: 'veo-8s',
+        location: 'Rooftop Rescue',
+        timeOfDay: 'night',
+        source: {
+          kind: 'storyboard-scene',
+          projectSlug: 'launch-teaser',
+          sceneIndex: 2,
+          storyboardDescription: 'Meera pulls Rani from the ledge.',
+          characters: ['Meera', 'Rani'],
+          presetSource: 'provider-route',
+        },
+        shots: [
+          { timecode: '[00:00 - 00:04]', start: 0, end: 4, shotSize: 'wide', lens: '24mm', angle: 'low angle', movement: 'static', description: 'A rooftop rescue.' },
+          { timecode: '[00:04 - 00:08]', start: 4, end: 8, shotSize: 'close-up', lens: '85mm', angle: 'high angle', movement: 'push-in', description: 'A reaction shot.' },
+        ],
+        promptText: 'prompt',
+        charCount: 6,
+        valid: true,
+        issues: [],
+        generatedAt: '2026-05-28T12:00:00.000Z',
+      });
+
+      const report = await buildProjectStatusReport('launch-teaser', root);
+      assert.equal(report.multiShotPrompt?.preset, 'veo-8s');
+      assert.equal(report.multiShotPrompt?.valid, true);
+      assert.equal(report.multiShotPrompt?.shotCount, 2);
+      assert.equal(report.multiShotPrompt?.issueCount, 0);
+      assert.equal(report.multiShotPrompt?.source?.sceneIndex, 2);
+      assert.deepEqual(report.multiShotPrompt?.source?.characters, ['Meera', 'Rani']);
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
   it('includes legacy import diagnostics when a legacy summary exists', async () => {
     const root = await mkdtemp(join(tmpdir(), 'vclaw-status-'));
     try {

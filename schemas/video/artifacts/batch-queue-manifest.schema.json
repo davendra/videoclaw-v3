@@ -18,8 +18,8 @@
       "additionalProperties": false,
       "properties": {
         "seconds": { "type": "number" },
-        "aspectRatio": { "type": "string" },
-        "resolution": { "type": "string" }
+        "aspectRatio": { "type": "string", "enum": ["16:9", "9:16", "1:1"] },
+        "resolution": { "type": "string", "enum": ["720p", "1080p"] }
       }
     },
     "jobs": {

@@ -6,6 +6,7 @@ import { join } from 'node:path';
 import {
   buildBatchPayload,
   readBatchManifest,
+  readNativeJobSceneStates,
   writeBatchQueueState,
   readBatchQueueState,
   rollupBatchQueueState,
@@ -213,4 +214,120 @@ test('rollupBatchQueueState reports terminal when nothing pending', () => {
 test('clipPathForJob and sceneOutputPathFor compute the scene->clip mapping', () => {
   assert.equal(sceneOutputPathFor('/out', 2), join('/out', 'scene-2.mp4'));
   assert.equal(clipPathForJob('/out', 'bravo'), join('/out', 'clips', 'bravo.mp4'));
+});
+
+test('readBatchManifest throws on unsupported defaults.resolution', async () => {
+  const root = await tmpRoot();
+  const path = join(root, 'bad-res.json');
+  await writeFile(
+    path,
+    JSON.stringify({
+      schemaVersion: 1,
+      defaults: { resolution: '4k' },
+      jobs: [{ id: 'a', prompt: 'p' }],
+    }),
+  );
+  await assert.rejects(() => readBatchManifest(path), /defaults\.resolution/i);
+});
+
+test('readBatchManifest throws on unsupported defaults.aspectRatio', async () => {
+  const root = await tmpRoot();
+  const path = join(root, 'bad-ar.json');
+  await writeFile(
+    path,
+    JSON.stringify({
+      schemaVersion: 1,
+      defaults: { aspectRatio: '4:3' },
+      jobs: [{ id: 'a', prompt: 'p' }],
+    }),
+  );
+  await assert.rejects(() => readBatchManifest(path), /defaults\.aspectRatio/i);
+});
+
+test('readNativeJobSceneStates: scene 0 failed, scene 1 submitted — one-failed-does-not-strand-pending', async () => {
+  const root = await tmpRoot();
+  const outDir = join(root, 'out');
+  const jobStateDir = join(outDir, '.vclaw-jobs');
+  await mkdir(jobStateDir, { recursive: true });
+
+  const externalJobId = 'runway-useapi-test-999';
+  const nativeJobState = {
+    externalJobId,
+    routeId: 'runway-useapi',
+    outputDir: outDir,
+    createdAt: '2026-05-29T00:00:00.000Z',
+    scenes: [
+      {
+        sceneIndex: 0,
+        prompt: 'p0',
+        taskId: 't0',
+        outputPath: join(outDir, 'scene-0.mp4'),
+        status: 'failed',
+        error: 'scene 0 exploded',
+      },
+      {
+        sceneIndex: 1,
+        prompt: 'p1',
+        taskId: 't1',
+        outputPath: join(outDir, 'scene-1.mp4'),
+        status: 'submitted',
+      },
+    ],
+  };
+  await writeFile(join(jobStateDir, `${externalJobId}.json`), `${JSON.stringify(nativeJobState, null, 2)}\n`);
+
+  const sceneStates = await readNativeJobSceneStates(outDir, externalJobId);
+
+  // scene 0: failed with its own error
+  const s0 = sceneStates.get(0);
+  assert.ok(s0, 'scene 0 present');
+  assert.equal(s0.status, 'failed');
+  assert.equal(s0.error, 'scene 0 exploded');
+
+  // scene 1: still submitted (pending) — not contaminated by scene 0's failure
+  const s1 = sceneStates.get(1);
+  assert.ok(s1, 'scene 1 present');
+  assert.equal(s1.status, 'submitted');
+  assert.equal(s1.error, undefined);
+
+  // Simulate what batchMonitorOnce does with these per-scene states:
+  // queue state has both jobs pending
+  const queueState: BatchQueueState = {
+    schemaVersion: 1,
+    externalJobId,
+    route: 'runway-useapi',
+    outputDir: outDir,
+    workspaceRoot: root,
+    submittedAt: '2026-05-29T00:00:00.000Z',
+    jobs: [
+      { id: 'job-alpha', sceneIndex: 0, taskId: 't0', status: 'pending' },
+      { id: 'job-bravo', sceneIndex: 1, taskId: 't1', status: 'pending' },
+    ],
+  };
+
+  // Apply per-scene attribution (mirrors batchMonitorOnce logic)
+  for (const job of queueState.jobs) {
+    if (job.status === 'done' || job.status === 'failed') continue;
+    const scene = sceneStates.get(job.sceneIndex);
+    if (scene?.status === 'failed') {
+      job.status = 'failed';
+      if (scene.error) job.error = scene.error;
+    }
+    // submitted/absent → remain pending
+  }
+
+  // job 0 failed with its own specific error message
+  assert.equal(queueState.jobs[0].status, 'failed');
+  assert.equal(queueState.jobs[0].error, 'scene 0 exploded');
+
+  // job 1 remains pending — NOT failed just because a sibling failed
+  assert.equal(queueState.jobs[1].status, 'pending');
+  assert.equal(queueState.jobs[1].error, undefined);
+
+  // rollup: 1 failed, 1 pending → NOT terminal
+  const rollup = rollupBatchQueueState(queueState);
+  assert.equal(rollup.failed, 1);
+  assert.equal(rollup.pending, 1);
+  assert.equal(rollup.done, 0);
+  assert.equal(rollup.terminal, false);
 });

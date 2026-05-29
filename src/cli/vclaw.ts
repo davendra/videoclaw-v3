@@ -31,6 +31,7 @@ import {
   rollupBatchQueueState,
   readBatchManifest,
   readBatchQueueState,
+  readNativeJobSceneStates,
   sceneOutputPathFor,
   writeBatchQueueState,
   batchStatusPath,
@@ -2282,34 +2283,34 @@ async function handleVideoBatchSubmit(args: string[]): Promise<void> {
  * short-circuit and are never re-downloaded. Returns the updated state.
  */
 async function batchMonitorOnce(state: BatchQueueState): Promise<BatchQueueState> {
-  const result = await batchNativePoll(state.route, {
+  await batchNativePoll(state.route, {
     outputDir: state.outputDir,
     externalJobId: state.externalJobId,
     workspaceRoot: state.workspaceRoot,
   });
-  const outputBySceneIndex = new Map<number, { path: string }>();
-  for (const output of result.outputs) {
-    if (typeof output.sceneIndex === 'number') {
-      outputBySceneIndex.set(output.sceneIndex, { path: output.path });
-    }
-  }
-  const issueText = result.issues.join(' | ');
+  // Read per-scene status from the transport's own job-state file. All three
+  // transports (runway, dreamina, seedance) write
+  // <outputDir>/.vclaw-jobs/<externalJobId>.json with scenes[].{sceneIndex,
+  // status, error, outputPath}. We attribute failure per-scene so one failed
+  // job never strands pending siblings.
+  const sceneStates = await readNativeJobSceneStates(state.outputDir, state.externalJobId);
   for (const job of state.jobs) {
     if (job.status === 'done' || job.status === 'failed') continue; // idempotent short-circuit
-    const output = outputBySceneIndex.get(job.sceneIndex);
-    if (output) {
+    const scene = sceneStates.get(job.sceneIndex);
+    if (scene?.status === 'completed') {
       const clipPath = clipPathForJob(state.outputDir, job.id);
       if (!existsSync(clipPath)) {
+        const sourcePath = scene.outputPath || sceneOutputPathFor(state.outputDir, job.sceneIndex);
         await mkdir(dirname(clipPath), { recursive: true });
-        await copyFile(output.path ?? sceneOutputPathFor(state.outputDir, job.sceneIndex), clipPath);
+        await copyFile(sourcePath, clipPath);
       }
       job.status = 'done';
-      job.clipPath = clipPath;
-    } else if (result.status === 'failed') {
+      job.clipPath = clipPathForJob(state.outputDir, job.id);
+    } else if (scene?.status === 'failed') {
       job.status = 'failed';
-      if (issueText) job.error = issueText;
+      if (scene.error) job.error = scene.error;
     }
-    // else: still pending; leave as-is.
+    // scene absent, 'submitted', or still pending → leave job as pending.
   }
   await writeBatchQueueState(state);
   return state;

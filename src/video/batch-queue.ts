@@ -21,6 +21,9 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import type { VideoExecutionPayload } from './types.js';
 
+const VALID_ASPECT_RATIOS = ['16:9', '9:16', '1:1'] as const;
+const VALID_RESOLUTIONS = ['720p', '1080p'] as const;
+
 /** Routes the batch queue can target. A subset of ProviderRouteId — the three
  * routes with in-process native submit/poll transports that loop payload.tasks. */
 export type BatchRouteId = 'runway-useapi' | 'dreamina-useapi' | 'seedance-direct';
@@ -160,22 +163,49 @@ export async function readBatchManifest(path: string): Promise<BatchQueueManifes
     };
   });
 
-  const defaults =
-    obj.defaults && typeof obj.defaults === 'object' && !Array.isArray(obj.defaults)
-      ? (obj.defaults as BatchQueueManifest['defaults'])
-      : undefined;
+  let defaults: BatchQueueManifest['defaults'];
+  if (obj.defaults !== undefined) {
+    if (!obj.defaults || typeof obj.defaults !== 'object' || Array.isArray(obj.defaults)) {
+      throw new Error(`batch manifest defaults must be an object when present`);
+    }
+    const d = obj.defaults as Record<string, unknown>;
+    if (d.seconds !== undefined && (typeof d.seconds !== 'number' || !Number.isFinite(d.seconds))) {
+      throw new Error(`batch manifest defaults.seconds must be a number when present`);
+    }
+    if (d.aspectRatio !== undefined) {
+      if (typeof d.aspectRatio !== 'string' || !(VALID_ASPECT_RATIOS as readonly string[]).includes(d.aspectRatio)) {
+        throw new Error(
+          `batch manifest defaults.aspectRatio must be one of ${VALID_ASPECT_RATIOS.join(', ')}, got: ${JSON.stringify(d.aspectRatio)}`,
+        );
+      }
+    }
+    if (d.resolution !== undefined) {
+      if (typeof d.resolution !== 'string' || !(VALID_RESOLUTIONS as readonly string[]).includes(d.resolution)) {
+        throw new Error(
+          `batch manifest defaults.resolution must be one of ${VALID_RESOLUTIONS.join(', ')}, got: ${JSON.stringify(d.resolution)}`,
+        );
+      }
+    }
+    defaults = d as BatchQueueManifest['defaults'];
+  }
 
   return { schemaVersion: 1, route, ...(defaults ? { defaults } : {}), jobs };
 }
 
-function coerceAspectRatio(value: string | undefined): VideoExecutionPayload['executionProfile']['aspectRatio'] {
+function resolveAspectRatio(value: string | undefined): VideoExecutionPayload['executionProfile']['aspectRatio'] {
+  if (value === undefined) return DEFAULT_ASPECT_RATIO;
   if (value === '9:16' || value === '1:1' || value === '16:9') return value;
-  return DEFAULT_ASPECT_RATIO;
+  throw new Error(
+    `batch manifest defaults.aspectRatio must be one of ${VALID_ASPECT_RATIOS.join(', ')}, got: ${JSON.stringify(value)}`,
+  );
 }
 
-function coerceResolution(value: string | undefined): VideoExecutionPayload['executionProfile']['resolution'] {
+function resolveResolution(value: string | undefined): VideoExecutionPayload['executionProfile']['resolution'] {
+  if (value === undefined) return DEFAULT_RESOLUTION;
   if (value === '1080p' || value === '720p') return value;
-  return DEFAULT_RESOLUTION;
+  throw new Error(
+    `batch manifest defaults.resolution must be one of ${VALID_RESOLUTIONS.join(', ')}, got: ${JSON.stringify(value)}`,
+  );
 }
 
 /**
@@ -195,8 +225,8 @@ export function buildBatchPayload(
     typeof manifest.defaults?.seconds === 'number' && Number.isFinite(manifest.defaults.seconds)
       ? manifest.defaults.seconds
       : DEFAULT_SECONDS;
-  const aspectRatio = coerceAspectRatio(manifest.defaults?.aspectRatio);
-  const resolution = coerceResolution(manifest.defaults?.resolution);
+  const aspectRatio = resolveAspectRatio(manifest.defaults?.aspectRatio);
+  const resolution = resolveResolution(manifest.defaults?.resolution);
 
   const tasks = manifest.jobs.map((job, index) => {
     const referencePaths = job.keyframe ? [job.keyframe] : [];
@@ -263,6 +293,53 @@ export async function readBatchQueueState(outputDir: string): Promise<BatchQueue
     throw new Error(`batch-queue.json not found in ${outputDir}; run "vclaw video batch-submit" first.`);
   }
   return JSON.parse(await readFile(path, 'utf-8')) as BatchQueueState;
+}
+
+/**
+ * Reads the native transport's per-scene job-state file
+ * (`<outputDir>/.vclaw-jobs/<externalJobId>.json`) and returns a map from
+ * sceneIndex to `{ status, error }`. All three transports (runway, dreamina,
+ * seedance) write this file with an identical `scenes[]` shape.
+ *
+ * Returns an empty map when the file is absent (e.g. a very early poll pass
+ * before the transport has flushed state). The caller treats absent scenes as
+ * still-pending.
+ */
+export async function readNativeJobSceneStates(
+  outputDir: string,
+  externalJobId: string,
+): Promise<Map<number, { status: 'submitted' | 'completed' | 'failed'; error?: string; outputPath: string }>> {
+  const path = join(outputDir, '.vclaw-jobs', `${externalJobId}.json`);
+  if (!existsSync(path)) return new Map();
+  let raw: string;
+  try {
+    raw = await readFile(path, 'utf-8');
+  } catch {
+    return new Map();
+  }
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    return new Map();
+  }
+  const jobState = parsed as {
+    scenes?: Array<{ sceneIndex?: number; status?: string; error?: string; outputPath?: string }>;
+  };
+  const result = new Map<number, { status: 'submitted' | 'completed' | 'failed'; error?: string; outputPath: string }>();
+  for (const scene of jobState.scenes ?? []) {
+    if (typeof scene.sceneIndex !== 'number') continue;
+    const status =
+      scene.status === 'completed' || scene.status === 'failed' || scene.status === 'submitted'
+        ? scene.status
+        : 'submitted';
+    result.set(scene.sceneIndex, {
+      status,
+      outputPath: typeof scene.outputPath === 'string' ? scene.outputPath : '',
+      ...(scene.error ? { error: scene.error } : {}),
+    });
+  }
+  return result;
 }
 
 /** Counts done/pending/failed and reports whether the queue is fully terminal. */

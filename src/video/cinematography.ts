@@ -261,6 +261,40 @@ export function resolveCameraVocab(vocab: string): ModeSpec {
 }
 
 /**
+ * One stacked shot in a multi-world intercut sequence: a single shot that
+ * carries its OWN cinema-mode {@link ModeSpec} and a rendered camera `block`.
+ */
+export interface StackedShot {
+  modeId: CinemaModeId;
+  spec: ModeSpec;
+  block: string;
+}
+
+/**
+ * Render a {@link ModeSpec} as a single-line camera block string. The
+ * `spec.camera` fragment is preserved verbatim so callers (and tests) can
+ * locate it inside the block.
+ */
+function renderModeBlock(spec: ModeSpec): string {
+  return `CAM: ${spec.camera} | ${spec.lens} | ${spec.movement} | ${spec.filtration} | ${spec.grade}`;
+}
+
+/**
+ * Stack cinema modes for a multi-world intercut sequence.
+ *
+ * Returns one {@link StackedShot} per input mode id, preserving input order
+ * AND duplicates. Each shot keeps its OWN {@link cinemaMode} spec and rendered
+ * camera block — adjacent modes are never averaged, merged, or collapsed into
+ * a single register, so intercutting between worlds stays visually distinct.
+ */
+export function stackModes(modeIds: CinemaModeId[]): StackedShot[] {
+  return modeIds.map((modeId) => {
+    const spec = cinemaMode(modeId);
+    return { modeId, spec, block: renderModeBlock(spec) };
+  });
+}
+
+/**
  * The named 2-second hook patterns: scroll-stopping opening beats. Order is
  * intentional and stable; callers may iterate {@link HOOK_PATTERN_IDS}.
  */

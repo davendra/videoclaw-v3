@@ -4,6 +4,7 @@ import { cameraSpec, lightingSpec, gradeSpec, audioMix, type DetailLevel } from 
 import { cinemaMode, resolveCameraVocab, CINEMA_MODE_IDS, type CinemaModeId } from '../video/cinematography.js';
 import { hookBeat, HOOK_PATTERN_IDS, type HookPatternId } from '../video/cinematography.js';
 import { genreDefaults, type GenreDefaults } from '../video/cinematography.js';
+import { stackModes, type StackedShot } from '../video/cinematography.js';
 
 describe('cinematography emitters', () => {
   it('terse omits numbers, rich includes them', () => {
@@ -70,6 +71,25 @@ describe('hook patterns', () => {
   });
   it('throws on an unknown pattern id', () => {
     assert.throws(() => hookBeat('nope' as HookPatternId, 2), /unknown hook pattern/i);
+  });
+});
+
+describe('mode stacking', () => {
+  it('keeps each shot\'s own mode block when modes differ (no averaging)', () => {
+    const stacked = stackModes(['studio', 'action']);
+    assert.equal(stacked.length, 2);
+    assert.equal(stacked[0].modeId, 'studio');
+    assert.equal(stacked[1].modeId, 'action');
+    assert.notEqual(stacked[0].spec.camera, stacked[1].spec.camera); // distinct, not merged
+  });
+  it('preserves repeated modes as separate entries (one block per shot)', () => {
+    const stacked = stackModes(['narrative', 'narrative']);
+    assert.equal(stacked.length, 2);
+    assert.equal(stacked[0].spec.camera, stacked[1].spec.camera);
+  });
+  it('renders a per-shot camera block string for each stacked shot', () => {
+    const stacked = stackModes(['atmospheric', 'performance']);
+    for (const s of stacked) assert.ok(s.block.includes(s.spec.camera));
   });
 });
 

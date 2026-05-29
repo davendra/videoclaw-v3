@@ -6,6 +6,8 @@ import { fileURLToPath } from 'node:url';
 import { artifactPathFor } from './artifact-store.js';
 import { readSceneCandidatesArtifact } from './scene-candidate-store.js';
 import { readSceneSelectionArtifact } from './scene-selection-store.js';
+import { readSeedanceAssets } from './seedance-asset-library.js';
+import { assertReferenceBudget } from './native-seedance.js';
 import { resolveProjectWorkspace } from './workspace.js';
 import type { FilmmakingPromptsArtifact, FilmmakingSeedancePacket } from './filmmaking-prompts.js';
 import type { ProviderRouteId } from './provider-platform/types.js';
@@ -183,6 +185,15 @@ export async function buildExecutionPayload(
 
   const sceneFilter = options.sceneIndices ? new Set(options.sceneIndices) : null;
 
+  // Seedance character/product identity is locked via managed Asset Library
+  // avatars (Asset:// URIs). When the project has registered them, each scene's
+  // cast names resolve to Asset:// URIs that become that scene's reference set.
+  // Absent artifact -> empty map -> behavior identical to today (no injection).
+  // Gated to the Seedance route so Veo/Runway payloads are untouched.
+  const assetUriByName = plan.recommendedRouteId === 'seedance-direct'
+    ? (await readSeedanceAssets(workspace.root, projectSlug)).assetUriByName
+    : new Map<string, string>();
+
   const tasks: VideoExecutionTask[] = (storyboard.scenes ?? [])
     .filter((scene) => {
       if (!sceneFilter) return true;
@@ -220,9 +231,27 @@ export async function buildExecutionPayload(
       const packetOrBaseReferencePaths = promptPacketReferencePaths.length > 0
         ? unique([...promptPacketReferencePaths, ...baseNonImageReferencePaths])
         : baseReferencePaths;
-      const referencePaths = chainSeed
-        ? unique([chainSeed.path, ...packetOrBaseReferencePaths])
-        : packetOrBaseReferencePaths;
+      // When the project has registered Seedance Asset Library avatars, this
+      // scene's resolved cast/product Asset:// URIs become its reference set
+      // (the proven identity-lock mechanism). Names that don't resolve are
+      // dropped. Empty map (no artifact) -> falls through to today's behavior.
+      const resolvedAssetUris = unique(
+        unique(scene.characters ?? [])
+          .map((name) => assetUriByName.get(name))
+          .filter((uri): uri is string => Boolean(uri)),
+      );
+      const referencePaths = resolvedAssetUris.length > 0
+        ? resolvedAssetUris
+        : chainSeed
+          ? unique([chainSeed.path, ...packetOrBaseReferencePaths])
+          : packetOrBaseReferencePaths;
+      // Fail fast if the injected Asset:// reference set exceeds Seedance's
+      // per-generation limits (reuses the canonical budget; does not duplicate
+      // the limits). Only runs when this feature actually populated references,
+      // so non-asset/non-seedance payloads are byte-identical to today.
+      if (resolvedAssetUris.length > 0) {
+        assertReferenceBudget(referencePaths);
+      }
       const backendHints = unique([
         ...sceneAssets.map((asset) => asset.backend ?? ''),
         ...(promptPacket ? ['filmmaking-prompts', `prompt-variant:${promptPacket.variant}`] : []),

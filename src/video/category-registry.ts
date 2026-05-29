@@ -106,6 +106,25 @@ const CATEGORY_REGISTRY: Record<string, CategoryDescriptor> = {
   },
 };
 
+export type ReferenceBuildStep = 'base-ref' | 'sheet' | 'scene-plate';
+
+/**
+ * Canonical identity-reference build order (the banana-pro-director discipline).
+ *
+ * Always build identity references in this sequence, for both character and
+ * product subjects:
+ *   1. `base-ref`     — a neutral white-seamless base reference establishing the
+ *                       subject's canonical identity, free of scene context.
+ *   2. `sheet`        — a multi-angle reference sheet derived from the base ref.
+ *   3. `scene-plate`  — scene plates that place the established subject in context.
+ *
+ * Building out of order (e.g. a scene plate before a clean base ref) lets scene
+ * lighting and framing contaminate the identity anchor, so the order is fixed.
+ */
+export function referenceBuildOrder(_subjectType: SubjectType): ReferenceBuildStep[] {
+  return ['base-ref', 'sheet', 'scene-plate'];
+}
+
 export const CATEGORY_IDS: string[] = Object.keys(CATEGORY_REGISTRY);
 
 export function resolveCategory(id?: string): CategoryDescriptor {

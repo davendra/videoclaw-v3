@@ -1,6 +1,6 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { resolveCategory, CATEGORY_IDS, type CategoryDescriptor } from '../video/category-registry.js';
+import { resolveCategory, CATEGORY_IDS, referenceBuildOrder, type CategoryDescriptor, type ReferenceBuildStep } from '../video/category-registry.js';
 
 describe('category registry', () => {
   it('resolves the character default (cinematic) when id is omitted', () => {
@@ -44,5 +44,14 @@ describe('commercial categories', () => {
       assert.ok(d.label && d.subjectType && d.beatTemplate && d.cameraVocab && d.genre && d.audioProfile);
       assert.equal(typeof d.hookSeconds, 'number');
     }
+  });
+});
+
+describe('reference build order', () => {
+  it('returns the canonical 3-step order for a character subject', () => {
+    assert.deepEqual(referenceBuildOrder('character'), ['base-ref', 'sheet', 'scene-plate']);
+  });
+  it('returns the same disciplined order for a product subject', () => {
+    assert.deepEqual(referenceBuildOrder('product'), ['base-ref', 'sheet', 'scene-plate']);
   });
 });

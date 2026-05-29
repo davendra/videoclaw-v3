@@ -308,6 +308,31 @@ export function composeSeedanceParagraph(
   return segments.join(' ');
 }
 
+export interface DialogueLine {
+  speaker: string;
+  line: string;
+  emotion?: string;
+  secondSpeaker?: { speaker: string; line: string; emotion?: string };
+}
+
+// Append spoken dialogue to a shot line using a clean two-speaker convention.
+// The first speaker gets a "<speaker> says[, <emotion>]:" opener; a second
+// speaker (when present) gets exactly one "She replies:" opener — the file
+// carries no gender/pronoun signal, so this defaults deterministically to
+// "She replies:". Pure and deterministic — no randomness or clock reads.
+export function withDialogue(shotLine: string, dialogue: DialogueLine): string {
+  const firstOpener = dialogue.emotion
+    ? `${dialogue.speaker} says, ${dialogue.emotion}:`
+    : `${dialogue.speaker} says:`;
+  const segments = [shotLine, `${firstOpener} "${dialogue.line}"`];
+  if (dialogue.secondSpeaker) {
+    const { speaker, line, emotion } = dialogue.secondSpeaker;
+    const replyOpener = emotion ? `She replies, ${emotion}:` : 'She replies:';
+    segments.push(`${replyOpener} ${speaker}: "${line}"`);
+  }
+  return segments.join(' ');
+}
+
 export { SHOT_SIZES, LENSES, ANGLES, MOVEMENTS, SHOT_TYPE_VOCABULARY };
 
 let stubSequenceIndex = 0;

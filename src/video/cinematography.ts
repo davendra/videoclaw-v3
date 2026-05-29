@@ -261,6 +261,58 @@ export function resolveCameraVocab(vocab: string): ModeSpec {
 }
 
 /**
+ * The named 2-second hook patterns: scroll-stopping opening beats. Order is
+ * intentional and stable; callers may iterate {@link HOOK_PATTERN_IDS}.
+ */
+export const HOOK_PATTERN_IDS = [
+  'black-to-light',
+  'silence-to-sound',
+  'reverse-motion',
+  'beat-drop',
+  'match-cut-in',
+  'whip-reveal',
+] as const;
+
+export type HookPatternId = (typeof HOOK_PATTERN_IDS)[number];
+
+const HOOK_PATTERNS: Record<HookPatternId, string> = {
+  'black-to-light':
+    'Hard cut from black to a blinding light burst that resolves into the hero subject, irises adjusting as detail floods in.',
+  'silence-to-sound':
+    'Dead silence over a held still frame, then a sudden full-bandwidth sound hit lands as the image snaps into motion.',
+  'reverse-motion':
+    'Action plays in eerie reverse — debris, liquid, and fabric rushing back into place — before it whips forward into real time.',
+  'beat-drop':
+    'Rapid pre-roll build with quick-cut teases that freeze on the downbeat, then explode into the full scene on the drop.',
+  'match-cut-in':
+    'A graphic match cut carries a shape, motion, or color straight from an everyday object into the hero subject in one seamless jump.',
+  'whip-reveal':
+    'A fast whip-pan smears the frame into motion blur, then decelerates hard to reveal the hero subject dead-center.',
+};
+
+/**
+ * Pad an integer second count to a 2-digit string (assumes < 60).
+ */
+function padSeconds(seconds: number): string {
+  return String(seconds).padStart(2, '0');
+}
+
+/**
+ * Render a named 2-second opening hook as a timecoded beat.
+ *
+ * Returns `"[00:00 - 00:0N] <description>"` where `N` is `hookSeconds`
+ * (zero-padded, assumed < 60). Unlike the cinema-mode resolvers, an unknown
+ * pattern id THROWS rather than falling back — hooks must be explicit.
+ */
+export function hookBeat(pattern: HookPatternId, hookSeconds: number): string {
+  const description = HOOK_PATTERNS[pattern];
+  if (!description) {
+    throw new Error(`unknown hook pattern: ${pattern}`);
+  }
+  return `[00:00 - 00:${padSeconds(hookSeconds)}] ${description}`;
+}
+
+/**
  * Build an audio-mix prompt fragment at the requested detail level.
  *   - terse:    evocative words only, no numbers
  *   - standard: brief layer naming

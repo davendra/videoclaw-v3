@@ -2,6 +2,7 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { cameraSpec, lightingSpec, gradeSpec, audioMix, type DetailLevel } from '../video/cinematography.js';
 import { cinemaMode, resolveCameraVocab, CINEMA_MODE_IDS, type CinemaModeId } from '../video/cinematography.js';
+import { hookBeat, HOOK_PATTERN_IDS, type HookPatternId } from '../video/cinematography.js';
 
 describe('cinematography emitters', () => {
   it('terse omits numbers, rich includes them', () => {
@@ -51,5 +52,22 @@ describe('cinema modes', () => {
   it('unknown mode/vocab falls back to narrative without throwing', () => {
     assert.equal(typeof cinemaMode('nope' as CinemaModeId).camera, 'string');
     assert.equal(typeof resolveCameraVocab('nope').camera, 'string');
+  });
+});
+
+describe('hook patterns', () => {
+  it('renders a 2s opening beat for a known pattern with a timecode stamp', () => {
+    const beat = hookBeat('black-to-light', 2);
+    assert.match(beat, /^\[00:00 - 00:02\]/);
+    assert.ok(beat.length > 12);
+  });
+  it('honors a custom hook length', () => {
+    assert.match(hookBeat('beat-drop', 3), /^\[00:00 - 00:03\]/);
+  });
+  it('exposes a non-empty pattern id list', () => {
+    assert.ok(HOOK_PATTERN_IDS.length >= 4);
+  });
+  it('throws on an unknown pattern id', () => {
+    assert.throws(() => hookBeat('nope' as HookPatternId, 2), /unknown hook pattern/i);
   });
 });

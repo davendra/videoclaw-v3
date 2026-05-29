@@ -313,6 +313,45 @@ export function hookBeat(pattern: HookPatternId, hookSeconds: number): string {
 }
 
 /**
+ * Per-genre look defaults: concrete color / lighting / cut-rate anchors a
+ * caller can seed a shot plan with before any per-shot overrides.
+ *
+ * `keyLightId` references an id understood by {@link lightingSpec}
+ * (e.g. `'neutral-studio'`, `'golden-hour'`, `'hard-dawn'`, `'night-fire'`).
+ */
+export interface GenreDefaults {
+  paletteHue: number;
+  saturationPct: number;
+  cutRatePerSec: number;
+  keyLightId: string;
+}
+
+const NEUTRAL_GENRE_DEFAULTS: GenreDefaults = {
+  paletteHue: 30,
+  saturationPct: 45,
+  cutRatePerSec: 0.4,
+  keyLightId: 'neutral-studio',
+};
+
+const GENRE_DEFAULTS: Record<string, GenreDefaults> = {
+  'live-action': { paletteHue: 30, saturationPct: 50, cutRatePerSec: 0.4, keyLightId: 'golden-hour' },
+  pixar: { paletteHue: 45, saturationPct: 80, cutRatePerSec: 0.5, keyLightId: 'neutral-studio' },
+  anime: { paletteHue: 210, saturationPct: 75, cutRatePerSec: 0.7, keyLightId: 'hard-dawn' },
+  noir: { paletteHue: 220, saturationPct: 10, cutRatePerSec: 0.3, keyLightId: 'night-fire' },
+  influencer: { paletteHue: 25, saturationPct: 65, cutRatePerSec: 0.8, keyLightId: 'neutral-studio' },
+  action: { paletteHue: 200, saturationPct: 70, cutRatePerSec: 1.2, keyLightId: 'hard-dawn' },
+  'music-video': { paletteHue: 280, saturationPct: 85, cutRatePerSec: 1.0, keyLightId: 'night-fire' },
+};
+
+/**
+ * Resolve per-genre look defaults. Case-insensitive; unknown genres fall
+ * back to a neutral default rather than throwing.
+ */
+export function genreDefaults(genre: string): GenreDefaults {
+  return GENRE_DEFAULTS[genre.toLowerCase()] ?? NEUTRAL_GENRE_DEFAULTS;
+}
+
+/**
  * Build an audio-mix prompt fragment at the requested detail level.
  *   - terse:    evocative words only, no numbers
  *   - standard: brief layer naming

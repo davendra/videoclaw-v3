@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { cameraSpec, lightingSpec, gradeSpec, audioMix, type DetailLevel } from '../video/cinematography.js';
 import { cinemaMode, resolveCameraVocab, CINEMA_MODE_IDS, type CinemaModeId } from '../video/cinematography.js';
 import { hookBeat, HOOK_PATTERN_IDS, type HookPatternId } from '../video/cinematography.js';
+import { genreDefaults, type GenreDefaults } from '../video/cinematography.js';
 
 describe('cinematography emitters', () => {
   it('terse omits numbers, rich includes them', () => {
@@ -69,5 +70,23 @@ describe('hook patterns', () => {
   });
   it('throws on an unknown pattern id', () => {
     assert.throws(() => hookBeat('nope' as HookPatternId, 2), /unknown hook pattern/i);
+  });
+});
+
+describe('genre defaults lookup', () => {
+  it('returns concrete numeric defaults for a known genre', () => {
+    const d = genreDefaults('music-video');
+    assert.equal(typeof d.cutRatePerSec, 'number');
+    assert.equal(typeof d.paletteHue, 'number');
+    assert.equal(typeof d.keyLightId, 'string');
+  });
+  it('covers the known genres', () => {
+    for (const g of ['live-action','pixar','anime','noir','influencer','action','music-video']) {
+      assert.ok(genreDefaults(g).cutRatePerSec > 0, `${g} has a positive cut rate`);
+    }
+  });
+  it('unknown genre falls back to a neutral default without throwing', () => {
+    const d = genreDefaults('claymation');
+    assert.equal(typeof d.cutRatePerSec, 'number');
   });
 });

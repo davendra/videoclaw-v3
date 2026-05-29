@@ -1,0 +1,31 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://vclaw.dev/schemas/video/artifacts/seedance-assets.schema.json",
+  "title": "SeedanceAssetsArtifact",
+  "type": "object",
+  "required": ["schemaVersion", "projectSlug", "groupName", "generatedAt", "assets"],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "projectSlug": { "type": "string", "minLength": 1 },
+    "groupName": { "type": "string", "minLength": 1 },
+    "generatedAt": { "type": "string", "format": "date-time" },
+    "assets": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/SeedanceAsset" }
+    }
+  },
+  "definitions": {
+    "SeedanceAsset": {
+      "type": "object",
+      "required": ["name", "assetId", "assetUri", "intlAssetUri"],
+      "additionalProperties": false,
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "assetId": { "type": "string", "minLength": 1 },
+        "assetUri": { "type": "string", "minLength": 1 },
+        "intlAssetUri": { "type": "string", "minLength": 1 }
+      }
+    }
+  }
+}

@@ -1,3 +1,8 @@
+import { existsSync } from 'node:fs';
+import { readFile } from 'node:fs/promises';
+import { join } from 'node:path';
+import { resolveProjectWorkspace } from './workspace.js';
+
 // xskill / NEX AI Asset Library client. Registers character reference images as
 // managed "Asset" avatars and returns their Asset:// URIs — the official
 // character-consistency mechanism for ark/seedance-2.0 (raw photoreal URLs in
@@ -178,6 +183,66 @@ export async function registerImageAsset(
     throw new Error(`Asset "${input.name}" (${assetId}) did not reach sync_status "active" (last: ${syncStatus}).`);
   }
   return { name: input.name, assetId, assetUri, intlAssetUri, syncStatus };
+}
+
+/** One subject (character/product) entry in the seedance-assets.json artifact. */
+export interface SeedanceAssetEntry {
+  name: string;
+  assetId: string;
+  assetUri: string;
+  intlAssetUri: string;
+}
+
+export interface SeedanceAssetsArtifact {
+  schemaVersion: 1;
+  projectSlug: string;
+  groupName: string;
+  generatedAt: string;
+  assets: SeedanceAssetEntry[];
+}
+
+/**
+ * Result of reading `artifacts/seedance-assets.json`. `assetUriByName` is the
+ * lookup the execution layer wants: subject name -> Asset:// URI. `assets`
+ * preserves the raw entries (assetId, intlAssetUri) for callers that need them.
+ */
+export interface SeedanceAssetsLookup {
+  assets: SeedanceAssetEntry[];
+  assetUriByName: Map<string, string>;
+}
+
+/**
+ * Read `artifacts/seedance-assets.json` for a project. Returns an empty lookup
+ * (no entries, empty map) when the artifact is absent — Seedance generations
+ * degrade gracefully to description-only / unmanaged references rather than
+ * failing. A present-but-malformed file is NOT swallowed: JSON.parse surfaces
+ * the corruption, matching sibling readers like product-references.ts.
+ */
+export async function readSeedanceAssets(
+  workspaceRoot: string,
+  slug: string,
+): Promise<SeedanceAssetsLookup> {
+  const workspace = resolveProjectWorkspace(slug, workspaceRoot);
+  const path = join(workspace.artifactsDir, 'seedance-assets.json');
+  if (!existsSync(path)) {
+    return { assets: [], assetUriByName: new Map() };
+  }
+  const parsed = JSON.parse(await readFile(path, 'utf-8')) as Partial<SeedanceAssetsArtifact>;
+  const assets: SeedanceAssetEntry[] = Array.isArray(parsed.assets)
+    ? parsed.assets.map((asset) => ({
+        name: asset.name,
+        assetId: asset.assetId,
+        assetUri: asset.assetUri,
+        intlAssetUri: asset.intlAssetUri,
+      }))
+    : [];
+  const assetUriByName = new Map<string, string>();
+  for (const asset of assets) {
+    if (asset.name && asset.assetUri) {
+      assetUriByName.set(asset.name, asset.assetUri);
+    }
+  }
+  return { assets, assetUriByName };
 }
 
 /** High-level: ensure the group, register each character image, return the Asset:// URIs. */

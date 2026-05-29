@@ -43,6 +43,11 @@ const KNOWN_ALTERNATE_WRITERS = new Set([
   // to anchor the product-subject filmmaking branch. Read by
   // src/video/product-references.ts; videoclaw never writes it.
   'product-references',
+  // Written via a direct writeFile() in src/cli/vclaw.ts
+  // handleVideoSeedanceRegisterAssets (the WRITER_RE only matches the typed
+  // writeArtifact() helper, and the scanner only walks src/video/**/*.ts).
+  // Read by src/video/seedance-asset-library.ts readSeedanceAssets().
+  'seedance-assets',
 ]);
 
 const REPO_ROOT = process.cwd();

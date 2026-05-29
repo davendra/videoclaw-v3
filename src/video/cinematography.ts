@@ -386,6 +386,132 @@ export function genreDefaults(genre: string): GenreDefaults {
 }
 
 /**
+ * A single ordered beat in a structured shot timeline. Beats are contiguous:
+ * the first `start` is 0 and the last `end` is the clip duration, with no gaps.
+ */
+export interface Beat {
+  start: number;
+  end: number;
+  label: string;
+  direction: string;
+}
+
+/**
+ * The beat-structure templates a shot plan can be scaffolded from. Mirrors the
+ * `BeatTemplate` union in {@link ../category-registry}.
+ */
+export type BeatTemplateId = 'three-act' | 'ad-hook-feature-cta' | 'turntable' | 'lookbook';
+
+interface BeatStep {
+  label: string;
+  direction: string;
+  weight: number;
+}
+
+/**
+ * Lay out a sequence of weighted steps as contiguous beats spanning
+ * `[startOffset, durationSeconds]`. The last beat's `end` is pinned exactly to
+ * `durationSeconds` so rounding never leaves a gap or overshoot.
+ */
+function layoutSteps(steps: BeatStep[], durationSeconds: number, startOffset: number): Beat[] {
+  const totalWeight = steps.reduce((sum, step) => sum + step.weight, 0) || 1;
+  const span = durationSeconds - startOffset;
+  const result: Beat[] = [];
+  let cursor = startOffset;
+  steps.forEach((step, index) => {
+    const isLast = index === steps.length - 1;
+    const end = isLast
+      ? durationSeconds
+      : Math.round((cursor + (span * step.weight) / totalWeight) * 100) / 100;
+    result.push({ start: cursor, end, label: step.label, direction: step.direction });
+    cursor = end;
+  });
+  return result;
+}
+
+/**
+ * Generate an ordered, contiguous set of {@link Beat}s for a beat template.
+ *
+ * The first beat always starts at 0 and the last beat always ends at
+ * `durationSeconds`, with no gaps between adjacent beats.
+ *
+ * - `three-act`: setup → inciting → rising → climax → resolve.
+ * - `ad-hook-feature-cta`: a HOOK beat `[0, hookSeconds]` (defaulting to a short
+ *   2s hook, clamped below the duration, when `hookSeconds` is 0), then
+ *   feature/benefit beats, ending with a CTA beat.
+ * - `turntable`: a "Hero angle" open and a "Hero angle (return)" close bracketing
+ *   rotation beats.
+ * - `lookbook`: a sequence of pose-change beats.
+ */
+export function beats(
+  template: BeatTemplateId,
+  durationSeconds: number,
+  hookSeconds: number,
+): Beat[] {
+  switch (template) {
+    case 'three-act':
+      return layoutSteps(
+        [
+          { label: 'Setup', direction: 'establish the subject, place, and tone', weight: 1 },
+          { label: 'Inciting', direction: 'introduce the disruption that sets the story in motion', weight: 1 },
+          { label: 'Rising', direction: 'escalate stakes and momentum toward the peak', weight: 2 },
+          { label: 'Climax', direction: 'land the highest-energy payoff beat', weight: 1 },
+          { label: 'Resolve', direction: 'settle the frame and leave a lingering final image', weight: 1 },
+        ],
+        durationSeconds,
+        0,
+      );
+    case 'ad-hook-feature-cta': {
+      const hookEnd =
+        hookSeconds > 0
+          ? Math.min(hookSeconds, durationSeconds)
+          : Math.min(2, Math.max(0, durationSeconds - 1));
+      const hook: Beat = {
+        start: 0,
+        end: hookEnd,
+        label: 'Hook',
+        direction: 'scroll-stopping opening beat that earns the next second',
+      };
+      const rest = layoutSteps(
+        [
+          { label: 'Feature', direction: 'show the product or idea in clear, confident detail', weight: 1 },
+          { label: 'Benefit', direction: 'translate the feature into a felt payoff for the viewer', weight: 1 },
+          { label: 'CTA', direction: 'direct call to action with a clear next step', weight: 1 },
+        ],
+        durationSeconds,
+        hookEnd,
+      );
+      return [hook, ...rest];
+    }
+    case 'turntable':
+      return layoutSteps(
+        [
+          { label: 'Hero angle', direction: 'open on the hero three-quarter angle, locked and clean', weight: 1 },
+          { label: 'Rotation', direction: 'smooth quarter-turn revealing form and surface', weight: 1 },
+          { label: 'Rotation (back)', direction: 'continue the orbit through the rear profile', weight: 1 },
+          { label: 'Hero angle (return)', direction: 'settle back on the hero three-quarter angle to close', weight: 1 },
+        ],
+        durationSeconds,
+        0,
+      );
+    case 'lookbook':
+      return layoutSteps(
+        [
+          { label: 'Look 1', direction: 'first pose and styling, full-length establishing frame', weight: 1 },
+          { label: 'Look 2', direction: 'pose change with a fresh angle and energy', weight: 1 },
+          { label: 'Look 3', direction: 'final pose and styling, signature closing frame', weight: 1 },
+        ],
+        durationSeconds,
+        0,
+      );
+    default: {
+      const exhaustive: never = template;
+      throw new Error(`unknown beat template: ${String(exhaustive)}`);
+    }
+  }
+}
+
+/**
  * Build an audio-mix prompt fragment at the requested detail level.
  *   - terse:    evocative words only, no numbers
  *   - standard: brief layer naming

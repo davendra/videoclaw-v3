@@ -5,6 +5,7 @@ import { cinemaMode, resolveCameraVocab, CINEMA_MODE_IDS, type CinemaModeId } fr
 import { hookBeat, HOOK_PATTERN_IDS, type HookPatternId } from '../video/cinematography.js';
 import { genreDefaults, type GenreDefaults } from '../video/cinematography.js';
 import { stackModes, type StackedShot } from '../video/cinematography.js';
+import { beats, type Beat } from '../video/cinematography.js';
 
 describe('cinematography emitters', () => {
   it('terse omits numbers, rich includes them', () => {
@@ -108,5 +109,33 @@ describe('genre defaults lookup', () => {
   it('unknown genre falls back to a neutral default without throwing', () => {
     const d = genreDefaults('claymation');
     assert.equal(typeof d.cutRatePerSec, 'number');
+  });
+});
+
+describe('beat templates', () => {
+  it('three-act yields setup/rising/climax-style ordered beats summing to duration', () => {
+    const b = beats('three-act', 15, 0);
+    assert.ok(b.length >= 3);
+    assert.equal(b[0].start, 0);
+    assert.equal(b[b.length - 1].end, 15);
+  });
+  it('ad-hook-feature-cta starts with a hook beat and ends with a CTA beat', () => {
+    const b = beats('ad-hook-feature-cta', 15, 2);
+    assert.equal(b[0].start, 0);
+    assert.equal(b[0].end, 2); // the 2s hook
+    assert.match(b[0].label.toLowerCase(), /hook/);
+    assert.match(b[b.length - 1].label.toLowerCase(), /cta|call to action/);
+    assert.equal(b[b.length - 1].end, 15);
+  });
+  it('turntable brackets the clip with a hero-angle open and close', () => {
+    const b = beats('turntable', 12, 0);
+    assert.match(b[0].label.toLowerCase(), /hero/);
+    assert.match(b[b.length - 1].label.toLowerCase(), /hero/);
+    assert.equal(b[b.length - 1].end, 12);
+  });
+  it('lookbook yields pose-change beats covering the duration', () => {
+    const b = beats('lookbook', 12, 0);
+    assert.ok(b.length >= 2);
+    assert.equal(b[b.length - 1].end, 12);
   });
 });

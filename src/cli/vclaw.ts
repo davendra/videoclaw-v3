@@ -2,7 +2,7 @@
 import { basename, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { existsSync, readFileSync } from 'node:fs';
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { copyFile, mkdir, readFile, writeFile } from 'node:fs/promises';
 import { buildProviderStatusReport } from '../video/provider-status.js';
 import { createAnalyzeOutput } from '../video/analyze-output.js';
 import { artifactPathFor, writeArtifact } from '../video/artifact-store.js';
@@ -25,6 +25,22 @@ import { generateFilmmakingPrompts, type FilmmakingPhase } from '../video/filmma
 import { resolveCategory } from '../video/category-registry.js';
 import { renderStoryboardGrid } from '../video/storyboard-grid.js';
 import { registerCharacterAssets } from '../video/seedance-asset-library.js';
+import {
+  buildBatchPayload,
+  clipPathForJob,
+  rollupBatchQueueState,
+  readBatchManifest,
+  readBatchQueueState,
+  sceneOutputPathFor,
+  writeBatchQueueState,
+  batchStatusPath,
+  type BatchQueueState,
+  type BatchRouteId,
+} from '../video/batch-queue.js';
+import { submitRunwayUseApiNative, pollRunwayUseApiNative } from '../video/native-runway.js';
+import { submitDreaminaUseApiNative, pollDreaminaUseApiNative } from '../video/native-dreamina.js';
+import { submitSeedanceDirectNative, pollSeedanceDirectNative } from '../video/native-seedance.js';
+import type { VideoExecutionPayload, VideoExecutionPollResult } from '../video/types.js';
 import { explainPromptQualityIssues, runMultiShotChecks } from '../video/prompt-quality.js';
 import { getBuiltinPipelineManifest } from '../video/pipeline-manifest.js';
 import { writeStageCheckpoint } from '../video/checkpoints.js';
@@ -2179,6 +2195,220 @@ async function handleVideoSeedanceRegisterAssets(args: string[]): Promise<void> 
   process.stdout.write(`${JSON.stringify({ artifactPath, ...artifact }, null, 2)}\n`);
 }
 
+// --- overnight batch video queue ---
+
+/**
+ * Submits a batch payload through the route's existing native in-process
+ * transport. No batch-specific submit logic: the same submit*Native used by
+ * the regular execute runtime, picked by route id.
+ */
+async function batchNativeSubmit(
+  route: BatchRouteId,
+  payload: VideoExecutionPayload,
+): Promise<{ externalJobId: string }> {
+  if (route === 'runway-useapi') return submitRunwayUseApiNative(payload);
+  if (route === 'dreamina-useapi') return submitDreaminaUseApiNative(payload);
+  return submitSeedanceDirectNative(payload);
+}
+
+/**
+ * Polls a batch through the route's native transport. The transport downloads
+ * completed outputs to <outputDir>/scene-<i>.mp4 itself.
+ */
+async function batchNativePoll(
+  route: BatchRouteId,
+  input: { outputDir: string; externalJobId: string; workspaceRoot: string },
+): Promise<VideoExecutionPollResult> {
+  if (route === 'runway-useapi') return pollRunwayUseApiNative(input);
+  if (route === 'dreamina-useapi') return pollDreaminaUseApiNative(input);
+  return pollSeedanceDirectNative(input);
+}
+
+async function handleVideoBatchSubmit(args: string[]): Promise<void> {
+  const manifestPath = parseFlagValue(args, '--manifest');
+  if (!manifestPath) {
+    throw new Error('video batch-submit requires --manifest <path>');
+  }
+  const outDir = parseFlagValue(args, '--out');
+  if (!outDir) {
+    throw new Error('video batch-submit requires --out <dir>');
+  }
+  const root = parseFlagValue(args, '--root') ?? process.cwd();
+  const manifest = await readBatchManifest(manifestPath);
+  const routeOverride = parseFlagValue(args, '--route');
+  if (routeOverride !== undefined) {
+    if (routeOverride !== 'runway-useapi' && routeOverride !== 'dreamina-useapi' && routeOverride !== 'seedance-direct') {
+      throw new Error(`video batch-submit: --route must be one of runway-useapi, dreamina-useapi, seedance-direct, got: ${routeOverride}`);
+    }
+    manifest.route = routeOverride;
+  }
+  const route = manifest.route;
+  await mkdir(outDir, { recursive: true });
+
+  const payload = buildBatchPayload(manifest, { workspaceRoot: root, outputDir: outDir });
+  const { externalJobId } = await batchNativeSubmit(route, payload);
+
+  const state: BatchQueueState = {
+    schemaVersion: 1,
+    externalJobId,
+    route,
+    outputDir: outDir,
+    workspaceRoot: root,
+    submittedAt: new Date().toISOString(),
+    jobs: manifest.jobs.map((job, index) => ({
+      id: job.id,
+      sceneIndex: index,
+      // The native transports own the provider task id; the batch queue keys on
+      // sceneIndex (scene-<i>.mp4) for downloads. taskId is recorded best-effort.
+      taskId: `${externalJobId}#${index}`,
+      status: 'pending' as const,
+    })),
+  };
+  await writeBatchQueueState(state);
+
+  writeOutput({
+    externalJobId,
+    route,
+    outputDir: outDir,
+    submittedAt: state.submittedAt,
+    jobCount: state.jobs.length,
+    jobs: state.jobs.map((j) => ({ id: j.id, sceneIndex: j.sceneIndex, status: j.status })),
+  });
+}
+
+/**
+ * One poll pass: advances pending jobs to done/failed, copying each freshly
+ * completed scene-<i>.mp4 into clips/<id>.mp4. Idempotent — already-done jobs
+ * short-circuit and are never re-downloaded. Returns the updated state.
+ */
+async function batchMonitorOnce(state: BatchQueueState): Promise<BatchQueueState> {
+  const result = await batchNativePoll(state.route, {
+    outputDir: state.outputDir,
+    externalJobId: state.externalJobId,
+    workspaceRoot: state.workspaceRoot,
+  });
+  const outputBySceneIndex = new Map<number, { path: string }>();
+  for (const output of result.outputs) {
+    if (typeof output.sceneIndex === 'number') {
+      outputBySceneIndex.set(output.sceneIndex, { path: output.path });
+    }
+  }
+  const issueText = result.issues.join(' | ');
+  for (const job of state.jobs) {
+    if (job.status === 'done' || job.status === 'failed') continue; // idempotent short-circuit
+    const output = outputBySceneIndex.get(job.sceneIndex);
+    if (output) {
+      const clipPath = clipPathForJob(state.outputDir, job.id);
+      if (!existsSync(clipPath)) {
+        await mkdir(dirname(clipPath), { recursive: true });
+        await copyFile(output.path ?? sceneOutputPathFor(state.outputDir, job.sceneIndex), clipPath);
+      }
+      job.status = 'done';
+      job.clipPath = clipPath;
+    } else if (result.status === 'failed') {
+      job.status = 'failed';
+      if (issueText) job.error = issueText;
+    }
+    // else: still pending; leave as-is.
+  }
+  await writeBatchQueueState(state);
+  return state;
+}
+
+async function writeBatchStatus(state: BatchQueueState): Promise<void> {
+  const rollup = rollupBatchQueueState(state);
+  const status = {
+    schemaVersion: 1 as const,
+    externalJobId: state.externalJobId,
+    route: state.route,
+    outputDir: state.outputDir,
+    updatedAt: new Date().toISOString(),
+    rollup,
+    jobs: state.jobs.map((j) => ({
+      id: j.id,
+      sceneIndex: j.sceneIndex,
+      status: j.status,
+      ...(j.clipPath ? { clipPath: j.clipPath } : {}),
+      ...(j.error ? { error: j.error } : {}),
+    })),
+  };
+  await writeFile(batchStatusPath(state.outputDir), `${JSON.stringify(status, null, 2)}\n`);
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function handleVideoBatchMonitor(args: string[]): Promise<void> {
+  const outDir = parseFlagValue(args, '--out');
+  if (!outDir) {
+    throw new Error('video batch-monitor requires --out <dir>');
+  }
+  const once = args.includes('--once');
+  const intervalSec = parsePositiveIntegerFlag(args, '--interval') ?? 1200;
+  const maxMinutesRaw = parseFlagValue(args, '--max-minutes');
+  const maxMinutes = maxMinutesRaw === undefined ? undefined : Number(maxMinutesRaw);
+  if (maxMinutes !== undefined && (!Number.isFinite(maxMinutes) || maxMinutes <= 0)) {
+    throw new Error(`video batch-monitor: --max-minutes must be a positive number, got: ${maxMinutesRaw}`);
+  }
+
+  let state = await readBatchQueueState(outDir);
+  const deadline = maxMinutes !== undefined ? Date.now() + maxMinutes * 60_000 : undefined;
+
+  // First pass always runs.
+  state = await batchMonitorOnce(state);
+  await writeBatchStatus(state);
+  let rollup = rollupBatchQueueState(state);
+
+  if (!once) {
+    while (!rollup.terminal) {
+      if (deadline !== undefined && Date.now() >= deadline) break;
+      await sleep(intervalSec * 1000);
+      state = await readBatchQueueState(outDir);
+      state = await batchMonitorOnce(state);
+      await writeBatchStatus(state);
+      rollup = rollupBatchQueueState(state);
+    }
+  }
+
+  writeOutput({
+    externalJobId: state.externalJobId,
+    route: state.route,
+    outputDir: state.outputDir,
+    rollup,
+    jobs: state.jobs.map((j) => ({
+      id: j.id,
+      sceneIndex: j.sceneIndex,
+      status: j.status,
+      ...(j.clipPath ? { clipPath: j.clipPath } : {}),
+      ...(j.error ? { error: j.error } : {}),
+    })),
+  });
+}
+
+async function handleVideoBatchStatus(args: string[]): Promise<void> {
+  const outDir = parseFlagValue(args, '--out');
+  if (!outDir) {
+    throw new Error('video batch-status requires --out <dir>');
+  }
+  const state = await readBatchQueueState(outDir);
+  const rollup = rollupBatchQueueState(state);
+  writeOutput({
+    externalJobId: state.externalJobId,
+    route: state.route,
+    outputDir: state.outputDir,
+    submittedAt: state.submittedAt,
+    rollup,
+    jobs: state.jobs.map((j) => ({
+      id: j.id,
+      sceneIndex: j.sceneIndex,
+      status: j.status,
+      ...(j.clipPath ? { clipPath: j.clipPath } : {}),
+      ...(j.error ? { error: j.error } : {}),
+    })),
+  });
+}
+
 function parsePositiveIntegerFlag(args: string[], flag: string): number | undefined {
   const raw = parseFlagValue(args, flag);
   if (raw === undefined) return undefined;
@@ -4195,6 +4425,21 @@ export async function main(): Promise<void> {
 
   if (command === 'video' && subcommand === 'seedance-register-assets') {
     await handleVideoSeedanceRegisterAssets(rest);
+    return;
+  }
+
+  if (command === 'video' && subcommand === 'batch-submit') {
+    await handleVideoBatchSubmit(rest);
+    return;
+  }
+
+  if (command === 'video' && subcommand === 'batch-monitor') {
+    await handleVideoBatchMonitor(rest);
+    return;
+  }
+
+  if (command === 'video' && subcommand === 'batch-status') {
+    await handleVideoBatchStatus(rest);
     return;
   }
 

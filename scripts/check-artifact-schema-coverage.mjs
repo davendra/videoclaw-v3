@@ -48,6 +48,12 @@ const KNOWN_ALTERNATE_WRITERS = new Set([
   // writeArtifact() helper, and the scanner only walks src/video/**/*.ts).
   // Read by src/video/seedance-asset-library.ts readSeedanceAssets().
   'seedance-assets',
+  // Input-only artifact: operators hand-author a batch-queue-manifest.json and
+  // pass it via `vclaw video batch-submit --manifest <path>`. Parsed by
+  // src/video/batch-queue.ts readBatchManifest(); videoclaw never writes it
+  // (the persisted queue-state file is batch-queue.json, a separate runtime
+  // file, not a canonical artifact).
+  'batch-queue-manifest',
 ]);
 
 const REPO_ROOT = process.cwd();

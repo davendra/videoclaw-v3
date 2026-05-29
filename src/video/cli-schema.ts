@@ -144,6 +144,23 @@ const COMMANDS: CommandSpec[] = [
     description: 'Register character reference images as xskill Asset Library avatars (Asset:// URIs) for ark/seedance-2.0 character consistency; writes artifacts/seedance-assets.json.',
   },
 
+  // --- overnight batch video queue ---
+  {
+    name: 'video batch-submit',
+    usage: 'vclaw video batch-submit --manifest <path> --out <dir> [--route runway-useapi|dreamina-useapi|seedance-direct] [--root <path>]',
+    description: 'Submit a batch-queue manifest (many jobs) through a native route; persists <dir>/batch-queue.json. Defaults to the free runway-useapi explore mode.',
+  },
+  {
+    name: 'video batch-monitor',
+    usage: 'vclaw video batch-monitor --out <dir> [--once] [--interval <sec>] [--max-minutes <n>]',
+    description: 'Poll a submitted batch, download completed clips to <dir>/clips/<jobId>.mp4, and refresh <dir>/batch-status.json. --once does a single pass (schedule it via launchd); without --once it loops every --interval seconds until terminal or --max-minutes elapses.',
+  },
+  {
+    name: 'video batch-status',
+    usage: 'vclaw video batch-status --out <dir>',
+    description: 'Print the current batch queue-state rollup (done/pending/failed) without polling (read-only).',
+  },
+
   // --- portfolio + status ---
   { name: 'video list', usage: 'vclaw video list [--root <path>]' },
   { name: 'video index', usage: 'vclaw video index [--root <path>] [--output <path>]' },

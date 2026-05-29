@@ -1067,6 +1067,81 @@ execution falls back to the normal storyboard plus asset manifest inputs. This
 prevents incomplete prompts such as `@image3` storyboard-grid references from
 being submitted before the matching image exists.
 
+## Overnight batch video queue
+
+Queue many independent video jobs and run them unattended overnight. The
+default route is the **free** `runway-useapi` explore mode — low-res, slow
+"backfill draft" generation that costs no credits, so a large queue can land
+by morning. Target `dreamina-useapi` (or `seedance-direct`) when you want paid
+hi-res output instead.
+
+A batch is one JSON manifest you author. It compiles into a single execution
+payload with N tasks and runs through the same native route transport
+(`native-runway` / `native-dreamina` / `native-seedance`) the normal execute
+runtime uses — there is no separate submit/poll path.
+
+### Manifest shape
+
+`schemas/video/artifacts/batch-queue-manifest.schema.json`:
+
+```json
+{
+  "schemaVersion": 1,
+  "route": "runway-useapi",
+  "defaults": { "seconds": 8, "aspectRatio": "16:9", "resolution": "720p" },
+  "jobs": [
+    { "id": "skyline", "prompt": "a neon city skyline at night, slow drift" },
+    { "id": "forest", "prompt": "a quiet pine forest at dawn", "keyframe": "/refs/forest.jpg", "seconds": 10 },
+    { "id": "desert", "prompt": "a desert dune ridge under hard noon sun", "aspectRatio": "9:16" }
+  ]
+}
+```
+
+- `route` (optional) — one of `runway-useapi` (default, free), `dreamina-useapi`,
+  `seedance-direct`.
+- `defaults` (optional) — `seconds` / `aspectRatio` / `resolution` applied to any
+  job that omits them.
+- each `job` requires `id` (stable; becomes the downloaded clip filename) and
+  `prompt`; `keyframe` (local path or public http(s) URL) and `seconds` are
+  optional per-job overrides. `id`s must be unique.
+
+### Commands
+
+```bash
+# 1. Submit the whole batch (free explore by default). Writes <dir>/batch-queue.json.
+vclaw video batch-submit --manifest batch.json --out runs/overnight [--route runway-useapi]
+
+# 2. Monitor on a schedule. --once does a single pass + exits (what launchd calls).
+vclaw video batch-monitor --out runs/overnight --once
+
+# 2b. Or loop foreground until everything is terminal (or --max-minutes elapses):
+vclaw video batch-monitor --out runs/overnight --interval 1200 --max-minutes 600
+
+# 3. Read-only rollup (never polls):
+vclaw video batch-status --out runs/overnight
+```
+
+- `batch-submit` reads the manifest, builds the payload, calls the route's
+  native submit, and persists `<dir>/batch-queue.json`
+  (`{ externalJobId, route, outputDir, submittedAt, jobs:[{id, sceneIndex, taskId, status}] }`).
+- `batch-monitor` polls once via the route's native transport (which downloads
+  completed outputs to `<dir>/scene-<i>.mp4`), then copies each finished scene to
+  `<dir>/clips/<jobId>.mp4`, updates statuses, and writes `<dir>/batch-status.json`.
+- `batch-status` prints the current done/pending/failed rollup without polling.
+
+**Resumable / idempotent.** Re-running `batch-monitor` only advances pending
+jobs to done/failed. Jobs already `done` (or whose `clips/<id>.mp4` already
+exists) short-circuit — completed clips are never re-downloaded and nothing is
+resubmitted. This is what makes `--once` safe to drive from launchd/cron on a
+schedule: each scheduled invocation just picks up where the last one left off.
+
+### Scheduling with launchd
+
+Point a launchd agent at `vclaw video batch-monitor --out <dir> --once` on a
+20-minute `StartInterval` (1200s). Each tick advances the queue and exits; when
+the rollup is terminal, subsequent ticks are no-ops. Finished clips collect in
+`<dir>/clips/<jobId>.mp4`, ready to use by morning.
+
 ## Prompt library
 
 `prompt-lib-list` and `prompt-lib-show` expose imported reference assets for:

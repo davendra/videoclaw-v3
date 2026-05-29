@@ -277,6 +277,13 @@ export async function submitSeedanceDirectNative(
   const createUrl = `${baseUrl(env)}/api/v3/tasks/create`;
   const externalJobId = `seedance-${Date.now()}`;
 
+  // Preflight: validate every task's reference budget before any network call so
+  // an over-budget task N cannot cause a partial submit (tasks 0..N-1 already
+  // charged against provider credits while task N throws).
+  for (const task of payload.tasks) {
+    assertReferenceBudget(task.referencePaths);
+  }
+
   const scenes: SeedanceJobSceneState[] = [];
   const rawResults: unknown[] = [];
   for (const task of payload.tasks) {

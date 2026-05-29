@@ -87,4 +87,61 @@ describe('seedanceReferenceParams budget enforcement (via submit path)', () => {
       await rm(root, { recursive: true, force: true });
     }
   });
+
+  it('rejects before any fetch when task 0 is in-budget but task 1 is over-budget (no partial submit)', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'vclaw-seedance-budget-partial-'));
+    let fetchCallCount = 0;
+    try {
+      await assert.rejects(
+        submitSeedanceDirectNative({
+          workspaceRoot: root,
+          projectSlug: 'alpha',
+          productionMode: 'director',
+          routeId: 'seedance-direct',
+          operationKind: 'image-to-video',
+          executionProfile: {
+            aspectRatio: '16:9',
+            quality: 'quality',
+            resolution: '720p',
+            generateAudio: true,
+            outputCount: 1,
+          },
+          generatedAt: new Date().toISOString(),
+          outputDir: join(root, 'outputs'),
+          tasks: [
+            {
+              sceneIndex: 0,
+              prompt: 'Task 0 is within budget.',
+              inputKind: 'image',
+              referencePaths: repeat(image, 2),
+              sourceAssetIds: [],
+              backendHints: [],
+              characters: [],
+            },
+            {
+              sceneIndex: 1,
+              prompt: 'Task 1 is over-budget on images.',
+              inputKind: 'image',
+              referencePaths: repeat(image, 10),
+              sourceAssetIds: [],
+              backendHints: [],
+              characters: [],
+            },
+          ],
+          promptGuidance: [],
+        }, {
+          env: { SUTUI_API_KEY: 'test-sutui' },
+          fetchImpl: async () => {
+            fetchCallCount += 1;
+            throw new Error('fetch must not be reached in a whole-payload preflight');
+          },
+        }),
+        /image/i,
+      );
+      // Confirm fetch was never called — proving no task 0 partial submit occurred.
+      assert.equal(fetchCallCount, 0, 'fetchImpl was called but should not have been');
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
 });

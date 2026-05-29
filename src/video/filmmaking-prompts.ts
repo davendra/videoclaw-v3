@@ -3,15 +3,19 @@ import { readFile } from 'node:fs/promises';
 import { artifactPathFor, writeArtifact } from './artifact-store.js';
 import {
   audioMix,
+  beats,
   cameraSpec,
   gradeSpec,
   lightingSpec,
+  orbitGrammar,
+  type Beat,
   type CameraMove,
   type DetailLevel,
 } from './cinematography.js';
 import type { AssetManifestArtifact, BriefArtifact, StoryboardArtifact } from './artifacts.js';
-import { resolveCategory } from './category-registry.js';
+import { resolveCategory, type CategoryDescriptor } from './category-registry.js';
 import { listCharacterProfiles, type CharacterProfile } from './characters.js';
+import { readProductReferences } from './product-references.js';
 import { readReferenceSheetsArtifact } from './reference-sheet-store.js';
 import type { ReferenceSheet, ReferenceSheetsArtifact } from './types.js';
 import { ensureProjectWorkspace, type VideoProjectWorkspace } from './workspace.js';
@@ -296,7 +300,9 @@ export async function generateFilmmakingPrompts(
   // The descriptor supplies a default genre; an explicit `--genre` still wins.
   // For the cinematic default this yields `'live-action'`, identical to today's
   // behavior — purely internal plumbing, no output change on the character path.
-  // subjectType is always 'character' for now (product is Phase D).
+  // `subjectType` selects the branch: `'character'` (default) keeps today's
+  // cinematic/character path verbatim; `'product'` takes the additive
+  // product-subject branch below.
   const descriptor = resolveCategory(options.category);
   const effectiveGenre = options.genre ?? descriptor.genre;
   const genreStyle = resolveGenreStyle(effectiveGenre);
@@ -305,11 +311,26 @@ export async function generateFilmmakingPrompts(
   const detail = options.detail ?? 'standard';
   const workspace = await ensureProjectWorkspace(options.projectSlug, root);
   const brief = await readOptionalArtifact<BriefArtifact>(workspace, 'brief');
+  const generatedAt = new Date().toISOString();
+
+  if (descriptor.subjectType === 'product') {
+    return generateProductPrompts({
+      options,
+      workspace,
+      brief,
+      descriptor,
+      genreStyle,
+      aspectRatio,
+      durationSeconds,
+      detail,
+      generatedAt,
+    });
+  }
+
   const storyboard = await readOptionalArtifact<StoryboardArtifact>(workspace, 'storyboard');
   const assetManifest = await readOptionalArtifact<AssetManifestArtifact>(workspace, 'asset-manifest');
   const referenceSheets = await readReferenceSheetsArtifact(root, options.projectSlug);
   const characters = await listCharacterProfiles(workspace);
-  const generatedAt = new Date().toISOString();
   const issues: FilmmakingPromptIssue[] = [];
 
   const referenceMap = buildReferenceMap(referenceSheets, characters, assetManifest);
@@ -386,6 +407,144 @@ export async function generateFilmmakingPrompts(
     artifact,
     artifactPath: await writeArtifact(workspace, 'filmmaking-prompts', artifact),
   };
+}
+
+// ---------------------------------------------------------------------------
+// Product-subject branch (descriptor.subjectType === 'product').
+//
+// Additive path: NO character sheets, NO storyboard-grid character lock. Each
+// product becomes a text-driven Seedance packet whose timeline follows the
+// descriptor's beat template (ad-hook-feature-cta / turntable / lookbook), with
+// orbit grammar woven in for orbit/turntable camera vocabularies and the
+// product reference assets carried as @imageN reference slots.
+// ---------------------------------------------------------------------------
+async function generateProductPrompts(input: {
+  options: GenerateFilmmakingPromptsOptions;
+  workspace: VideoProjectWorkspace;
+  brief: BriefArtifact | undefined;
+  descriptor: CategoryDescriptor;
+  genreStyle: GenreStyle;
+  aspectRatio: string;
+  durationSeconds: number;
+  detail: DetailLevel;
+  generatedAt: string;
+}): Promise<GenerateFilmmakingPromptsResult> {
+  const { options, workspace, brief, descriptor, genreStyle, aspectRatio, durationSeconds, detail, generatedAt } = input;
+  const issues: FilmmakingPromptIssue[] = [];
+  const { products } = await readProductReferences(workspace);
+
+  const productList = products.length > 0
+    ? products
+    : [{ name: brief?.title ?? 'the product', referenceAssets: [] as string[] }];
+  if (products.length === 0) {
+    issues.push({
+      code: 'reference-slot-pending',
+      severity: 'warning',
+      message: 'No product-references.json found; product packets fall back to a description-only hero from the brief.',
+      path: 'artifacts/product-references.json',
+    });
+  }
+
+  const referenceMap: FilmmakingReferenceSlot[] = [];
+  for (const product of productList) {
+    for (const asset of product.referenceAssets) {
+      referenceMap.push({
+        slot: nextSlot(referenceMap.length),
+        role: 'reference-image',
+        label: `${product.name} reference`,
+        path: asset,
+        status: 'ready',
+      });
+    }
+  }
+
+  const orbitKind = descriptor.beatTemplate === 'turntable' ? 'product-rotation' : 'camera-orbit';
+  const useOrbit = descriptor.cameraVocab === 'orbit' || descriptor.beatTemplate === 'turntable';
+
+  const seedancePackets: FilmmakingSeedancePacket[] = productList.map((product, index) => {
+    const productSlots = referenceMap.filter((slot) => slot.label === `${product.name} reference`);
+    const productBeats = beats(descriptor.beatTemplate, durationSeconds, descriptor.hookSeconds);
+    return {
+      sceneIndex: index,
+      variant: 'text-driven',
+      durationSeconds,
+      references: productSlots,
+      promptText: productPromptText({
+        product,
+        productSlots,
+        brief,
+        descriptor,
+        genreStyle,
+        aspectRatio,
+        durationSeconds,
+        detail,
+        productBeats,
+        useOrbit,
+        orbitKind,
+      }),
+      warnings: productSlots.filter((slot) => slot.status === 'pending').map((slot) => `${slot.slot} ${slot.label} is pending.`),
+    };
+  });
+
+  const artifact: FilmmakingPromptsArtifact = {
+    schemaVersion: 1,
+    projectSlug: options.projectSlug,
+    generatedAt,
+    sourceSkill: 'ai-filmmaking',
+    durationDefaultSeconds: durationSeconds,
+    referenceMap,
+    characterSheetPrompts: [],
+    storyboardGridPrompt: null,
+    seedancePackets,
+    issues,
+  };
+
+  if (!options.write) return { artifact };
+  return {
+    artifact,
+    artifactPath: await writeArtifact(workspace, 'filmmaking-prompts', artifact),
+  };
+}
+
+function productPromptText(input: {
+  product: { name: string; referenceAssets: string[] };
+  productSlots: FilmmakingReferenceSlot[];
+  brief: BriefArtifact | undefined;
+  descriptor: CategoryDescriptor;
+  genreStyle: GenreStyle;
+  aspectRatio: string;
+  durationSeconds: number;
+  detail: DetailLevel;
+  productBeats: Beat[];
+  useOrbit: boolean;
+  orbitKind: 'product-rotation' | 'camera-orbit';
+}): string {
+  const { product, productSlots, brief, descriptor, genreStyle, aspectRatio, durationSeconds, detail, productBeats, useOrbit, orbitKind } = input;
+  const productName = cleanSentence(product.name) || 'the product';
+  const subjectDescription = cleanSentence(brief?.intent ?? '') || `the hero product, ${productName}`;
+  const refLine = productSlots.length > 0
+    ? `REFERENCE: ${productSlots.map((slot) => `${slot.slot} (${slot.label})`).join(', ')} — match the product's exact form, color, finish, and proportions.`
+    : 'REFERENCE: no reference image attached — render the product faithfully from the description.';
+  const heroNote = descriptor.beatTemplate === 'turntable'
+    ? 'Open and close on the hero three-quarter angle; the rotation must return cleanly to that hero framing.'
+    : '';
+  const orbitLine = useOrbit ? `CAMERA: ${orbitGrammar(orbitKind)}` : '';
+  const lines = [
+    `FORMAT: ${durationSeconds} seconds / ${genreStyle.formatTone} / ${aspectRatio} / ${descriptor.label}`,
+    '',
+    `PRODUCT: ${productName} — ${subjectDescription}.`,
+    refLine,
+    orbitLine,
+    heroNote,
+    `STYLE: ${genreStyle.gridStyleDescriptors}. Aspect ratio ${aspectRatio} held across every shot.${detail === 'rich' ? ` ${richCinematographySuffix()}` : ''}`,
+    `AUDIO: diegetic product sound only, natural ambience, no voice-over unless the brief asks.${detail === 'rich' ? ` ${richAudioSuffix()}` : ''}`,
+    '',
+    `TIMELINE (must cover full 0:00-${formatSeconds(durationSeconds)}):`,
+    ...productBeats.map((beat) => (
+      `${formatSeconds(Math.round(beat.start))}-${formatSeconds(Math.round(beat.end))} ${beat.label.toUpperCase()}: ${beat.direction}.`
+    )),
+  ];
+  return lines.filter(Boolean).join('\n');
 }
 
 function buildReferenceMap(

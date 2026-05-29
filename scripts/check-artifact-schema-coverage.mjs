@@ -39,6 +39,10 @@ const KNOWN_ALTERNATE_WRITERS = new Set([
   // Written via writeArtifact() in src/cli/vclaw.ts handleVideoMultiShot
   // (--auto --project path). The WRITER_RE only scans src/video/**/*.ts.
   'multi-shot-prompt',
+  // Input-only artifact: operators hand-author artifacts/product-references.json
+  // to anchor the product-subject filmmaking branch. Read by
+  // src/video/product-references.ts; videoclaw never writes it.
+  'product-references',
 ]);
 
 const REPO_ROOT = process.cwd();

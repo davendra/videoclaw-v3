@@ -6,8 +6,25 @@ import { tmpdir } from 'node:os';
 import { createBriefArtifact, createStoryboardArtifact } from '../video/artifacts.js';
 import { writeArtifact } from '../video/artifact-store.js';
 import { addCharacterProfile } from '../video/characters.js';
-import { generateFilmmakingPrompts } from '../video/filmmaking-prompts.js';
+import { generateFilmmakingPrompts, resolveGenreStyle } from '../video/filmmaking-prompts.js';
 import { ensureProjectWorkspace } from '../video/workspace.js';
+
+async function setupGenreProject(slug: string, root: string): Promise<void> {
+  const workspace = await ensureProjectWorkspace(slug, root);
+  await addCharacterProfile(workspace, {
+    name: 'Meera',
+    description: 'Indian woman operative, 30s, long braid, sharp jaw, dark eyes, long dark coat over tactical vest.',
+    referenceAssets: ['characters/meera-sheet.jpg'],
+  });
+  await writeArtifact(workspace, 'brief', createBriefArtifact({
+    title: 'Genre Probe', intent: 'A scene.', productionMode: 'director',
+  }));
+  await writeArtifact(workspace, 'storyboard', createStoryboardArtifact({
+    projectSlug: slug, productionMode: 'director',
+    scenes: [{ sceneIndex: 0, description: 'Meera advances through smoke', characters: ['Meera'], durationSeconds: 15,
+      scenePrompt: { animationPrompt: 'Meera steps through smoke.' } }],
+  }));
+}
 
 describe('filmmaking prompt packets', () => {
   it('generates character sheets, storyboard grid prompt, reference map, and Seedance packets', async () => {
@@ -141,6 +158,64 @@ describe('filmmaking prompt packets', () => {
     assert.match(result.artifact.seedancePackets[0]?.promptText ?? '', /faces obscured \(content-filter safe\)/);
     // The single-frame guard is unconditional — present with or without --no-faces.
     assert.match(result.artifact.seedancePackets[0]?.promptText ?? '', /single full-frame cinematic shot/);
+  });
+
+  it('threads genre style + aspect ratio through every template (anime, 9:16)', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'vclaw-fp-genre-anime-'));
+    await setupGenreProject('anime-p', root);
+    const result = await generateFilmmakingPrompts({ root, projectSlug: 'anime-p', genre: 'anime', aspectRatio: '9:16' });
+    // Char sheet picks the anime style block + 9:16
+    assert.match(result.artifact.characterSheetPrompts[0]?.promptText ?? '', /2D anime cel-shading/);
+    assert.match(result.artifact.characterSheetPrompts[0]?.promptText ?? '', /Aspect ratio = 9:16/);
+    // Storyboard grid carries the anime descriptors + 9:16 page layout
+    assert.match(result.artifact.storyboardGridPrompt?.promptText ?? '', /2D anime cel-shading/);
+    assert.match(result.artifact.storyboardGridPrompt?.promptText ?? '', /9:16 page layout/);
+    // Seedance packet states the aspect ratio
+    assert.match(result.artifact.seedancePackets[0]?.promptText ?? '', /9:16/);
+  });
+
+  it('substitutes the annotation third line by genre (influencer→VOICE, action→STYLE), MOOD by default', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'vclaw-fp-thirdline-'));
+    await setupGenreProject('thirdline-p', root);
+
+    const dflt = await generateFilmmakingPrompts({ root, projectSlug: 'thirdline-p' });
+    assert.match(dflt.artifact.storyboardGridPrompt?.promptText ?? '', /CAM, MOVE, and MOOD/);
+    assert.match(dflt.artifact.storyboardGridPrompt?.promptText ?? '', /\bMOOD: /);
+
+    const vlog = await generateFilmmakingPrompts({ root, projectSlug: 'thirdline-p', genre: 'influencer' });
+    assert.match(vlog.artifact.storyboardGridPrompt?.promptText ?? '', /CAM, MOVE, and VOICE/);
+    assert.match(vlog.artifact.storyboardGridPrompt?.promptText ?? '', /\bVOICE: /);
+    assert.match(vlog.artifact.characterSheetPrompts[0]?.promptText ?? '', /iPhone selfie-camera aesthetic/);
+
+    const action = await generateFilmmakingPrompts({ root, projectSlug: 'thirdline-p', genre: 'martial-arts' });
+    assert.match(action.artifact.storyboardGridPrompt?.promptText ?? '', /CAM, MOVE, and STYLE/);
+    assert.match(action.artifact.storyboardGridPrompt?.promptText ?? '', /\bSTYLE: /);
+  });
+
+  it('flags a >100-word character description as an error (skill failure threshold)', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'vclaw-fp-bloat-'));
+    const workspace = await ensureProjectWorkspace('bloat-p', root);
+    const bloated = Array.from({ length: 110 }, (_, i) => `trait${i}`).join(' ');
+    await addCharacterProfile(workspace, { name: 'Bloaty', description: bloated, referenceAssets: [] });
+    await writeArtifact(workspace, 'brief', createBriefArtifact({ title: 'B', intent: 'x', productionMode: 'director' }));
+    await writeArtifact(workspace, 'storyboard', createStoryboardArtifact({
+      projectSlug: 'bloat-p', productionMode: 'director',
+      scenes: [{ sceneIndex: 0, description: 'beat', characters: ['Bloaty'] }],
+    }));
+    const result = await generateFilmmakingPrompts({ root, projectSlug: 'bloat-p' });
+    const issue = result.artifact.issues.find((i) => i.code === 'character-description-long');
+    assert.equal(issue?.severity, 'error');
+  });
+
+  it('resolveGenreStyle maps aliases and passes unknown genres through', () => {
+    assert.equal(resolveGenreStyle('photoreal').genre, 'live-action');
+    assert.equal(resolveGenreStyle('3d').genre, 'pixar');
+    assert.equal(resolveGenreStyle('vlog').annotationThirdLine, 'VOICE');
+    assert.equal(resolveGenreStyle('fight').annotationThirdLine, 'STYLE');
+    assert.equal(resolveGenreStyle(undefined).genre, 'live-action');
+    const unknown = resolveGenreStyle('claymation');
+    assert.equal(unknown.genre, 'claymation');
+    assert.equal(unknown.annotationThirdLine, 'MOOD');
   });
 
   it('falls back to text-driven Seedance packets when storyboard grid context is missing', async () => {

@@ -885,20 +885,33 @@ Full framework rules and the variation guide: `vclaw video prompt-lib-show --nam
 ## Filmmaking prompt packets
 
 ```bash
-vclaw video filmmaking-prompts --project <slug> [--root <path>] [--duration <seconds>] [--storyboard-grid <path>] [--write]
+vclaw video filmmaking-prompts --project <slug> [--root <path>] [--duration <seconds>] [--storyboard-grid <path>] [--genre live-action|pixar|anime|noir|influencer|action|music-video] [--aspect-ratio 16:9|9:16] [--no-faces] [--write]
 ```
 
 Generates the first-class prompt packet layer derived from the
 `ai-filmmaking` workflow. This command is deterministic: it reads existing
 project artifacts and writes no model output unless `--write` is provided.
 
+`--genre` is a swappable style parameter (the skill is genre-agnostic): it sets
+the character-sheet STYLE block, the storyboard grid style descriptors, and the
+Seedance FORMAT tone, and selects the annotation third line (MOOD by default,
+VOICE for `influencer`/vlog, STYLE for `action`/martial-arts). Aliases like
+`photoreal`→`live-action`, `3d`→`pixar`, `vlog`→`influencer` resolve
+automatically; an unknown value passes through as a free-form descriptor.
+`--aspect-ratio` (default `16:9`; use `9:16` for vertical/social) is stated in
+every template and every shot. `--no-faces` renders the storyboard grid in a
+silhouette / no-frontal-face register so it survives real-person content
+filters when used as a provider `reference_image`.
+
 The packet includes:
 
 - `characterSheetPrompts[]` — 8-view character reference sheet prompts. When a
   character already has reference assets, the prompt uses reference-image mode
   and avoids re-describing the image; otherwise it uses a concise description.
+  Descriptions over 60 words warn; over 100 words are flagged as an error
+  (the skill's bloat/scene-contamination failure threshold).
 - `storyboardGridPrompt` — a 3x3 / 9-panel cinematic storyboard grid prompt
-  with CAM / MOVE / MOOD production-note strips.
+  with CAM / MOVE / (MOOD|VOICE|STYLE) production-note strips.
 - `referenceMap[]` — stable `@image1`, `@image2`, ... slots for character
   sheets, storyboard grid, and per-scene start frames.
 - `seedancePackets[]` — per-scene Seedance prompt packets. If character sheets

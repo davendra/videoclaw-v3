@@ -186,7 +186,7 @@ function printHelp(): void {
   process.stdout.write('  vclaw video execute-cancel --project <slug> [--root <path>] [--mode storyboard|director]\n');
   process.stdout.write('  vclaw video review-ui --project <slug> [--root <path>] [--host <host>] [--port <port>] [--ui-path <path>] [--dry-run]\n');
   process.stdout.write('  vclaw video review-autopilot --project <slug> [--root <path>] [--template <template-id>] [--character <name>] [--run-id <id>]\n');
-  process.stdout.write('  vclaw video filmmaking-prompts --project <slug> [--root <path>] [--duration <seconds>] [--storyboard-grid <path>] [--no-faces] [--write]\n');
+  process.stdout.write('  vclaw video filmmaking-prompts --project <slug> [--root <path>] [--duration <seconds>] [--storyboard-grid <path>] [--genre live-action|pixar|anime|noir|influencer|action|music-video] [--aspect-ratio 16:9|9:16] [--no-faces] [--write]\n');
   process.stdout.write('  vclaw video storyboard-grid --project <slug> [--root <path>] [--output <path>] [--width <px>] [--height <px>] [--dry-run]\n');
   process.stdout.write('  vclaw video portal --project <slug> [--root <path>] [--client <name>] [--run <id>] [--surface edit|review|client-review|preview|compare|index]\n');
   process.stdout.write('  vclaw video portal-index [--root <path>] [--client <name>] [--output <path>]\n');
@@ -2083,12 +2083,16 @@ async function handleVideoFilmmakingPrompts(args: string[]): Promise<void> {
   const root = parseFlagValue(args, '--root') ?? process.cwd();
   const durationSeconds = parsePositiveIntegerFlag(args, '--duration');
   const storyboardGridPath = parseFlagValue(args, '--storyboard-grid');
+  const genre = parseFlagValue(args, '--genre');
+  const aspectRatio = parseFlagValue(args, '--aspect-ratio');
   const result = await generateFilmmakingPrompts({
     root,
     projectSlug,
     ...(durationSeconds !== undefined ? { durationSeconds } : {}),
     ...(storyboardGridPath ? { storyboardGridPath } : {}),
     ...(args.includes('--no-faces') ? { noFaces: true } : {}),
+    ...(genre ? { genre } : {}),
+    ...(aspectRatio ? { aspectRatio } : {}),
     write: args.includes('--write'),
   });
   process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);

@@ -780,6 +780,9 @@ metadata block.
 | `--from-storyboard` | false | Hydrate `--plan` or `--auto` from a project storyboard scene. Requires `--project <slug>` and `--scene <sceneIndex>`. |
 | `--shots <n>` | auto (preset window) | Exact shot count for `--plan`. Must fall within the resolved preset's `[minShots, maxShots]`; out-of-range values fail fast. |
 | `--seed <n>` | random | PRNG seed for reproducible plans. |
+| `--format <name>` | `default` | With `--plan`: select the rendered output. `default` emits the original `{ preset, shots[] }` JSON (unchanged). `seedance-paragraph` renders one flowing labeled paragraph via `composeSeedanceParagraph`. `per-shot` renders one `SHOT N — NAME` block per shot via `composePerShotFormat`. |
+| `--lang <code>` | `en` | With `--plan` and a non-`default` `--format`: wrap the rendered text for bilingual delivery. `en` = one fenced block; `zh` = one fenced block; `en+zh` = two labeled (`EN` / `中文`) fenced blocks. Translation is offline/identity here — the flag surfaces the wrapper structure only; no network translation is performed. |
+| `--category <id>` | `cinematic` | With `--plan` and a non-`default` `--format`: the category descriptor (subject type, beat template, genre) that drives the composed prose. One of the registered category ids; unknown ids fail fast. |
 | `--total-seconds <n>` | 15 | Total clip duration in seconds. |
 | `--max-chars <n>` | 1500 | Character budget enforced by `--validate`. |
 | `--style-line <text>` | cinematic-15s default | Override the `Style:` metadata line. |
@@ -801,6 +804,8 @@ metadata block.
 `--presets` emits JSON: `{ presets[] }` with every registered preset and its duration, shot-count, per-shot-duration, character-budget, style, and audio contract.
 
 `--plan` emits JSON: `{ preset, shots[] }`. The `preset` object carries `name`, `totalSeconds`, `minShotSeconds`, `maxShotSeconds`, `minShots`, `maxShots`, `maxChars`, `styleLine`, and `audioLine`. Each shot has `index`, `start`, `end`, `timecode`, `shotSize`, `lens`, `angle`, `movement`. With `--from-storyboard`, output also includes `source` and resolved `input` so agents can see exactly which scene, characters, action, location, and time of day were used.
+
+With `--format seedance-paragraph` or `--format per-shot`, `--plan` instead emits the rendered prompt **text** (not JSON), wrapped in fenced code block(s) per `--lang` (`en` default = one block, `en+zh` = two labeled blocks). `--format default` (or omitting it) keeps the original JSON output unchanged.
 
 `--validate` emits JSON: `{ valid, charCount, issues[] }` where each issue has `code`, `severity`, `message`. With `--explain-issues`, it also emits `explanations[]` containing `code`, `summary`, and `suggestedFix`. Exit code `1` when any issue has `severity: "error"`.
 
@@ -885,7 +890,7 @@ Full framework rules and the variation guide: `vclaw video prompt-lib-show --nam
 ## Filmmaking prompt packets
 
 ```bash
-vclaw video filmmaking-prompts --project <slug> [--root <path>] [--duration <seconds>] [--panels 9|12|15|20] [--detail terse|standard|rich] [--storyboard-grid <path>] [--genre live-action|pixar|anime|noir|influencer|action|music-video] [--aspect-ratio 16:9|9:16] [--no-faces] [--write]
+vclaw video filmmaking-prompts --project <slug> [--root <path>] [--duration <seconds>] [--panels 9|12|15|20] [--detail terse|standard|rich] [--storyboard-grid <path>] [--category <id>] [--genre live-action|pixar|anime|noir|influencer|action|music-video] [--aspect-ratio 16:9|9:16] [--phase storyboard|video] [--no-faces] [--write]
 ```
 
 Generates the first-class prompt packet layer derived from the
@@ -906,6 +911,11 @@ filters when used as a provider `reference_image`. `--detail terse|standard|rich
 emit today's phrasing unchanged, while `rich` appends a quantified suffix
 (lens mm, Kelvin + key-angle, color-grade hue°/sat%, audio dB hierarchy, move
 velocity in ft/s) from the shared `src/video/cinematography.ts` emitters.
+`--phase storyboard|video` gates which slice is returned: `storyboard` returns
+the storyboard/camera-language portion only (video `seedancePackets` gated to
+`[]`) for the lock-the-grid step, while `video` and the default (omitted) return
+the full packet. `--category <id>` selects the category descriptor (character vs
+product path); unknown ids fail fast.
 
 The packet includes:
 

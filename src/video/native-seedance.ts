@@ -114,7 +114,36 @@ function classifyReferencePaths(referencePaths: string[]): ClassifiedReferencePa
   return classified;
 }
 
+const REFERENCE_BUDGET = { images: 9, videos: 3, audios: 3 } as const;
+
+/**
+ * Fail fast when a reference set exceeds Seedance 2.0's per-generation limits
+ * (<=9 image, <=3 video, <=3 audio references). Classifies via the same
+ * `classifyReferencePaths` logic used to route references into provider params,
+ * so image/video/audio counts always agree with what would actually be sent.
+ * Returns void at or below every limit; throws a clear Error otherwise.
+ */
+export function assertReferenceBudget(referencePaths: string[]): void {
+  const classified = classifyReferencePaths(referencePaths);
+  if (classified.images.length > REFERENCE_BUDGET.images) {
+    throw new Error(
+      `Seedance reference budget exceeded: ${classified.images.length} image references (max ${REFERENCE_BUDGET.images}).`,
+    );
+  }
+  if (classified.videos.length > REFERENCE_BUDGET.videos) {
+    throw new Error(
+      `Seedance reference budget exceeded: ${classified.videos.length} video references (max ${REFERENCE_BUDGET.videos}).`,
+    );
+  }
+  if (classified.audios.length > REFERENCE_BUDGET.audios) {
+    throw new Error(
+      `Seedance reference budget exceeded: ${classified.audios.length} audio references (max ${REFERENCE_BUDGET.audios}).`,
+    );
+  }
+}
+
 function seedanceReferenceParams(referencePaths: string[]): Record<string, unknown> {
+  assertReferenceBudget(referencePaths);
   const classified = classifyReferencePaths(referencePaths);
   const params: Record<string, unknown> = {};
 

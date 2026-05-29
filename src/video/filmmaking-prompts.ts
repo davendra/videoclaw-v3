@@ -90,6 +90,12 @@ export interface GenerateFilmmakingPromptsOptions {
   projectSlug: string;
   durationSeconds?: number;
   storyboardGridPath?: string;
+  /**
+   * Render the storyboard grid prompt in a silhouette / no-face register so the
+   * grid stays usable as a provider `reference_image` (real-person content
+   * filters reject photoreal faces). See the multi-shot-framework Anti-patterns.
+   */
+  noFaces?: boolean;
   write?: boolean;
 }
 
@@ -115,6 +121,7 @@ export async function generateFilmmakingPrompts(
 ): Promise<GenerateFilmmakingPromptsResult> {
   const root = options.root ?? process.cwd();
   const durationSeconds = options.durationSeconds ?? 15;
+  const noFaces = options.noFaces ?? false;
   const workspace = await ensureProjectWorkspace(options.projectSlug, root);
   const brief = await readOptionalArtifact<BriefArtifact>(workspace, 'brief');
   const storyboard = await readOptionalArtifact<StoryboardArtifact>(workspace, 'storyboard');
@@ -127,7 +134,7 @@ export async function generateFilmmakingPrompts(
   const referenceMap = buildReferenceMap(referenceSheets, characters, assetManifest);
   const characterSheetPrompts = buildCharacterSheetPrompts(characters, referenceMap, issues);
   const storyboardGridPrompt = storyboard
-    ? buildStoryboardGridPrompt(storyboard, brief, characterSheetPrompts)
+    ? buildStoryboardGridPrompt(storyboard, brief, characterSheetPrompts, noFaces)
     : null;
   if (!storyboard) {
     issues.push({
@@ -161,6 +168,7 @@ export async function generateFilmmakingPrompts(
     brief,
     referenceMap,
     durationSeconds,
+    noFaces,
     issues,
   });
 
@@ -257,6 +265,7 @@ function buildStoryboardGridPrompt(
   storyboard: StoryboardArtifact,
   brief: BriefArtifact | undefined,
   characterPrompts: FilmmakingCharacterSheetPrompt[],
+  noFaces = false,
 ): FilmmakingStoryboardGridPrompt {
   const panels = buildNinePanels(storyboard);
   const characters = characterPrompts
@@ -264,10 +273,13 @@ function buildStoryboardGridPrompt(
     .join('\n');
   const sceneType = brief?.productionMode === 'director' ? 'cinematic director scene' : 'cinematic sequence';
   const location = brief?.title ?? storyboard.projectSlug;
+  const styleLine = noFaces
+    ? 'Style: Cinematic, production-grade, live-action, 35mm film grain. Render ALL figures as backlit silhouettes, shot from behind, or at distance — faces obscured, in shadow, or turned away, with NO clear frontal facial features (this keeps the sheet usable as a provider reference image despite real-person content filters). Aspect ratio = 16:9 page layout. No text, no captions, no panel numbers inside panels, only thin clean separators between panels. UNDER EACH panel a thin off-white annotation strip with three short lines of production notes in a clean, high-contrast sans-serif font: CAM, MOVE, and MOOD. Notes must read as short uppercase slug lines.'
+    : 'Style: Cinematic, production-grade, live-action, photorealistic, lifelike, 35mm film grain. Aspect ratio = 16:9 page layout. No text, no captions, no panel numbers inside panels, only thin clean separators between panels. UNDER EACH panel a thin off-white annotation strip with three short lines of production notes in a clean, high-contrast sans-serif font: CAM, MOVE, and MOOD. Notes must read as short uppercase slug lines.';
   const promptText = [
     `Create a cinematic storyboard sheet in a 3x3 grid format (9 panels arranged in 3 rows x 3 columns) depicting ONE CONTINUOUS ${sceneType}.`,
     '',
-    'Style: Cinematic, production-grade, live-action, photorealistic, lifelike, 35mm film grain. Aspect ratio = 16:9 page layout. No text, no captions, no panel numbers inside panels, only thin clean separators between panels. UNDER EACH panel a thin off-white annotation strip with three short lines of production notes in a clean, high-contrast sans-serif font: CAM, MOVE, and MOOD. Notes must read as short uppercase slug lines.',
+    styleLine,
     '',
     'CHARACTER LOCK - all recurring characters must appear IDENTICAL across all 9 panels. Use the descriptions below as the source of truth.',
     characters || 'NO NAMED CHARACTER: preserve the same subject, setting, palette, and camera language across all panels.',
@@ -292,6 +304,7 @@ function buildSeedancePackets(input: {
   brief: BriefArtifact | undefined;
   referenceMap: FilmmakingReferenceSlot[];
   durationSeconds: number;
+  noFaces?: boolean;
   issues: FilmmakingPromptIssue[];
 }): FilmmakingSeedancePacket[] {
   const scenes = input.storyboard?.scenes ?? [];
@@ -332,6 +345,7 @@ function buildSeedancePackets(input: {
         references,
         variant,
         durationSeconds: scene.durationSeconds ?? input.durationSeconds,
+        noFaces: input.noFaces ?? false,
       }),
       warnings: references.filter((reference) => reference.status === 'pending')
         .map((reference) => `${reference.slot} ${reference.label} is pending.`),
@@ -339,23 +353,34 @@ function buildSeedancePackets(input: {
   });
 }
 
+// Positive-direction guard so the model performs the grid panels over time
+// instead of reproducing the 3x3 collage as a moving split-screen frame.
+// See multi-shot-framework Anti-patterns ("Grid leakage").
+const GRID_SINGLE_FRAME_GUARD =
+  'Output a single full-frame cinematic shot that fills the entire frame edge to edge — no 3x3 grid, no split-screen, no panel borders, no collage, no multi-panel montage. The storyboard grid is reference ONLY; perform its panels as consecutive moments over time, never as one image.';
+
 function seedancePromptText(input: {
   scene: StoryboardArtifact['scenes'][number];
   brief: BriefArtifact | undefined;
   references: FilmmakingReferenceSlot[];
   variant: FilmmakingSeedancePacket['variant'];
   durationSeconds: number;
+  noFaces?: boolean;
 }): string {
   const characterRefs = input.references.filter((reference) => reference.role === 'character-sheet');
   const gridRef = input.references.find((reference) => reference.role === 'storyboard-grid');
   const startFrame = input.references.find((reference) => reference.role === 'start-frame');
   const duration = `${input.durationSeconds} seconds`;
   const action = cleanSentence(input.scene.scenePrompt?.animationPrompt ?? input.scene.description);
+  const noFaceLine = input.noFaces
+    ? 'Keep all figures as backlit silhouettes, backs, or distance with faces obscured (content-filter safe).'
+    : '';
   if (input.variant === 'character-sheets-plus-storyboard-grid' && gridRef) {
     return [
       ...characterRefs.map((reference, index) => `Character ${index + 1}: ${reference.slot} (${reference.label})`),
       '',
-      `Use the provided character sheets and cinematic storyboard grid ${gridRef.slot} as the main visual and motion reference. Create a ${duration} cinematic sequence. Read the storyboard panels as sequential shots, not as one image. Follow the panel order, camera logic, motion arrows, and framing consistently and temporally. NO TEXT ON SCREEN, NO MUSIC.`,
+      `Use the provided character sheets and cinematic storyboard grid ${gridRef.slot} as visual and motion reference. Create a ${duration} cinematic sequence. ${GRID_SINGLE_FRAME_GUARD} Follow the panel order, camera logic, motion, and framing consistently and temporally. NO TEXT ON SCREEN, NO MUSIC.`,
+      noFaceLine,
       startFrame ? `Use ${startFrame.slot} as the scene start-frame continuity anchor.` : '',
       '',
       `Storyline: ${action}`,
@@ -363,7 +388,8 @@ function seedancePromptText(input: {
   }
   if (input.variant === 'storyboard-grid-reference' && gridRef) {
     return [
-      `Use the provided cinematic storyboard grid ${gridRef.slot} as the main visual and motion reference. Create a ${duration} cinematic sequence. Read the storyboard panels as sequential shots, not as one image. Follow the panel order, camera logic, motion arrows and camera framing consistently. Handheld camera moments may be used to boost realism. NO TEXT ON SCREEN, NO MUSIC.`,
+      `Use the provided cinematic storyboard grid ${gridRef.slot} as visual and motion reference. Create a ${duration} cinematic sequence. ${GRID_SINGLE_FRAME_GUARD} Follow the panel order, camera logic, motion and camera framing consistently. Handheld camera moments may be used to boost realism. NO TEXT ON SCREEN, NO MUSIC.`,
+      noFaceLine,
       startFrame ? `Use ${startFrame.slot} as the scene start-frame continuity anchor.` : '',
       '',
       `Storyline: ${action}`,

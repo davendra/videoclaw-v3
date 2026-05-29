@@ -350,6 +350,46 @@ then drops the `Location:` / `Style:` / `Audio:` line labels at the end.
 The validator catches this as `multi-shot-missing-metadata`. Re-add the
 three labels exactly.
 
+### Real-person content filter rejects photoreal references
+
+Provider content filters (notably xskill / ARK Seedance — "may contain
+real person") reject **photorealistic human faces** supplied as
+`reference_images`. This silently kills the whole submission, not just
+one image. Production-learned escape hatches, in order of preference:
+
+- **Make reference art faceless.** Backlit silhouettes, figures shot from
+  behind, or at distance — no clear frontal facial features — pass the
+  filter. This is why per-scene storyboard grids destined for
+  `reference_images` should be rendered in a silhouette / no-face register
+  (see the `--no-faces` flag on `filmmaking-prompts`).
+- **Prefer a single `image_url` (first-frame role) over the
+  `reference_images` array.** The first-frame slot is materially more
+  lenient than the multi-reference array for the same image.
+- **Back-view / distance / hood** beats front-facing for any shot that
+  must include a recognizable cast member.
+
+A photoreal six-panel character sheet will almost always be rejected as a
+`reference_image`; keep those as the *identity source* for image
+generation, not as a video-provider reference.
+
+### Grid leakage — the model animates the storyboard layout
+
+When a 3×3 storyboard grid is passed as a `reference_image`, the video
+model will happily **reproduce the grid itself** — the output becomes a
+moving 9-panel split-screen instead of a single full-frame shot. "Read
+the panels as sequential shots, not as one image" is **not enough**; the
+model treats the collage as the composition to render.
+
+Use explicit positive direction for single-frame output:
+
+- ✅ `"Output a single full-frame cinematic shot that fills the entire frame edge to edge."`
+- ✅ `"The storyboard grid is reference ONLY — perform its panels as consecutive moments over time."`
+- ✅ `"No 3x3 grid, no split-screen, no panel borders, no collage, no multi-panel montage."`
+
+The generated Seedance packets in `filmmaking-prompts.ts` now embed this
+guard for both grid-bearing variants; preserve it if you touch
+`seedancePromptText`.
+
 ---
 
 ## Validator Issue Codes

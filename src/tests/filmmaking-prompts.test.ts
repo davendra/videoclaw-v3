@@ -67,7 +67,10 @@ describe('filmmaking prompt packets', () => {
     assert.equal(result.artifact.seedancePackets[0]?.variant, 'character-sheets-plus-storyboard-grid');
     assert.equal(result.artifact.seedancePackets[0]?.durationSeconds, 15);
     assert.match(result.artifact.seedancePackets[0]?.promptText ?? '', /NO TEXT ON SCREEN, NO MUSIC/);
-    assert.match(result.artifact.seedancePackets[0]?.promptText ?? '', /Read the storyboard panels as sequential shots/);
+    // Grid-leakage guard: the packet must force single-full-frame output so the
+    // model performs the panels over time instead of animating the 3x3 collage.
+    assert.match(result.artifact.seedancePackets[0]?.promptText ?? '', /single full-frame cinematic shot/);
+    assert.match(result.artifact.seedancePackets[0]?.promptText ?? '', /no split-screen/);
     assert.ok(result.artifactPath?.endsWith('artifacts/filmmaking-prompts.json'));
 
     const saved = JSON.parse(await readFile(result.artifactPath!, 'utf-8')) as typeof result.artifact;
@@ -109,6 +112,35 @@ describe('filmmaking prompt packets', () => {
       && reference.status === 'ready'
       && reference.path === 'assets/storyboard-grid.png'
     )), true);
+  });
+
+  it('renders the storyboard grid prompt in a no-face register and tags packets for content-filter safety when --no-faces is set', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'vclaw-filmmaking-prompts-nofaces-'));
+    const workspace = await ensureProjectWorkspace('nofaces', root);
+    await writeArtifact(workspace, 'brief', createBriefArtifact({
+      title: 'Silhouette Run',
+      intent: 'A gritty war-thriller scene.',
+      productionMode: 'director',
+    }));
+    await writeArtifact(workspace, 'storyboard', createStoryboardArtifact({
+      projectSlug: 'nofaces',
+      productionMode: 'director',
+      scenes: [{
+        sceneIndex: 0,
+        description: 'Three operatives breach a ruined doorway in heavy backlight',
+        scenePrompt: { animationPrompt: 'Operatives storm through the breach as dust swirls.' },
+      }],
+    }));
+
+    const plain = await generateFilmmakingPrompts({ root, projectSlug: 'nofaces' });
+    assert.doesNotMatch(plain.artifact.storyboardGridPrompt?.promptText ?? '', /backlit silhouettes/);
+
+    const result = await generateFilmmakingPrompts({ root, projectSlug: 'nofaces', noFaces: true });
+    assert.match(result.artifact.storyboardGridPrompt?.promptText ?? '', /backlit silhouettes/);
+    assert.match(result.artifact.storyboardGridPrompt?.promptText ?? '', /NO clear frontal facial features/);
+    assert.match(result.artifact.seedancePackets[0]?.promptText ?? '', /faces obscured \(content-filter safe\)/);
+    // The single-frame guard is unconditional — present with or without --no-faces.
+    assert.match(result.artifact.seedancePackets[0]?.promptText ?? '', /single full-frame cinematic shot/);
   });
 
   it('falls back to text-driven Seedance packets when storyboard grid context is missing', async () => {

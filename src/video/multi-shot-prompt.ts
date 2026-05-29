@@ -317,9 +317,8 @@ export interface DialogueLine {
 
 // Append spoken dialogue to a shot line using a clean two-speaker convention.
 // The first speaker gets a "<speaker> says[, <emotion>]:" opener; a second
-// speaker (when present) gets exactly one "She replies:" opener — the file
-// carries no gender/pronoun signal, so this defaults deterministically to
-// "She replies:". Pure and deterministic — no randomness or clock reads.
+// speaker (when present) gets exactly one "<speaker> replies[, <emotion>]:"
+// opener. Pure and deterministic — no randomness or clock reads.
 export function withDialogue(shotLine: string, dialogue: DialogueLine): string {
   const firstOpener = dialogue.emotion
     ? `${dialogue.speaker} says, ${dialogue.emotion}:`
@@ -327,8 +326,8 @@ export function withDialogue(shotLine: string, dialogue: DialogueLine): string {
   const segments = [shotLine, `${firstOpener} "${dialogue.line}"`];
   if (dialogue.secondSpeaker) {
     const { speaker, line, emotion } = dialogue.secondSpeaker;
-    const replyOpener = emotion ? `She replies, ${emotion}:` : 'She replies:';
-    segments.push(`${replyOpener} ${speaker}: "${line}"`);
+    const replyOpener = emotion ? `${speaker} replies, ${emotion}:` : `${speaker} replies:`;
+    segments.push(`${replyOpener} "${line}"`);
   }
   return segments.join(' ');
 }

@@ -885,7 +885,7 @@ Full framework rules and the variation guide: `vclaw video prompt-lib-show --nam
 ## Filmmaking prompt packets
 
 ```bash
-vclaw video filmmaking-prompts --project <slug> [--root <path>] [--duration <seconds>] [--storyboard-grid <path>] [--genre live-action|pixar|anime|noir|influencer|action|music-video] [--aspect-ratio 16:9|9:16] [--no-faces] [--write]
+vclaw video filmmaking-prompts --project <slug> [--root <path>] [--duration <seconds>] [--panels 9|12|15|20] [--storyboard-grid <path>] [--genre live-action|pixar|anime|noir|influencer|action|music-video] [--aspect-ratio 16:9|9:16] [--no-faces] [--write]
 ```
 
 Generates the first-class prompt packet layer derived from the
@@ -910,8 +910,13 @@ The packet includes:
   and avoids re-describing the image; otherwise it uses a concise description.
   Descriptions over 60 words warn; over 100 words are flagged as an error
   (the skill's bloat/scene-contamination failure threshold).
-- `storyboardGridPrompt` — a 3x3 / 9-panel cinematic storyboard grid prompt
-  with CAM / MOVE / (MOOD|VOICE|STYLE) production-note strips.
+- `storyboardGridPrompt` — a multi-panel cinematic storyboard grid prompt.
+  `--panels` (9/12/15/20, default 15) sets the adaptive grid layout
+  (3×3 / 3×4 / 3×5 / 4×5, transposed for vertical `--aspect-ratio`), each panel
+  carries a per-panel timecode and a CAM / MOVE / (MOOD|VOICE|STYLE)
+  production-note strip, and beats follow a three-act progression
+  (setup → inciting → rising → climax → denouement). `rows`/`cols` are recorded
+  on the prompt for the deterministic `storyboard-grid` renderer.
 - `referenceMap[]` — stable `@image1`, `@image2`, ... slots for character
   sheets, storyboard grid, and per-scene start frames.
 - `seedancePackets[]` — per-scene Seedance prompt packets. If character sheets

@@ -32,6 +32,7 @@ describe('vclaw storyboard-grid cli', () => {
       await generateFilmmakingPrompts({
         root,
         projectSlug: 'alpha',
+        panelCount: 9,
         write: true,
       });
 

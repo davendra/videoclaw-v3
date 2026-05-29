@@ -34,6 +34,7 @@ export interface FilmmakingCharacterSheetPrompt {
 export interface FilmmakingStoryboardPanel {
   panel: number;
   position: string;
+  timecode: string;
   beat: string;
   cam: string;
   move: string;
@@ -42,7 +43,9 @@ export interface FilmmakingStoryboardPanel {
 
 export interface FilmmakingStoryboardGridPrompt {
   variant: 'storyboard-grid';
-  panelCount: 9;
+  panelCount: number;
+  rows: number;
+  cols: number;
   promptText: string;
   panels: FilmmakingStoryboardPanel[];
 }
@@ -105,25 +108,45 @@ export interface GenerateFilmmakingPromptsOptions {
   genre?: string;
   /** Aspect ratio stated in every template (default 16:9; 9:16 for vertical/social). */
   aspectRatio?: string;
+  /**
+   * Storyboard panel count — 9, 12, 15 (default), or 20. Drives the grid layout
+   * (3×3 / 3×4 / 3×5 / 4×5, transposed for vertical aspect ratios) and the
+   * per-panel timecode breakdown. Mirrors the storyboard-prompt-builder skill.
+   */
+  panelCount?: number;
   write?: boolean;
+}
+
+export const SUPPORTED_PANEL_COUNTS = [9, 12, 15, 20] as const;
+
+// Grid layout per panel count (storyboard-prompt-builder skill). Horizontal
+// orientation keeps cols ≥ rows; a vertical (taller-than-wide) aspect ratio
+// transposes so the sheet reads top-to-bottom.
+function gridLayout(panelCount: number, aspectRatio: string): { rows: number; cols: number } {
+  const base: Record<number, { rows: number; cols: number }> = {
+    9: { rows: 3, cols: 3 },
+    12: { rows: 3, cols: 4 },
+    15: { rows: 3, cols: 5 },
+    20: { rows: 4, cols: 5 },
+  };
+  const layout = base[panelCount] ?? { rows: 3, cols: Math.ceil(panelCount / 3) };
+  const [w, h] = aspectRatio.split(':').map((n) => Number(n));
+  const vertical = Number.isFinite(w) && Number.isFinite(h) && h > w;
+  return vertical ? { rows: layout.cols, cols: layout.rows } : layout;
+}
+
+export function resolvePanelCount(panelCount?: number): number {
+  if (panelCount === undefined) return 15;
+  if (!(SUPPORTED_PANEL_COUNTS as readonly number[]).includes(panelCount)) {
+    throw new Error(`filmmaking-prompts: --panels must be one of ${SUPPORTED_PANEL_COUNTS.join(', ')} (got ${panelCount})`);
+  }
+  return panelCount;
 }
 
 export interface GenerateFilmmakingPromptsResult {
   artifact: FilmmakingPromptsArtifact;
   artifactPath?: string;
 }
-
-const STORYBOARD_POSITIONS = [
-  'top-left',
-  'top-center',
-  'top-right',
-  'middle-left',
-  'middle-center',
-  'middle-right',
-  'bottom-left',
-  'bottom-center',
-  'bottom-right',
-] as const;
 
 // The ai-filmmaking skill is genre-agnostic: the same skeleton renders
 // photoreal, Pixar 3D, anime, noir, vlog, or stylized work — style is a
@@ -224,6 +247,7 @@ export async function generateFilmmakingPrompts(
   const noFaces = options.noFaces ?? false;
   const genreStyle = resolveGenreStyle(options.genre);
   const aspectRatio = options.aspectRatio?.trim() || '16:9';
+  const panelCount = resolvePanelCount(options.panelCount);
   const workspace = await ensureProjectWorkspace(options.projectSlug, root);
   const brief = await readOptionalArtifact<BriefArtifact>(workspace, 'brief');
   const storyboard = await readOptionalArtifact<StoryboardArtifact>(workspace, 'storyboard');
@@ -247,7 +271,7 @@ export async function generateFilmmakingPrompts(
     });
   }
   const storyboardGridPrompt = storyboard
-    ? buildStoryboardGridPrompt(storyboard, brief, characterSheetPrompts, noFaces, genreStyle, aspectRatio)
+    ? buildStoryboardGridPrompt(storyboard, brief, characterSheetPrompts, noFaces, genreStyle, aspectRatio, panelCount, durationSeconds)
     : null;
   if (!storyboard) {
     issues.push({
@@ -394,8 +418,11 @@ function buildStoryboardGridPrompt(
   noFaces = false,
   genreStyle: GenreStyle = resolveGenreStyle(),
   aspectRatio = '16:9',
+  panelCount = 15,
+  durationSeconds = 15,
 ): FilmmakingStoryboardGridPrompt {
-  const panels = buildNinePanels(storyboard);
+  const { rows, cols } = gridLayout(panelCount, aspectRatio);
+  const panels = buildPanels(storyboard, panelCount, durationSeconds, cols);
   const characters = characterPrompts
     .map((prompt) => `${prompt.characterName.toUpperCase()}: ${characterLine(prompt)}`)
     .join('\n');
@@ -405,27 +432,37 @@ function buildStoryboardGridPrompt(
   const noFaceClause = noFaces
     ? ' Render ALL figures as backlit silhouettes, shot from behind, or at distance — faces obscured, in shadow, or turned away, with NO clear frontal facial features (this keeps the sheet usable as a provider reference image despite real-person content filters).'
     : '';
-  const styleLine = `Style: Cinematic, production-grade, ${genreStyle.gridStyleDescriptors}.${noFaceClause} Aspect ratio = ${aspectRatio} page layout. No text, no captions, no panel numbers inside panels, only thin clean separators between panels. UNDER EACH panel a thin off-white annotation strip with three short lines of production notes in a clean, high-contrast sans-serif font legible at rendered size: CAM, MOVE, and ${third}. Notes must read as short uppercase slug lines.`;
   const promptText = [
-    `Create a cinematic storyboard sheet in a 3x3 grid format (9 panels arranged in 3 rows x 3 columns) depicting ONE CONTINUOUS ${sceneType}.`,
+    // A) Title & format header
+    `Create a professional ${durationSeconds}-second ${genreStyle.formatTone} storyboard sheet for "${location}" — a complete production presentation page of ${panelCount} sequential cinematic panels arranged in a clean ${rows}×${cols} grid layout, depicting ONE CONTINUOUS ${sceneType}.`,
     '',
-    styleLine,
+    // B) Style declaration
+    `Style: Cinematic, production-grade, ${genreStyle.gridStyleDescriptors}.${noFaceClause} Aspect ratio = ${aspectRatio} page layout.`,
     '',
-    'CHARACTER LOCK - all recurring characters must appear IDENTICAL across all 9 panels (same face, same build, same clothing, same props). Use the descriptions below as the source of truth. If reference images are attached, treat them as additional identity anchors and match them precisely.',
+    // C) Character descriptions + lock
+    'CHARACTER LOCK - all recurring characters must appear IDENTICAL across every panel (same face, same build, same clothing, same props). Use the descriptions below as the source of truth. If reference images are attached, treat them as additional identity anchors and match them precisely.',
     characters || 'NO NAMED CHARACTER: preserve the same subject, setting, palette, and camera language across all panels.',
     '',
-    `This is one continuous moment in ${location}. Same geography, same lighting logic, same wardrobe, same props. No extra characters, no readable UI text unless explicitly required, no logos unless already part of the brief.`,
+    // D) Visual tone
+    `Visual tone: consistent colour grade, lighting logic, and lens language across all ${panelCount} panels — establish it once and hold it. This is one continuous moment in ${location}: same geography, same lighting, same wardrobe, same props.`,
     '',
-    'Camera moves naturally around the action as if shot in a single continuous take broken into 9 sequential beats.',
+    // E) Storyboard layout details
+    `Storyboard sheet layout: a clean ${rows}×${cols} grid on a neutral production board, thin clean separators between panels, each panel numbered with its timecode label, a short shot description beneath. UNDER EACH panel a thin off-white annotation strip with three short lines in a clean, high-contrast sans-serif font legible at rendered size: CAM, MOVE, and ${third}. Notes must read as short uppercase slug lines, not sentences. No readable UI text, no logos unless already part of the brief. Camera moves naturally around the action as if shot in a single continuous take broken into ${panelCount} sequential beats.`,
     '',
+    // F) Scene breakdown (read left-to-right, top-to-bottom)
     'Narrative - read left-to-right, top-to-bottom:',
     ...panels.map((panel) => (
-      `Panel ${panel.panel} (${panel.position}): ${panel.beat}. CAM: ${panel.cam}. MOVE: ${panel.move}. ${third}: ${panel.mood}.`
+      `Panel ${panel.panel} ${panel.timecode} (${panel.position}): ${panel.beat}. CAM: ${panel.cam}. MOVE: ${panel.move}. ${third}: ${panel.mood}.`
     )),
+    '',
+    // G/H) Art-direction + rendering footer
+    `Art direction: vary the framing every panel (wide -> medium -> close-up -> over-the-shoulder), build intensity through the middle, peak near the end, then resolve. Distribute character detail across panels — faces in close-ups, full wardrobe in wides. Render quality: masterpiece, production-ready, ${aspectRatio} professional storyboard sheet.`,
   ].join('\n');
   return {
     variant: 'storyboard-grid',
-    panelCount: 9,
+    panelCount,
+    rows,
+    cols,
     promptText,
     panels,
   };
@@ -582,22 +619,40 @@ function characterSheetDescriptionPrompt(description: string, style: string, asp
   return `Create a professional character reference sheet for ${description}. Divide the sheet into four vertical columns for a total of eight shots. The top row shows full-body views from head to toe: front, side, three-quarter, and back. No cropping at ankles, knees, or head. The bottom row contains four matching face close-ups, including front and profile views. Style: ${style}. Use clean neutral studio lighting, no scene-specific lighting. Background should be simple and not distracting from character design. Aspect ratio = ${aspectRatio}.`;
 }
 
-function buildNinePanels(storyboard: StoryboardArtifact): FilmmakingStoryboardPanel[] {
+function buildPanels(
+  storyboard: StoryboardArtifact,
+  panelCount: number,
+  durationSeconds: number,
+  cols: number,
+): FilmmakingStoryboardPanel[] {
   const scenes = storyboard.scenes.length > 0 ? storyboard.scenes : [{
     sceneIndex: 0,
     description: 'Opening visual beat',
   }];
-  return STORYBOARD_POSITIONS.map((position, index) => {
-    const scene = scenes[Math.min(index, scenes.length - 1)];
+  return Array.from({ length: panelCount }, (_, index) => {
+    // Map each panel onto a scene proportionally so N panels spread across the
+    // available scenes instead of cycling 1:1.
+    const scene = scenes[Math.min(Math.floor((index / panelCount) * scenes.length), scenes.length - 1)];
+    const row = Math.floor(index / cols) + 1;
+    const col = (index % cols) + 1;
     return {
       panel: index + 1,
-      position,
+      position: `row ${row}, col ${col}`,
+      timecode: panelTimecode(index, panelCount, durationSeconds),
       beat: shortBeat(scene.description, index, scenes.length),
       cam: cameraLine(index),
       move: moveLine(scene.description),
-      mood: moodLine(index, scenes.length),
+      mood: actBeat(index, panelCount),
     };
   });
+}
+
+// Split totalSeconds evenly across panelCount panels → [MM:SS - MM:SS] per panel.
+function panelTimecode(index: number, panelCount: number, totalSeconds: number): string {
+  const start = Math.round((index / panelCount) * totalSeconds);
+  const end = Math.round(((index + 1) / panelCount) * totalSeconds);
+  const fmt = (s: number) => `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
+  return `[${fmt(start)} - ${fmt(end)}]`;
 }
 
 function shortBeat(value: string, index: number, sceneCount: number): string {
@@ -606,28 +661,39 @@ function shortBeat(value: string, index: number, sceneCount: number): string {
   return cleaned;
 }
 
+const CAMERA_VOCAB = [
+  'WIDE. LOW TRACK',
+  'MEDIUM. WHIP PAN',
+  'CLOSE. STATIC',
+  'OVER SHOULDER. PUSH',
+  'WIDE. SLOW ORBIT',
+  'MEDIUM CLOSE. HANDHELD',
+  'LOW ANGLE. PUSH IN',
+  'PROFILE. TRACK',
+  'CLOSE. SOFT HOLD',
+  'HIGH ANGLE. CRANE DOWN',
+  'MACRO. RACK FOCUS',
+  'DUTCH. SNAP ZOOM',
+];
+
+// Never repeat a framing in consecutive panels (skill: vary shot types).
 function cameraLine(index: number): string {
-  return [
-    'WIDE. LOW TRACK',
-    'MEDIUM. WHIP PAN',
-    'CLOSE. STATIC',
-    'OVER SHOULDER. PUSH',
-    'WIDE. SLOW ORBIT',
-    'MEDIUM CLOSE. HANDHELD',
-    'LOW ANGLE. PUSH IN',
-    'PROFILE. TRACK',
-    'CLOSE. SOFT HOLD',
-  ][index] ?? 'MEDIUM. STATIC';
+  return CAMERA_VOCAB[index % CAMERA_VOCAB.length];
 }
 
 function moveLine(description: string): string {
   return cleanSentence(description).split(/\s+/).slice(0, 6).join(' ').toUpperCase();
 }
 
-function moodLine(index: number, sceneCount: number): string {
-  if (index === 0) return 'ESTABLISH. CONTROLLED.';
-  if (index >= sceneCount - 1) return 'PAYOFF. RESOLVE.';
-  return 'BUILD. CONTINUITY.';
+// Three-act emotional progression across the panels (storyboard-prompt-builder):
+// setup -> inciting -> rising tension -> climax -> denouement.
+function actBeat(index: number, panelCount: number): string {
+  const p = (index + 1) / panelCount;
+  if (p <= 0.2) return 'SETUP. ESTABLISH.';
+  if (p <= 0.4) return 'INCITING. SHIFT.';
+  if (p <= 0.7) return 'RISING. BUILD TENSION.';
+  if (p <= 0.87) return 'CLIMAX. PEAK INTENSITY.';
+  return 'DENOUEMENT. RESOLVE.';
 }
 
 function characterLine(prompt: FilmmakingCharacterSheetPrompt): string {

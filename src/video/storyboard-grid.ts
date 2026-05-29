@@ -33,7 +33,6 @@ export interface RenderStoryboardGridResult {
 
 const DEFAULT_WIDTH = 1920;
 const DEFAULT_HEIGHT = 1080;
-const PANEL_COUNT = 9;
 const FONT_FAMILY = "'Arial', 'Helvetica', sans-serif";
 
 export async function renderStoryboardGrid(
@@ -61,14 +60,19 @@ export async function renderStoryboardGrid(
   }
 
   const artifact = JSON.parse(await readFile(artifactPath, 'utf-8')) as FilmmakingPromptsArtifact;
-  const panels = artifact.storyboardGridPrompt?.panels ?? [];
-  if (panels.length !== PANEL_COUNT) {
+  const gridPrompt = artifact.storyboardGridPrompt;
+  const panels = gridPrompt?.panels ?? [];
+  if (panels.length === 0) {
     throw new VclawError(
       'asset_not_found',
-      `storyboard-grid requires a 9-panel storyboardGridPrompt in artifacts/filmmaking-prompts.json (found ${panels.length}).`,
+      `storyboard-grid requires a storyboardGridPrompt with panels in artifacts/filmmaking-prompts.json (found ${panels.length}). Run vclaw video filmmaking-prompts --project ${options.projectSlug} --write first.`,
       { artifactPath, panelCount: panels.length },
     );
   }
+  // Layout from the artifact when present (variable panel counts), else derive a
+  // near-square grid so older 9-panel artifacts still render as 3×3.
+  const cols = gridPrompt?.cols ?? Math.ceil(Math.sqrt(panels.length));
+  const rows = gridPrompt?.rows ?? Math.ceil(panels.length / cols);
 
   const outputPath = resolveOutputPath(workspace.projectDir, options.output);
   const artifactReferencePath = artifactPathForOutput(workspace.projectDir, outputPath);
@@ -79,6 +83,8 @@ export async function renderStoryboardGrid(
       title: artifact.projectSlug,
       width,
       height,
+      rows,
+      cols,
     });
     await mkdir(dirname(outputPath), { recursive: true });
     await sharp(png).png().toFile(outputPath);
@@ -159,19 +165,22 @@ async function renderGridPng(input: {
   title: string;
   width: number;
   height: number;
+  rows: number;
+  cols: number;
 }): Promise<Buffer> {
+  const { rows, cols } = input;
   const margin = Math.round(input.width * 0.028);
   const gap = Math.round(input.width * 0.01);
   const headerHeight = Math.round(input.height * 0.085);
   const footerHeight = Math.round(input.height * 0.025);
   const gridWidth = input.width - margin * 2;
   const gridHeight = input.height - headerHeight - footerHeight - margin;
-  const cellWidth = Math.floor((gridWidth - gap * 2) / 3);
-  const cellHeight = Math.floor((gridHeight - gap * 2) / 3);
+  const cellWidth = Math.floor((gridWidth - gap * (cols - 1)) / cols);
+  const cellHeight = Math.floor((gridHeight - gap * (rows - 1)) / rows);
 
   const panelNodes = input.panels.map((panel, index) => {
-    const col = index % 3;
-    const row = Math.floor(index / 3);
+    const col = index % cols;
+    const row = Math.floor(index / cols);
     const x = margin + col * (cellWidth + gap);
     const y = headerHeight + row * (cellHeight + gap);
     return renderPanel(panel, x, y, cellWidth, cellHeight);
@@ -182,7 +191,7 @@ async function renderGridPng(input: {
   <rect width="100%" height="100%" fill="#111317"/>
   <rect x="0" y="0" width="${input.width}" height="${headerHeight}" fill="#f2efe6"/>
   <text x="${margin}" y="${Math.round(headerHeight * 0.62)}" font-family="${FONT_FAMILY}" font-size="${Math.round(headerHeight * 0.32)}" font-weight="700" fill="#111317">${title}</text>
-  <text x="${input.width - margin}" y="${Math.round(headerHeight * 0.62)}" text-anchor="end" font-family="${FONT_FAMILY}" font-size="${Math.round(headerHeight * 0.22)}" font-weight="700" fill="#3d4a57">9-PANEL STORYBOARD GRID</text>
+  <text x="${input.width - margin}" y="${Math.round(headerHeight * 0.62)}" text-anchor="end" font-family="${FONT_FAMILY}" font-size="${Math.round(headerHeight * 0.22)}" font-weight="700" fill="#3d4a57">${input.panels.length}-PANEL STORYBOARD GRID</text>
   ${panelNodes}
 </svg>`;
 
@@ -212,7 +221,7 @@ function renderPanel(
   <rect x="${x}" y="${y}" width="${width}" height="${height}" rx="10" fill="#20252b" stroke="#f2efe6" stroke-width="3"/>
   <rect x="${x}" y="${y}" width="${width}" height="${imageHeight}" rx="10" fill="#242b33"/>
   <rect x="${x}" y="${y + imageHeight}" width="${width}" height="${stripHeight}" fill="#f2efe6"/>
-  <text x="${x + pad}" y="${y + pad + titleSize}" font-family="${FONT_FAMILY}" font-size="${titleSize}" font-weight="800" fill="#f2efe6">PANEL ${panel.panel} - ${escapeXml(panel.position.toUpperCase())}</text>
+  <text x="${x + pad}" y="${y + pad + titleSize}" font-family="${FONT_FAMILY}" font-size="${titleSize}" font-weight="800" fill="#f2efe6">PANEL ${panel.panel} ${escapeXml((panel.timecode ?? '').toUpperCase())}</text>
   ${lineNodes}
   <text x="${x + pad}" y="${noteY}" font-family="${FONT_FAMILY}" font-size="${noteSize}" font-weight="800" fill="#111317">CAM: ${escapeXml(panel.cam.toUpperCase())}</text>
   <text x="${x + pad}" y="${noteY + noteSize + 7}" font-family="${FONT_FAMILY}" font-size="${noteSize}" font-weight="800" fill="#111317">MOVE: ${escapeXml(panel.move.toUpperCase())}</text>

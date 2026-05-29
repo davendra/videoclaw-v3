@@ -43,19 +43,22 @@
         { "type": "null" },
         {
           "type": "object",
-          "required": ["variant", "panelCount", "promptText", "panels"],
+          "required": ["variant", "panelCount", "rows", "cols", "promptText", "panels"],
           "properties": {
             "variant": { "type": "string", "const": "storyboard-grid" },
-            "panelCount": { "type": "integer", "const": 9 },
+            "panelCount": { "type": "integer", "enum": [9, 12, 15, 20] },
+            "rows": { "type": "integer", "minimum": 1 },
+            "cols": { "type": "integer", "minimum": 1 },
             "promptText": { "type": "string" },
             "panels": {
               "type": "array",
               "items": {
                 "type": "object",
-                "required": ["panel", "position", "beat", "cam", "move", "mood"],
+                "required": ["panel", "position", "timecode", "beat", "cam", "move", "mood"],
                 "properties": {
                   "panel": { "type": "integer" },
                   "position": { "type": "string" },
+                  "timecode": { "type": "string" },
                   "beat": { "type": "string" },
                   "cam": { "type": "string" },
                   "move": { "type": "string" },

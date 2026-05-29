@@ -36,6 +36,7 @@ describe('storyboard grid renderer', () => {
       await generateFilmmakingPrompts({
         root,
         projectSlug: 'alpha',
+        panelCount: 9,
         write: true,
       });
 

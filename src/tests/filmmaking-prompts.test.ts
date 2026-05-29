@@ -76,8 +76,10 @@ describe('filmmaking prompt packets', () => {
     assert.equal(result.artifact.characterSheetPrompts.length, 1);
     assert.equal(result.artifact.characterSheetPrompts[0]?.mode, 'reference-image');
     assert.match(result.artifact.characterSheetPrompts[0]?.promptText ?? '', /neutral studio lighting/);
-    assert.equal(result.artifact.storyboardGridPrompt?.panelCount, 9);
-    assert.equal(result.artifact.storyboardGridPrompt?.panels.length, 9);
+    assert.equal(result.artifact.storyboardGridPrompt?.panelCount, 15);
+    assert.equal(result.artifact.storyboardGridPrompt?.panels.length, 15);
+    assert.equal(result.artifact.storyboardGridPrompt?.rows, 3);
+    assert.equal(result.artifact.storyboardGridPrompt?.cols, 5);
     assert.ok(result.artifact.referenceMap.some((slot) => slot.slot === '@image1' && slot.role === 'character-sheet'));
     assert.ok(result.artifact.referenceMap.some((slot) => slot.role === 'storyboard-grid' && slot.status === 'pending'));
     assert.ok(result.artifact.referenceMap.some((slot) => slot.role === 'start-frame' && slot.path === 'assets/upscaled/scene-0.jpg'));
@@ -205,6 +207,32 @@ describe('filmmaking prompt packets', () => {
     const result = await generateFilmmakingPrompts({ root, projectSlug: 'bloat-p' });
     const issue = result.artifact.issues.find((i) => i.code === 'character-description-long');
     assert.equal(issue?.severity, 'error');
+  });
+
+  it('supports variable panel counts with adaptive grid + per-panel timecodes', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'vclaw-fp-panels-'));
+    await setupGenreProject('panels-p', root);
+
+    // 20 panels horizontal -> 4x5
+    const wide = await generateFilmmakingPrompts({ root, projectSlug: 'panels-p', panelCount: 20 });
+    assert.equal(wide.artifact.storyboardGridPrompt?.panelCount, 20);
+    assert.equal(wide.artifact.storyboardGridPrompt?.rows, 4);
+    assert.equal(wide.artifact.storyboardGridPrompt?.cols, 5);
+    assert.equal(wide.artifact.storyboardGridPrompt?.panels.length, 20);
+    // Per-panel timecodes present
+    assert.match(wide.artifact.storyboardGridPrompt?.panels[0]?.timecode ?? '', /^\[\d{2}:\d{2} - \d{2}:\d{2}\]$/);
+    assert.match(wide.artifact.storyboardGridPrompt?.promptText ?? '', /4×5 grid/);
+
+    // 15 panels vertical -> transposed to 5x3
+    const tall = await generateFilmmakingPrompts({ root, projectSlug: 'panels-p', panelCount: 15, aspectRatio: '9:16' });
+    assert.equal(tall.artifact.storyboardGridPrompt?.rows, 5);
+    assert.equal(tall.artifact.storyboardGridPrompt?.cols, 3);
+
+    // Invalid panel count rejected
+    await assert.rejects(
+      generateFilmmakingPrompts({ root, projectSlug: 'panels-p', panelCount: 7 }),
+      /--panels must be one of/,
+    );
   });
 
   it('resolveGenreStyle maps aliases and passes unknown genres through', () => {

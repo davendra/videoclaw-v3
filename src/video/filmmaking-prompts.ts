@@ -1,6 +1,14 @@
 import { existsSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import { artifactPathFor, writeArtifact } from './artifact-store.js';
+import {
+  audioMix,
+  cameraSpec,
+  gradeSpec,
+  lightingSpec,
+  type CameraMove,
+  type DetailLevel,
+} from './cinematography.js';
 import type { AssetManifestArtifact, BriefArtifact, StoryboardArtifact } from './artifacts.js';
 import { listCharacterProfiles, type CharacterProfile } from './characters.js';
 import { readReferenceSheetsArtifact } from './reference-sheet-store.js';
@@ -114,7 +122,37 @@ export interface GenerateFilmmakingPromptsOptions {
    * per-panel timecode breakdown. Mirrors the storyboard-prompt-builder skill.
    */
   panelCount?: number;
+  /**
+   * Cinematography language density (default `standard`). At `rich`, a quantified
+   * cinematography suffix (lens mm, Kelvin, key angle, color-grade hue/sat, audio
+   * dB hierarchy, move velocity in ft/s) is appended to the storyboard-grid Style
+   * line and the text-driven Seedance STYLE/AUDIO lines. `terse`/`standard` emit
+   * exactly today's output (no behavior change).
+   */
+  detail?: DetailLevel;
   write?: boolean;
+}
+
+// Quantified cinematography suffix appended only at detail === 'rich'. Built from
+// the shared cinematography emitters so the numbers stay consistent with the
+// multi-shot framework. Deterministic and pure.
+const RICH_CAMERA_MOVE: CameraMove = {
+  shot: 'master',
+  lens: 35,
+  angle: 'eye-level',
+  movement: 'dolly',
+};
+
+function richCinematographySuffix(): string {
+  return (
+    `Cinematography: ${cameraSpec(RICH_CAMERA_MOVE, 'rich')}; ` +
+    `${lightingSpec('neutral-studio', 'rich')}; ` +
+    `${gradeSpec('teal-orange', 'rich')}.`
+  );
+}
+
+function richAudioSuffix(): string {
+  return `Audio: ${audioMix('rich')}.`;
 }
 
 export const SUPPORTED_PANEL_COUNTS = [9, 12, 15, 20] as const;
@@ -248,6 +286,7 @@ export async function generateFilmmakingPrompts(
   const genreStyle = resolveGenreStyle(options.genre);
   const aspectRatio = options.aspectRatio?.trim() || '16:9';
   const panelCount = resolvePanelCount(options.panelCount);
+  const detail = options.detail ?? 'standard';
   const workspace = await ensureProjectWorkspace(options.projectSlug, root);
   const brief = await readOptionalArtifact<BriefArtifact>(workspace, 'brief');
   const storyboard = await readOptionalArtifact<StoryboardArtifact>(workspace, 'storyboard');
@@ -271,7 +310,7 @@ export async function generateFilmmakingPrompts(
     });
   }
   const storyboardGridPrompt = storyboard
-    ? buildStoryboardGridPrompt(storyboard, brief, characterSheetPrompts, noFaces, genreStyle, aspectRatio, panelCount, durationSeconds)
+    ? buildStoryboardGridPrompt(storyboard, brief, characterSheetPrompts, noFaces, genreStyle, aspectRatio, panelCount, durationSeconds, detail)
     : null;
   if (!storyboard) {
     issues.push({
@@ -309,6 +348,7 @@ export async function generateFilmmakingPrompts(
     genreStyle,
     aspectRatio,
     characterContext,
+    detail,
     issues,
   });
 
@@ -420,6 +460,7 @@ function buildStoryboardGridPrompt(
   aspectRatio = '16:9',
   panelCount = 15,
   durationSeconds = 15,
+  detail: DetailLevel = 'standard',
 ): FilmmakingStoryboardGridPrompt {
   const { rows, cols } = gridLayout(panelCount, aspectRatio);
   const panels = buildPanels(storyboard, panelCount, durationSeconds, cols);
@@ -432,12 +473,15 @@ function buildStoryboardGridPrompt(
   const noFaceClause = noFaces
     ? ' Render ALL figures as backlit silhouettes, shot from behind, or at distance — faces obscured, in shadow, or turned away, with NO clear frontal facial features (this keeps the sheet usable as a provider reference image despite real-person content filters).'
     : '';
+  // At `rich`, append a quantified cinematography suffix to the Style line.
+  // `terse`/`standard` keep the line byte-identical to today.
+  const richStyleSuffix = detail === 'rich' ? ` ${richCinematographySuffix()}` : '';
   const promptText = [
     // A) Title & format header
     `Create a professional ${durationSeconds}-second ${genreStyle.formatTone} storyboard sheet for "${location}" — a complete production presentation page of ${panelCount} sequential cinematic panels arranged in a clean ${rows}×${cols} grid layout, depicting ONE CONTINUOUS ${sceneType}.`,
     '',
     // B) Style declaration
-    `Style: Cinematic, production-grade, ${genreStyle.gridStyleDescriptors}.${noFaceClause} Aspect ratio = ${aspectRatio} page layout.`,
+    `Style: Cinematic, production-grade, ${genreStyle.gridStyleDescriptors}.${noFaceClause} Aspect ratio = ${aspectRatio} page layout.${richStyleSuffix}`,
     '',
     // C) Character descriptions + lock
     'CHARACTER LOCK - all recurring characters must appear IDENTICAL across every panel (same face, same build, same clothing, same props). Use the descriptions below as the source of truth. If reference images are attached, treat them as additional identity anchors and match them precisely.',
@@ -477,6 +521,7 @@ function buildSeedancePackets(input: {
   genreStyle: GenreStyle;
   aspectRatio: string;
   characterContext: Map<string, { slot?: string; description: string }>;
+  detail: DetailLevel;
   issues: FilmmakingPromptIssue[];
 }): FilmmakingSeedancePacket[] {
   const scenes = input.storyboard?.scenes ?? [];
@@ -521,6 +566,7 @@ function buildSeedancePackets(input: {
         genreStyle: input.genreStyle,
         aspectRatio: input.aspectRatio,
         characterContext: input.characterContext,
+        detail: input.detail,
       }),
       warnings: references.filter((reference) => reference.status === 'pending')
         .map((reference) => `${reference.slot} ${reference.label} is pending.`),
@@ -544,9 +590,11 @@ function seedancePromptText(input: {
   genreStyle?: GenreStyle;
   aspectRatio?: string;
   characterContext?: Map<string, { slot?: string; description: string }>;
+  detail?: DetailLevel;
 }): string {
   const genreStyle = input.genreStyle ?? resolveGenreStyle();
   const aspectRatio = input.aspectRatio ?? '16:9';
+  const detail = input.detail ?? 'standard';
   const characterRefs = input.references.filter((reference) => reference.role === 'character-sheet');
   const gridRef = input.references.find((reference) => reference.role === 'storyboard-grid');
   const startFrame = input.references.find((reference) => reference.role === 'start-frame');
@@ -601,8 +649,8 @@ function seedancePromptText(input: {
     '',
     ...subjectLines,
     `ENVIRONMENT: ${input.brief?.title ?? input.brief?.intent ?? input.scene.description}.`,
-    `STYLE: ${genreStyle.gridStyleDescriptors}. Aspect ratio ${aspectRatio} held across every shot.`,
-    'AUDIO / MOOD: No music. Natural ambience and subject-driven sound only.',
+    `STYLE: ${genreStyle.gridStyleDescriptors}. Aspect ratio ${aspectRatio} held across every shot.${detail === 'rich' ? ` ${richCinematographySuffix()}` : ''}`,
+    `AUDIO / MOOD: No music. Natural ambience and subject-driven sound only.${detail === 'rich' ? ` ${richAudioSuffix()}` : ''}`,
     '',
     `TIMELINE (must cover full 0:00-${formatSeconds(input.durationSeconds)}):`,
     `0:00-${formatSeconds(Math.floor(input.durationSeconds / 3))}: Wide establishing shot, ${aspectRatio} - ${action}.`,

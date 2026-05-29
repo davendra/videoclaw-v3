@@ -266,4 +266,32 @@ describe('filmmaking prompt packets', () => {
     assert.deepEqual(result.artifact.seedancePackets, []);
     assert.ok(result.artifact.issues.some((issue) => issue.code === 'storyboard-missing'));
   });
+
+  it('appends quantified cinematography only at detail:rich (default unchanged)', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'vclaw-fp-detail-'));
+    await setupGenreProject('detail-p', root);
+    // NB: the baseline grid prompt already says "35mm film grain", so the
+    // \d+mm alternative would false-positive on the default output. Assert on
+    // the Kelvin / key-angle / dB / ft-per-sec tokens the rich suffix adds and
+    // the default output never contains.
+    const QUANTIFIED = /\d+K|\d+°|dB|ft\/s/;
+
+    // Default (omitted detail) must NOT carry any quantified tokens — proves the
+    // standard output is byte-identical to today.
+    const dflt = await generateFilmmakingPrompts({ root, projectSlug: 'detail-p' });
+    assert.doesNotMatch(dflt.artifact.storyboardGridPrompt?.promptText ?? '', QUANTIFIED);
+    for (const packet of dflt.artifact.seedancePackets) {
+      assert.doesNotMatch(packet.promptText, QUANTIFIED);
+    }
+    const standard = await generateFilmmakingPrompts({ root, projectSlug: 'detail-p', detail: 'standard' });
+    assert.doesNotMatch(standard.artifact.storyboardGridPrompt?.promptText ?? '', QUANTIFIED);
+    assert.equal(
+      standard.artifact.storyboardGridPrompt?.promptText,
+      dflt.artifact.storyboardGridPrompt?.promptText,
+    );
+
+    // Rich: the storyboard grid Style line now carries quantified cinematography.
+    const rich = await generateFilmmakingPrompts({ root, projectSlug: 'detail-p', detail: 'rich' });
+    assert.match(rich.artifact.storyboardGridPrompt?.promptText ?? '', QUANTIFIED);
+  });
 });

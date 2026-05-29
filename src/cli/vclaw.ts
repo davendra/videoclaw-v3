@@ -187,7 +187,7 @@ function printHelp(): void {
   process.stdout.write('  vclaw video execute-cancel --project <slug> [--root <path>] [--mode storyboard|director]\n');
   process.stdout.write('  vclaw video review-ui --project <slug> [--root <path>] [--host <host>] [--port <port>] [--ui-path <path>] [--dry-run]\n');
   process.stdout.write('  vclaw video review-autopilot --project <slug> [--root <path>] [--template <template-id>] [--character <name>] [--run-id <id>]\n');
-  process.stdout.write('  vclaw video filmmaking-prompts --project <slug> [--root <path>] [--duration <seconds>] [--panels 9|12|15|20] [--storyboard-grid <path>] [--genre live-action|pixar|anime|noir|influencer|action|music-video] [--aspect-ratio 16:9|9:16] [--no-faces] [--write]\n');
+  process.stdout.write('  vclaw video filmmaking-prompts --project <slug> [--root <path>] [--duration <seconds>] [--panels 9|12|15|20] [--storyboard-grid <path>] [--genre live-action|pixar|anime|noir|influencer|action|music-video] [--aspect-ratio 16:9|9:16] [--detail terse|standard|rich] [--no-faces] [--write]\n');
   process.stdout.write('  vclaw video storyboard-grid --project <slug> [--root <path>] [--output <path>] [--width <px>] [--height <px>] [--dry-run]\n');
   process.stdout.write('  vclaw video seedance-register-assets --project <slug> --character <name>:<imageUrl> [--character ...] [--group <name>] [--root <path>]\n');
   process.stdout.write('  vclaw video portal --project <slug> [--root <path>] [--client <name>] [--run <id>] [--surface edit|review|client-review|preview|compare|index]\n');
@@ -2088,6 +2088,10 @@ async function handleVideoFilmmakingPrompts(args: string[]): Promise<void> {
   const genre = parseFlagValue(args, '--genre');
   const aspectRatio = parseFlagValue(args, '--aspect-ratio');
   const panelCount = parsePositiveIntegerFlag(args, '--panels');
+  const detailFlag = parseFlagValue(args, '--detail');
+  if (detailFlag !== undefined && !['terse', 'standard', 'rich'].includes(detailFlag)) {
+    throw new Error('video filmmaking-prompts --detail must be one of terse, standard, rich');
+  }
   const result = await generateFilmmakingPrompts({
     root,
     projectSlug,
@@ -2097,6 +2101,7 @@ async function handleVideoFilmmakingPrompts(args: string[]): Promise<void> {
     ...(genre ? { genre } : {}),
     ...(aspectRatio ? { aspectRatio } : {}),
     ...(panelCount !== undefined ? { panelCount } : {}),
+    ...(detailFlag !== undefined ? { detail: detailFlag as 'terse' | 'standard' | 'rich' } : {}),
     write: args.includes('--write'),
   });
   process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);

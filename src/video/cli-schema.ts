@@ -130,7 +130,7 @@ const COMMANDS: CommandSpec[] = [
   },
   {
     name: 'video filmmaking-prompts',
-    usage: 'vclaw video filmmaking-prompts --project <slug> [--root <path>] [--duration <seconds>] [--storyboard-grid <path>] [--write]',
+    usage: 'vclaw video filmmaking-prompts --project <slug> [--root <path>] [--duration <seconds>] [--storyboard-grid <path>] [--detail terse|standard|rich] [--write]',
     description: 'Generate ai-filmmaking prompt packets: character sheet prompts, optional attached 9-panel storyboard grid, reference map, and Seedance Variant A/B/C packets.',
   },
   {

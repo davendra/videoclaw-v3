@@ -308,6 +308,35 @@ export function composeSeedanceParagraph(
   return segments.join(' ');
 }
 
+// Render a ShotPlan as a structured per-shot video-prompt layout: one block per
+// shot headed `SHOT <N> — <NAME>`, followed by labeled lines (Framing / Scene /
+// Dialogue / SFX / Camera), closed by a single Audio footer from the preset.
+// Blocks are separated by blank lines. Pure and deterministic — it only reads
+// `plan`/`descriptor`. ShotSlot carries no per-shot name/scene/dialogue/sfx
+// fields, so those are derived deterministically (NAME falls back to the shot
+// size, then `Shot <N>`; Dialogue/SFX render an em-dash placeholder when absent).
+export function composePerShotFormat(
+  plan: ShotPlan,
+  descriptor: CategoryDescriptor,
+): string {
+  const { preset, shots } = plan;
+  const blocks = shots.map((s, i) => {
+    const n = i + 1;
+    const name = s.shotSize || `Shot ${n}`;
+    const framing = `${s.shotSize}, ${s.angle}, ${s.movement}, ${s.lens}`;
+    const scene = `${descriptor.label} — ${descriptor.subjectType} carries beat ${n} of ${shots.length} (${s.movement}); ${descriptor.genre} look, ${descriptor.beatTemplate} structure`;
+    return [
+      `SHOT ${n} — ${name}`,
+      `Framing: ${framing}`,
+      `Scene: ${scene}`,
+      `Dialogue: —`,
+      `SFX: —`,
+      `Camera: ${s.movement}`,
+    ].join('\n');
+  });
+  return `${blocks.join('\n\n')}\n\nAudio: ${preset.audioLine}`;
+}
+
 export interface DialogueLine {
   speaker: string;
   line: string;

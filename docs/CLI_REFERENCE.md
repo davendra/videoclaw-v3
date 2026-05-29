@@ -885,7 +885,7 @@ Full framework rules and the variation guide: `vclaw video prompt-lib-show --nam
 ## Filmmaking prompt packets
 
 ```bash
-vclaw video filmmaking-prompts --project <slug> [--root <path>] [--duration <seconds>] [--panels 9|12|15|20] [--storyboard-grid <path>] [--genre live-action|pixar|anime|noir|influencer|action|music-video] [--aspect-ratio 16:9|9:16] [--no-faces] [--write]
+vclaw video filmmaking-prompts --project <slug> [--root <path>] [--duration <seconds>] [--panels 9|12|15|20] [--detail terse|standard|rich] [--storyboard-grid <path>] [--genre live-action|pixar|anime|noir|influencer|action|music-video] [--aspect-ratio 16:9|9:16] [--no-faces] [--write]
 ```
 
 Generates the first-class prompt packet layer derived from the
@@ -901,7 +901,11 @@ automatically; an unknown value passes through as a free-form descriptor.
 `--aspect-ratio` (default `16:9`; use `9:16` for vertical/social) is stated in
 every template and every shot. `--no-faces` renders the storyboard grid in a
 silhouette / no-frontal-face register so it survives real-person content
-filters when used as a provider `reference_image`.
+filters when used as a provider `reference_image`. `--detail terse|standard|rich`
+(default `standard`) sets cinematography language density: `terse`/`standard`
+emit today's phrasing unchanged, while `rich` appends a quantified suffix
+(lens mm, Kelvin + key-angle, color-grade hue°/sat%, audio dB hierarchy, move
+velocity in ft/s) from the shared `src/video/cinematography.ts` emitters.
 
 The packet includes:
 

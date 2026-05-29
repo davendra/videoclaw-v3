@@ -316,9 +316,12 @@ Combining works too: `"natural real-time pace, decisive movement, no slow-motion
 If you do NOT want slow motion, scan the prompt for every instance of
 `slow-mo`, `slow motion`, `slow-motion`. Including these tokens — even
 inside the Style line — biases the output toward slow motion. The
-default `cinematic-15s` preset's `styleLine` contains "Slow-motion,
-handheld grit" — keep it for the cinematic look, override it via
-`--style-line` when the segment calls for natural pace.
+default `cinematic-15s` `styleLine` is deliberately slow-motion-free
+("Cool shadows, natural skin tones. IMAX-scale composition, deep focus,
+practical lighting. High contrast, grounded realism. In the style of a
+Christopher Nolan movie."), so the drift comes from shot descriptions or
+a custom `--style-line`, not the default. Don't add slow-motion tokens
+unless you want the effect; use positive tempo phrasing instead.
 
 ### Vague camera direction
 

@@ -988,6 +988,33 @@ identity; managed assets pass the filter and lock the character (validated
   `native-seedance.ts` already routes `Asset://` references into
   `reference_images` on `ark/seedance-2.0`.
 
+### End-to-end identity flow (seedance-direct)
+
+The `seedance-assets.json` artifact closes the loop so identity is locked
+automatically at execution time, without hand-editing scene reference paths:
+
+1. **Register** — `vclaw video seedance-register-assets` registers each
+   character image as a managed Asset Library avatar and writes
+   `projects/<slug>/artifacts/seedance-assets.json`. Its canonical contract is
+   `schemas/video/artifacts/seedance-assets.schema.json` (`{ schemaVersion: 1,
+   projectSlug, groupName, generatedAt, assets: [{ name, assetId, assetUri,
+   intlAssetUri }] }`).
+2. **Resolve** — on the `seedance-direct` route only, `buildExecutionPayload`
+   (`src/video/execution-runtime.ts`) reads that artifact via
+   `readSeedanceAssets(workspaceRoot, slug)` and auto-resolves each scene's
+   `referencePaths` by matching the scene's `characters` names → their
+   `Asset://` URIs. A project without `seedance-assets.json` behaves exactly as
+   before (no auto-resolution).
+3. **Budget cap** — references are capped at **≤9 image / ≤3 video / ≤3 audio**
+   per submission. `assertReferenceBudget` is preflighted across the whole
+   payload in `submitSeedanceDirectNative` before any provider submit, so an
+   over-budget run fails fast with no partial submission.
+
+Characters are matched by **name** (the scene's `characters` entries), but
+prompts should still describe characters by **visual descriptor, not proper
+name** — names do not survive across generations; the Asset Library avatar is
+what locks identity.
+
 Example:
 
 ```bash

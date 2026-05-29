@@ -361,6 +361,29 @@ export function withDialogue(shotLine: string, dialogue: DialogueLine): string {
   return segments.join(' ');
 }
 
+export type Lang = 'en' | 'zh' | 'en+zh';
+
+// Wrap a composed prompt block for bilingual delivery. `en` returns the English
+// text in a single fenced code block; `zh` returns ONE fenced block of the
+// translated text; `en+zh` returns TWO labeled fenced blocks (EN then 中文).
+//
+// Translation is injected via `opts.translate` so this stays pure/deterministic
+// and offline — the default is an identity passthrough. The contract for any
+// real translator is that numeric/technical specs (ft/s, Kelvin, °, %, dB) pass
+// through unchanged; with the identity default the ZH block is byte-identical to
+// the EN block, so spec tokens are trivially preserved. Pure and deterministic.
+export function composeBilingual(
+  text: string,
+  lang: Lang,
+  opts: { translate?: (text: string) => string } = {},
+): string {
+  const translate = opts.translate ?? ((t: string) => t);
+  const fence = (body: string): string => `\`\`\`\n${body}\n\`\`\``;
+  if (lang === 'en') return fence(text);
+  if (lang === 'zh') return fence(translate(text));
+  return [`EN`, fence(text), `中文`, fence(translate(text))].join('\n');
+}
+
 export { SHOT_SIZES, LENSES, ANGLES, MOVEMENTS, SHOT_TYPE_VOCABULARY };
 
 let stubSequenceIndex = 0;

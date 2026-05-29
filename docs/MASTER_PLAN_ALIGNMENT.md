@@ -59,6 +59,30 @@ structurally true — the TS assemble path exists and is wired. It is
 `skills/video-replicator/scripts/` are retained as the proven reference
 until the TS path is validated on real renders.
 
+### Commercial Track + Quantified Prompt-Craft (phases A–F) — DONE / landed on `main`
+
+A six-phase programme generalised the prompt-craft layer from cinematic
+character video to a quantified, category-driven surface covering commercial /
+product work, and locked Seedance identity through the official Asset Library.
+All six phases are implemented and on `main` (A–D and E–F merged). Architecture
+write-up: `docs/ARCHITECTURE.md`; merge-plan ledger: the matching addendum in
+`MERGE_PLAN.md`.
+
+| Phase | What landed | Key modules |
+|---|---|---|
+| A — Standing rules + quantified cinematography | pure name/brand/face-morph/diegetic scrubbers; detail-leveled (`terse/standard/rich`) camera/lighting/grade/audio emitters | `src/video/prompt-rules.ts`, `src/video/cinematography.ts` |
+| B — Cinema modes + hook library | five cinema modes (`stackModes` never merges intercuts), six named 2-second hooks (throw-on-unknown), per-genre defaults, beat templates, orbit grammar | `src/video/cinematography.ts` |
+| C — Category Descriptor registry | nine categories with `subjectType` character/product, beat template, camera vocab, genre, audio profile, hook seconds; fixed `referenceBuildOrder` | `src/video/category-registry.ts` |
+| D — Commercial / product track | `subjectType === 'product'` branch (no character sheets/grid lock; text-driven beat-templated packets, orbit grammar) reading `product-references.json` | `src/video/product-references.ts`, `src/video/filmmaking-prompts.ts` |
+| E — Multi-shot output formats + two-phase gate | `seedance-paragraph` / `per-shot` formats, two-speaker dialogue, bilingual (`en/zh/en+zh`); `--hook` / `--dialogue` / `--format` / `--lang` / `--category` flags; `filmmaking-prompts --phase storyboard\|video` | `src/video/multi-shot-prompt.ts`, `src/video/filmmaking-prompts.ts` |
+| F — Seedance Asset Library end-to-end | `seedance-register-assets` → `seedance-assets.json` (+ schema) → `execution-runtime` per-scene `Asset://` auto-resolve (seedance-direct only) → `native-seedance` reference budget cap (≤9img/≤3vid/≤3audio) | `src/video/seedance-asset-library.ts`, `schemas/video/artifacts/seedance-assets.schema.json`, `src/video/execution-runtime.ts`, `src/video/native-seedance.ts` |
+
+This closes the master-plan prompt-structure / commercial-track lanes
+(superseding the Tier 2 "prompt-structure schema" follow-on framing below):
+prompt structure is now expressed as the Category Descriptor registry +
+quantified cinematography emitters + the standing prompt rules, and a dedicated
+commercial/product subject path exists alongside the cinematic character path.
+
 ---
 
 Source plan:

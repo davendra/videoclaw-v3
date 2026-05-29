@@ -152,3 +152,104 @@ Compatibility aliases:
 
 1. `video execution-plan` -> `video plan`
 2. `video execute` -> `video produce`
+
+## Commercial track + quantified prompt-craft (landed)
+
+The prompt-craft layer is category-driven and quantified. It generalises beyond
+"cinematic character video" to cover commercial / product work, and locks
+Seedance identity through the official Asset Library. The pieces below are all
+implemented and on `main`.
+
+### Category Descriptor registry
+
+`src/video/category-registry.ts` defines nine categories (`CATEGORY_IDS`), each
+a `CategoryDescriptor` carrying a `subjectType` of `character` or `product`, a
+`beatTemplate` (`three-act` / `ad-hook-feature-cta` / `turntable` / `lookbook`),
+a `cameraVocab`, a `genre`, an `audioProfile` (`diegetic` / `ad-mix`), and
+`hookSeconds`. `resolveCategory(id?)` defaults to the `cinematic` character
+descriptor. The `subjectType` selects which branch `filmmaking-prompts` takes:
+
+- **character path** — character sheets + storyboard-grid character lock
+  (the existing cinematic path, unchanged).
+- **product path** — no character sheets, no grid lock; each product in
+  `artifacts/product-references.json` becomes a text-driven Seedance packet
+  whose timeline follows the descriptor's beat template, with orbit grammar
+  woven in for orbit/turntable vocabularies. `src/video/product-references.ts`
+  reads the product references and degrades gracefully (description-only hero
+  from the brief) when the artifact is absent.
+
+`referenceBuildOrder()` fixes the identity-reference build sequence
+(`base-ref → sheet → scene-plate`) so scene lighting can't contaminate the
+identity anchor.
+
+### Quantified cinematography + standing prompt rules
+
+`src/video/cinematography.ts` holds pure, deterministic prompt-fragment emitters
+whose density scales with a `DetailLevel` of `terse | standard | rich`:
+`cameraSpec` (shot/lens-mm/angle/movement, velocity in ft/s at `rich`),
+`lightingSpec` (Kelvin / key angle / ratio), `gradeSpec` (shadow/highlight
+hue+sat splits), and `audioMix` (a dB hierarchy at `rich`). It also defines five
+cinema modes (`CINEMA_MODE_IDS`: `narrative`, `studio`, `action`, `performance`,
+`atmospheric`) resolved by `cinemaMode` and stacked for multi-world intercuts by
+`stackModes` (adjacent modes are never merged), `resolveCameraVocab`, per-genre
+look defaults (`genreDefaults`), beat-template layout (`beats()`), and precise
+orbit grammar (`orbitGrammar`, three `ORBIT_KINDS`).
+
+A library of six named 2-second opening hooks (`HOOK_PATTERN_IDS`:
+`black-to-light`, `silence-to-sound`, `reverse-motion`, `beat-drop`,
+`match-cut-in`, `whip-reveal`) is resolved by `resolveHookPattern` / `hookBeat`,
+which **throw** on an unknown id (hooks must be explicit).
+
+`src/video/prompt-rules.ts` holds the standing prompt rules as pure scrubbers:
+`stripProperNames` (swap cast names for stable visual descriptors),
+`brandNeutralize` (strip brand tokens), `noFaceMorphTag` (forbid identity
+drift), and `diegeticAudioLine` (diegetic audio only).
+
+### Filmmaking-prompts two-phase gate
+
+`vclaw video filmmaking-prompts` (`src/video/filmmaking-prompts.ts`) takes a
+`--phase storyboard|video` gate: `storyboard` returns the storyboard /
+camera-language portion only (`seedancePackets` gated to `[]`); `video` and the
+default (omitted) return the full video-generation packets. The same command
+takes `--category <id>`, `--genre`, `--detail terse|standard|rich` (appends a
+quantified cinematography suffix at `rich`), `--panels 9|12|15|20`,
+`--aspect-ratio`, `--no-faces`, and `--storyboard-grid <path>`.
+
+### Multi-shot output formats
+
+`vclaw video multi-shot --plan` (`src/video/multi-shot-prompt.ts`) renders a
+deterministic shot plan in several formats:
+
+- `--format default|seedance-paragraph|per-shot` — `composeSeedanceParagraph`
+  (Seedance native single-paragraph), `composePerShotFormat` (per-shot
+  `SHOT N` blocks), or the default layout.
+- `--lang en|zh|en+zh` — `composeBilingual` wraps the rendered prompt in fenced
+  blocks (single, translated, or EN + 中文); numeric/technical spec tokens pass
+  through unchanged.
+- `--dialogue "<speaker>: <line> [|| <speaker>: <line>]"` — `parseDialogueLine`
+  + `withDialogue` attach one- or two-speaker spoken dialogue.
+- `--hook <patternId>` — prepends a resolved opening-hook directive.
+- `--category <id>` — resolves a `CategoryDescriptor` to shape the prompt.
+
+### Seedance Asset Library end-to-end flow
+
+Seedance character/product consistency on the official `ark/seedance-2.0`
+endpoint goes through managed Asset Library avatars (`Asset://` URIs), not raw
+photoreal URLs (which trip the "real person" content filter and don't lock
+identity). The end-to-end flow:
+
+1. `vclaw video seedance-register-assets` (`src/video/seedance-asset-library.ts`)
+   registers each `--character <name>:<imageUrl>` as an Image asset under a
+   group, polls until it reaches the international Ark profile
+   (`sync_status: active`), and writes `artifacts/seedance-assets.json`
+   (contract: `schemas/video/artifacts/seedance-assets.schema.json`). Requires
+   `SUTUI_API_KEY`.
+2. At runtime, `src/video/execution-runtime.ts` reads
+   `seedance-assets.json` (only when `recommendedRouteId === 'seedance-direct'`)
+   and auto-resolves each scene's cast names to their `Asset://` URIs, which
+   become that scene's reference set.
+3. `src/video/native-seedance.ts` routes `Asset://` references into the Seedance
+   `reference_images` param and enforces the per-generation reference budget via
+   `assertReferenceBudget` (≤9 image, ≤3 video, ≤3 audio) — validated for every
+   task before any network call, so an over-budget task can't cause a partial
+   submit.

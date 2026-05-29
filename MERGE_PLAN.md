@@ -4,7 +4,12 @@
 > (the clean-room v0.1.0 rebuild) into a single video CLI + skills library.
 >
 > **Author:** drafted 2026-05-24 from a side-by-side investigation of both repos.
-> **Status:** proposal — implementation has not started.
+> **Status:** the v2 merge described below has landed (foundation is now
+> `videoclaw-v3`, the current repo). On top of it, the **Commercial Track +
+> Quantified Prompt-Craft** programme — phases **A–F** — is **DONE and landed on
+> `main`** (A–D and E–F merged). See the "Commercial Track + Quantified
+> Prompt-Craft (phases A–F) — DONE" addendum at the end of this file for what
+> shipped, and `docs/ARCHITECTURE.md` for the architecture-level write-up.
 
 ---
 
@@ -1914,6 +1919,67 @@ Still open from earlier:
 - Q15 (artifact triage — 7 schemaless artifacts: schema, drop, or relocate)
 
 ---
+
+# Addendum — Commercial Track + Quantified Prompt-Craft (phases A–F) — DONE
+
+> **Status: DONE / landed on `main`** (phases A–D and E–F merged). This
+> programme sits on top of the merged foundation above and is the current
+> production-facing prompt-craft surface. The architecture-level write-up lives
+> in `docs/ARCHITECTURE.md`; this addendum is the merge-plan ledger of what
+> shipped.
+
+This programme generalised the prompt-craft layer from "cinematic character
+video" to a quantified, category-driven surface that also covers commercial /
+product work, and locked Seedance character/product identity through the
+official Asset Library. All six phases are implemented and on `main`.
+
+- **Phase A — Standing prompt rules + quantified cinematography (DONE).**
+  `src/video/prompt-rules.ts` (pure scrubbers: `stripProperNames`,
+  `brandNeutralize`, `noFaceMorphTag`, `diegeticAudioLine`) and
+  `src/video/cinematography.ts` (detail-leveled emitters `cameraSpec` /
+  `lightingSpec` / `gradeSpec` / `audioMix` at `terse | standard | rich`).
+
+- **Phase B — Cinema modes + hook library (DONE).** In `cinematography.ts`:
+  five `CINEMA_MODE_IDS` (`narrative`, `studio`, `action`, `performance`,
+  `atmospheric`) via `cinemaMode` / `stackModes` (intercut shots never merged),
+  `resolveCameraVocab`, six named 2-second `HOOK_PATTERN_IDS`
+  (`resolveHookPattern` / `hookBeat`, throw-on-unknown), per-genre
+  `genreDefaults`, beat-template `beats()`, and `orbitGrammar` (3 `ORBIT_KINDS`).
+
+- **Phase C — Category Descriptor registry (DONE).**
+  `src/video/category-registry.ts`: nine `CATEGORY_IDS` each with a
+  `subjectType` of `character` or `product`, a `beatTemplate`, `cameraVocab`,
+  `genre`, `audioProfile`, and `hookSeconds`. `resolveCategory` (default
+  `cinematic`) drives which branch `filmmaking-prompts` takes. `referenceBuildOrder`
+  fixes the identity-reference build order (`base-ref → sheet → scene-plate`).
+
+- **Phase D — Commercial / product track (DONE).**
+  `src/video/product-references.ts` reads `artifacts/product-references.json`
+  (degrades to description-only when absent). `filmmaking-prompts.ts` branches
+  on `descriptor.subjectType === 'product'` into a product path (no character
+  sheets / no grid lock; text-driven Seedance packets following the descriptor's
+  beat template, with orbit grammar for orbit/turntable vocabularies).
+
+- **Phase E — Multi-shot output formats + two-phase gate (DONE).**
+  `multi-shot-prompt.ts` adds `composeSeedanceParagraph` (Seedance native
+  paragraph), `composePerShotFormat` (per-shot blocks), `withDialogue` /
+  `parseDialogueLine` (two-speaker dialogue), and `composeBilingual`
+  (`en | zh | en+zh`). Surfaced through `vclaw video multi-shot --plan` flags
+  `--format default|seedance-paragraph|per-shot`, `--lang en|zh|en+zh`,
+  `--hook <patternId>`, `--dialogue "<speaker>: <line> [|| <speaker>: <line>]"`,
+  `--category <id>`. `filmmaking-prompts` gains a two-phase gate
+  `--phase storyboard|video` (storyboard phase gates `seedancePackets` to `[]`).
+
+- **Phase F — Seedance Asset Library end-to-end (DONE).**
+  `src/video/seedance-asset-library.ts` (`vclaw video seedance-register-assets`)
+  registers character images as managed Asset Library avatars, waits for
+  international-profile sync, and writes `artifacts/seedance-assets.json`
+  (schema `schemas/video/artifacts/seedance-assets.schema.json`). At runtime
+  `execution-runtime.ts` reads it (only for `recommendedRouteId ===
+  'seedance-direct'`) and auto-resolves each scene's cast names to `Asset://`
+  URIs as that scene's reference set; `native-seedance.ts` routes `Asset://`
+  references into `reference_images` and enforces the reference budget
+  (`assertReferenceBudget`: ≤9 image, ≤3 video, ≤3 audio) before any submit.
 
 *End of plan.*
 

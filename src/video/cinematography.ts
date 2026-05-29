@@ -332,6 +332,21 @@ function padSeconds(seconds: number): string {
 }
 
 /**
+ * Resolve a named opening-hook pattern id to its directive description.
+ *
+ * Like {@link hookBeat}, an unknown id THROWS rather than falling back — hooks
+ * must be explicit. Exported so CLI surfaces can prepend the directive without
+ * re-deriving the table.
+ */
+export function resolveHookPattern(pattern: HookPatternId): string {
+  const description = HOOK_PATTERNS[pattern];
+  if (!description) {
+    throw new Error(`unknown hook pattern: ${pattern}`);
+  }
+  return description;
+}
+
+/**
  * Render a named 2-second opening hook as a timecoded beat.
  *
  * Returns `"[00:00 - 00:0N] <description>"` where `N` is `hookSeconds`

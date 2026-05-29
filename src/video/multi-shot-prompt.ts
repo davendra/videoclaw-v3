@@ -361,6 +361,34 @@ export function withDialogue(shotLine: string, dialogue: DialogueLine): string {
   return segments.join(' ');
 }
 
+// Parse a CLI `--dialogue` value into a DialogueLine. The format is
+// `"<speaker>: <line>"`, optionally with a second speaker after a `||`
+// separator: `"A: hi || B: bye"`. Each side must contain a colon; the first
+// colon splits speaker from line. THROWS on a malformed side (no colon) — there
+// is no silent fallback. Pure and deterministic.
+export function parseDialogueLine(value: string): DialogueLine {
+  const parseSide = (raw: string): { speaker: string; line: string } => {
+    const idx = raw.indexOf(':');
+    if (idx === -1) {
+      throw new Error(`malformed dialogue (expected "<speaker>: <line>"): ${raw.trim()}`);
+    }
+    const speaker = raw.slice(0, idx).trim();
+    const line = raw.slice(idx + 1).trim();
+    if (!speaker || !line) {
+      throw new Error(`malformed dialogue (expected "<speaker>: <line>"): ${raw.trim()}`);
+    }
+    return { speaker, line };
+  };
+  const [firstRaw, ...rest] = value.split('||');
+  const first = parseSide(firstRaw);
+  const dialogue: DialogueLine = { speaker: first.speaker, line: first.line };
+  if (rest.length > 0) {
+    const second = parseSide(rest.join('||'));
+    dialogue.secondSpeaker = { speaker: second.speaker, line: second.line };
+  }
+  return dialogue;
+}
+
 export type Lang = 'en' | 'zh' | 'en+zh';
 
 // Wrap a composed prompt block for bilingual delivery. `en` returns the English

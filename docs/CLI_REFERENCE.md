@@ -783,6 +783,8 @@ metadata block.
 | `--format <name>` | `default` | With `--plan`: select the rendered output. `default` emits the original `{ preset, shots[] }` JSON (unchanged). `seedance-paragraph` renders one flowing labeled paragraph via `composeSeedanceParagraph`. `per-shot` renders one `SHOT N — NAME` block per shot via `composePerShotFormat`. |
 | `--lang <code>` | `en` | With `--plan` and a non-`default` `--format`: wrap the rendered text for bilingual delivery. `en` = one fenced block; `zh` = one fenced block; `en+zh` = two labeled (`EN` / `中文`) fenced blocks. Translation is offline/identity here — the flag surfaces the wrapper structure only; no network translation is performed. |
 | `--category <id>` | `cinematic` | With `--plan` and a non-`default` `--format`: the category descriptor (subject type, beat template, genre) that drives the composed prose. One of the registered category ids; unknown ids fail fast. |
+| `--hook <patternId>` | — | With `--plan` and a non-`default` `--format`: prepend a named opening-hook directive (`Opening hook — <description>`) drawn from `HOOK_PATTERNS`. One of `black-to-light`, `silence-to-sound`, `reverse-motion`, `beat-drop`, `match-cut-in`, `whip-reveal`; unknown ids fail fast. Omitting it leaves the rendered text unchanged. |
+| `--dialogue "<speaker>: <line>"` | — | With `--plan` and a non-`default` `--format`: append spoken dialogue to the opening of the rendered text via `withDialogue`. Add a second speaker after a `\|\|` separator (`"A: hi \|\| B: bye"`) to emit one `replies:` line. A value with no colon fails fast. Omitting it leaves the rendered text unchanged. |
 | `--total-seconds <n>` | 15 | Total clip duration in seconds. |
 | `--max-chars <n>` | 1500 | Character budget enforced by `--validate`. |
 | `--style-line <text>` | cinematic-15s default | Override the `Style:` metadata line. |
@@ -805,7 +807,7 @@ metadata block.
 
 `--plan` emits JSON: `{ preset, shots[] }`. The `preset` object carries `name`, `totalSeconds`, `minShotSeconds`, `maxShotSeconds`, `minShots`, `maxShots`, `maxChars`, `styleLine`, and `audioLine`. Each shot has `index`, `start`, `end`, `timecode`, `shotSize`, `lens`, `angle`, `movement`. With `--from-storyboard`, output also includes `source` and resolved `input` so agents can see exactly which scene, characters, action, location, and time of day were used.
 
-With `--format seedance-paragraph` or `--format per-shot`, `--plan` instead emits the rendered prompt **text** (not JSON), wrapped in fenced code block(s) per `--lang` (`en` default = one block, `en+zh` = two labeled blocks). `--format default` (or omitting it) keeps the original JSON output unchanged.
+With `--format seedance-paragraph` or `--format per-shot`, `--plan` instead emits the rendered prompt **text** (not JSON), wrapped in fenced code block(s) per `--lang` (`en` default = one block, `en+zh` = two labeled blocks). `--hook` prepends a named opening-hook directive and `--dialogue` appends spoken dialogue to the opening line (both apply only on non-`default` formats and are post-render text transforms — the composers stay pure). `--format default` (or omitting any of these flags) keeps the original JSON output unchanged.
 
 `--validate` emits JSON: `{ valid, charCount, issues[] }` where each issue has `code`, `severity`, `message`. With `--explain-issues`, it also emits `explanations[]` containing `code`, `summary`, and `suggestedFix`. Exit code `1` when any issue has `severity: "error"`.
 

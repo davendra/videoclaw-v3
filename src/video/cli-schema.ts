@@ -125,7 +125,7 @@ const COMMANDS: CommandSpec[] = [
   // --- authoring aids ---
   {
     name: 'video multi-shot',
-    usage: 'vclaw video multi-shot (--presets | --plan [--shots N] [--seed N] [--format default|seedance-paragraph|per-shot] [--lang en|zh|en+zh] [--category <id>] | --validate [--file <path>] [--explain-issues] | --fix [--file <path>] | --auto --image <path> [--dry-run] [--retry-invalid N] [...]) [--preset <name>] [--provider <name>] [--route <name>] [--from-storyboard --project <slug> --scene <sceneIndex>] [--total-seconds N] [--max-chars N] [--root <path>] [--raw]',
+    usage: 'vclaw video multi-shot (--presets | --plan [--shots N] [--seed N] [--format default|seedance-paragraph|per-shot] [--lang en|zh|en+zh] [--category <id>] [--hook <patternId>] [--dialogue "<speaker>: <line> [|| <speaker>: <line>]"] | --validate [--file <path>] [--explain-issues] | --fix [--file <path>] | --auto --image <path> [--dry-run] [--retry-invalid N] [...]) [--preset <name>] [--provider <name>] [--route <name>] [--from-storyboard --project <slug> --scene <sceneIndex>] [--total-seconds N] [--max-chars N] [--root <path>] [--raw]',
     description: 'Scaffold, validate, and Gemini-author timecoded multi-shot cinematic prompts, including project storyboard scene hydration.',
   },
   {

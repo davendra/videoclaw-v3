@@ -6,6 +6,7 @@ import {
   LENS_VOCABULARY,
   ANGLE_VOCABULARY,
 } from './prompt-quality.js';
+import type { CategoryDescriptor } from './category-registry.js';
 
 export interface MultiShotPreset {
   name: string;
@@ -276,6 +277,35 @@ export function composePromptText(
 ): string {
   const body = plan.map((s) => `${s.timecode} ${s.line}`).join('\n\n');
   return `${body}\n\n${metadataBlock}`;
+}
+
+// Render a ShotPlan in Seedance's native prompt format: one flowing paragraph
+// with inline labeled segments (Style & Mood / Dynamic Description / Static
+// Description), a camera block in the existing per-shot emitter phrasing, and an
+// Audio footer. Pure and deterministic — it only reads `plan`/`descriptor`.
+export function composeSeedanceParagraph(
+  plan: ShotPlan,
+  descriptor: CategoryDescriptor,
+): string {
+  const { preset, shots } = plan;
+  // Camera block: reuse the per-shot "shotSize, lens, angle, movement" phrasing,
+  // collapsed onto one line so the paragraph stays a single block.
+  const cameraBlock = shots
+    .map((s) => `${s.shotSize}, ${s.lens}, ${s.angle}, ${s.movement}`)
+    .join('; ');
+  const motion = shots.map((s) => s.movement).join(', ');
+  const styleMood = `${descriptor.label} — ${preset.styleLine}`;
+  const dynamic = `the ${descriptor.subjectType} carries the action across ${shots.length} continuous beats (${motion})`;
+  const staticScene = `${descriptor.label} scene, ${descriptor.genre} look, beat structure ${descriptor.beatTemplate}`;
+  const segments = [
+    `Style & Mood: ${styleMood}`,
+    `Dynamic Description: ${dynamic}`,
+    `Static Description: ${staticScene}`,
+    `Camera: ${cameraBlock}`,
+    `Audio: ${preset.audioLine}`,
+  ];
+  // Single space joins keep this one flowing paragraph (no "\n\n" block breaks).
+  return segments.join(' ');
 }
 
 export { SHOT_SIZES, LENSES, ANGLES, MOVEMENTS, SHOT_TYPE_VOCABULARY };

@@ -270,6 +270,56 @@ export const DEFAULT_PROVIDER_REGISTRY: VideoProviderDescriptor[] = [
       "Requires USEAPI_API_TOKEN; account must be pre-registered with UseAPI (see registerRunwayAccount in providers/runway-useapi.ts).",
     ],
   },
+  {
+    id: "dreamina-useapi",
+    provider: "seedance",
+    displayName: "Dreamina via UseAPI",
+    path: "useapi",
+    summary: "Dreamina (CapCut/ByteDance Seed) Seedance 2.0 surface via useapi.net — keyframe i2v plus text-to-video, 1080p on CA accounts.",
+    controls: [
+      "first-frame",
+      "last-frame",
+      "reference-images",
+      "world-consistency",
+    ],
+    operationSupport: [
+      {
+        operation: "text-to-video",
+        aspectRatios: ["landscape", "portrait"],
+      },
+      {
+        operation: "image-to-video",
+        aspectRatios: ["landscape", "portrait"],
+      },
+    ],
+    routingHints: {
+      latencyClass: "medium",
+      costClass: "medium",
+      trustClass: "aggregator",
+      preferredWorkflows: ["ad-creative-variants", "product-demo-spokesperson"],
+    },
+    escapeHatches: [
+      {
+        name: "dreaminaOptions",
+        description: "Preserve Dreamina-native controls such as model selection and CA-only 1080p output.",
+        options: [
+          {
+            name: "model",
+            description: "Choose the Dreamina model (seedance-2.0, seedance-2.0-fast, ...); override with VCLAW_DREAMINA_MODEL.",
+          },
+          {
+            name: "resolution",
+            description: "1080p is CA-only; 720p works on both US and CA regions.",
+          },
+        ],
+      },
+    ],
+    notes: [
+      "Production native transport (src/video/native-dreamina.ts) — Seedance 2.0 via Dreamina by default; override with VCLAW_DREAMINA_MODEL.",
+      "Requires USEAPI_API_TOKEN plus VCLAW_DREAMINA_ACCOUNT (e.g. 'CA:ai@example.com'); region via VCLAW_DREAMINA_REGION (default CA).",
+      "Real human faces are rejected by Seedance content moderation; use illustrated/stylized characters or a Runway-generated start frame.",
+    ],
+  },
 ];
 
 export const DEFAULT_ROUTING_POLICY: ProviderRoutingPolicy = {
@@ -283,6 +333,7 @@ export const DEFAULT_ROUTING_POLICY: ProviderRoutingPolicy = {
     "veo-useapi",
     "seedance-direct",
     "runway-useapi",
+    "dreamina-useapi",
   ],
 };
 

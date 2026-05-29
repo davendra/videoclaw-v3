@@ -29,11 +29,13 @@ function adapterEnvVarForRoute(routeId: ProviderRouteId): string {
       return 'VCLAW_SEEDANCE_DIRECT_ADAPTER';
     case 'runway-useapi':
       return 'VCLAW_RUNWAY_USEAPI_ADAPTER';
+    case 'dreamina-useapi':
+      return 'VCLAW_DREAMINA_USEAPI_ADAPTER';
   }
 }
 
 function builtinAdapterCommandForRoute(routeId: ProviderRouteId): string | null {
-  if (!(routeId === 'seedance-direct' || routeId === 'veo-useapi' || routeId === 'runway-useapi')) {
+  if (!(routeId === 'seedance-direct' || routeId === 'veo-useapi' || routeId === 'runway-useapi' || routeId === 'dreamina-useapi')) {
     return null;
   }
   const scriptPath = fileURLToPath(new URL('../cli/provider-adapter.js', import.meta.url));

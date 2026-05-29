@@ -39,6 +39,7 @@ export type ProviderRouteId =
   | "veo-direct"
   | "veo-useapi"
   | "runway-useapi"
+  | "dreamina-useapi"
   | "seedance-direct";
 
 export type ProviderHealthState = "healthy" | "degraded" | "offline" | "deprecated";

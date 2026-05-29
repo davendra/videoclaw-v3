@@ -1,6 +1,7 @@
 import { submitSeedanceDirectNative, pollSeedanceDirectNative, cancelSeedanceDirectNative } from './native-seedance.js';
 import { submitVeoUseApiNative, pollVeoUseApiNative } from './native-veo.js';
 import { submitRunwayUseApiNative, pollRunwayUseApiNative, cancelRunwayUseApiNative } from './native-runway.js';
+import { submitDreaminaUseApiNative, pollDreaminaUseApiNative, cancelDreaminaUseApiNative } from './native-dreamina.js';
 import type { ProviderRouteId } from './provider-platform/types.js';
 import type { VideoExecutionCancelResult, VideoExecutionPayload, VideoExecutionPollResult } from './types.js';
 
@@ -73,6 +74,28 @@ export async function runBuiltinProviderAdapter(
       }) as Promise<VideoExecutionCancelResult>;
     }
     return submitRunwayUseApiNative(input as unknown as VideoExecutionPayload, {
+      env: options.env,
+    });
+  }
+
+  if (route === 'dreamina-useapi') {
+    if (input.action === 'poll') {
+      return pollDreaminaUseApiNative({
+        outputDir: String(input.outputDir ?? ''),
+        externalJobId: String(input.externalJobId ?? ''),
+        workspaceRoot: String(input.workspaceRoot ?? ''),
+      }, {
+        env: options.env,
+      }) as Promise<VideoExecutionPollResult>;
+    }
+    if (input.action === 'cancel') {
+      return cancelDreaminaUseApiNative({
+        outputDir: String(input.outputDir ?? ''),
+        externalJobId: String(input.externalJobId ?? ''),
+        workspaceRoot: String(input.workspaceRoot ?? ''),
+      }) as Promise<VideoExecutionCancelResult>;
+    }
+    return submitDreaminaUseApiNative(input as unknown as VideoExecutionPayload, {
       env: options.env,
     });
   }

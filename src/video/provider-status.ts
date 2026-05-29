@@ -23,6 +23,7 @@ const ROUTE_REQUIRED_ENV_VARS: Record<ProviderRouteId, string[]> = {
   'veo-useapi': ['USEAPI_API_TOKEN', 'USEAPI_ACCOUNT_EMAIL'],
   'seedance-direct': ['SUTUI_API_KEY'],
   'runway-useapi': ['USEAPI_API_TOKEN', 'USEAPI_ACCOUNT_EMAIL'],
+  'dreamina-useapi': ['USEAPI_API_TOKEN', 'VCLAW_DREAMINA_ACCOUNT'],
 };
 
 const ROUTE_REQUIRED_DEPENDENCIES: Record<ProviderRouteId, ExecutableName[]> = {
@@ -33,6 +34,10 @@ const ROUTE_REQUIRED_DEPENDENCIES: Record<ProviderRouteId, ExecutableName[]> = {
   // shell-outs. ffmpeg is still useful for downstream stitching/post but is
   // not strictly required for the route itself to deliver mp4s.
   'runway-useapi': ['ffmpeg'],
+  // dreamina-useapi native transport is pure Node (fetch + fs), no python/bun
+  // shell-outs. ffmpeg is still useful for downstream stitching/post but is
+  // not strictly required for the route itself to deliver mp4s.
+  'dreamina-useapi': ['ffmpeg'],
 };
 
 const ROUTE_MATURITY: Record<ProviderRouteId, 'production' | 'scaffold'> = {
@@ -40,6 +45,7 @@ const ROUTE_MATURITY: Record<ProviderRouteId, 'production' | 'scaffold'> = {
   'veo-useapi': 'production',
   'seedance-direct': 'production',
   'runway-useapi': 'production',
+  'dreamina-useapi': 'production',
 };
 
 const ROUTE_ADAPTER_ENV_VAR: Record<ProviderRouteId, string> = {
@@ -47,12 +53,14 @@ const ROUTE_ADAPTER_ENV_VAR: Record<ProviderRouteId, string> = {
   'veo-useapi': 'VCLAW_VEO_USEAPI_ADAPTER',
   'seedance-direct': 'VCLAW_SEEDANCE_DIRECT_ADAPTER',
   'runway-useapi': 'VCLAW_RUNWAY_USEAPI_ADAPTER',
+  'dreamina-useapi': 'VCLAW_DREAMINA_USEAPI_ADAPTER',
 };
 
 const ROUTE_COMMAND_ENV_VARS: Partial<Record<ProviderRouteId, string[]>> = {
   'veo-useapi': ['VCLAW_VEO_USEAPI_SUBMIT_CMD', 'VCLAW_VEO_USEAPI_POLL_CMD', 'VCLAW_VEO_BUN_BIN'],
   'seedance-direct': ['VCLAW_SEEDANCE_DIRECT_SUBMIT_CMD', 'VCLAW_SEEDANCE_DIRECT_POLL_CMD'],
   'runway-useapi': ['VCLAW_RUNWAY_USEAPI_SUBMIT_CMD', 'VCLAW_RUNWAY_USEAPI_POLL_CMD', 'VCLAW_RUNWAY_USEAPI_CANCEL_CMD'],
+  'dreamina-useapi': ['VCLAW_DREAMINA_USEAPI_SUBMIT_CMD', 'VCLAW_DREAMINA_USEAPI_POLL_CMD', 'VCLAW_DREAMINA_USEAPI_CANCEL_CMD'],
 };
 
 function findExecutable(command: ExecutableName): string | undefined {

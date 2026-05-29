@@ -131,7 +131,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     name: 'list_provider_routes',
     description:
-      'List the provider routes (veo-useapi, seedance-direct, runway-useapi, veo-direct) and their current availability.',
+      'List the provider routes (veo-useapi, seedance-direct, runway-useapi, dreamina-useapi, veo-direct) and their current availability.',
     inputSchema: {
       type: 'object',
       properties: { ...rootProp },

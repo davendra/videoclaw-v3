@@ -655,6 +655,7 @@ VCLAW_VEO_DIRECT_ADAPTER
 VCLAW_VEO_USEAPI_ADAPTER
 VCLAW_SEEDANCE_DIRECT_ADAPTER
 VCLAW_RUNWAY_USEAPI_ADAPTER
+VCLAW_DREAMINA_USEAPI_ADAPTER
 ```
 
 The adapter should print JSON to `stdout`. If `produce` returns `externalJobId`,
@@ -696,6 +697,32 @@ VCLAW_VEO_CLI_ROOT        # optional, defaults to <workspace>/vclaw-cli
 VCLAW_VEO_BUN_BIN         # optional, defaults to bun
 VCLAW_VEO_OUTPUT_DIR      # optional, defaults to <vclaw-cli>/output-videos
 ```
+
+For `dreamina-useapi` (Dreamina / CapCut-ByteDance Seed, Seedance 2.0 via
+useapi.net — keyframe image-to-video plus text-to-video, 1080p on CA accounts),
+the built-in native transport (`src/video/native-dreamina.ts`) talks directly to
+the useapi.net Dreamina API. It reuses the same `USEAPI_API_TOKEN` as
+`runway-useapi` (no new token) and reads the account/region from env:
+
+```bash
+USEAPI_API_TOKEN          # required, shared with runway-useapi
+VCLAW_DREAMINA_ACCOUNT    # required, e.g. "CA:ai@example.com" (already configured server-side)
+VCLAW_DREAMINA_REGION     # optional, defaults to CA
+VCLAW_DREAMINA_MODEL      # optional, defaults to seedance-2.0
+```
+
+The account must already be registered with useapi.net (`POST /accounts` with
+`{email, password, region, maxJobs}` is done out-of-band); the transport only
+needs the account id + token at submit time. Image-to-video uploads the first
+image reference via `POST /dreamina/assets/<account>` to obtain an `assetRef`,
+then passes it as `firstFrameRef` on `POST /dreamina/videos`; poll uses
+`GET /dreamina/videos/<jobid>` and downloads `response.videoUrl`. As with
+`runway-useapi`, you can override the whole route with
+`VCLAW_DREAMINA_USEAPI_ADAPTER` or the per-action shims
+`VCLAW_DREAMINA_USEAPI_SUBMIT_CMD` / `_POLL_CMD` / `_CANCEL_CMD`.
+
+> Seedance 2.0 rejects real human faces at content moderation — use illustrated
+> or stylized characters, or a Runway-generated real-face start frame.
 
 ## Execution profile normalization
 

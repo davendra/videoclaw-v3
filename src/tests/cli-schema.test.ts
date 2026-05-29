@@ -9,7 +9,7 @@ describe('cli-schema', () => {
     const dump = buildSchemaDump();
     assert.equal(typeof dump.version, 'string', 'version present');
     assert.ok(Array.isArray(dump.commands), 'commands is an array');
-    assert.equal(dump.commands.length, 77, 'expect exactly 77 curated commands; update this count when adding/removing entries');
+    assert.equal(dump.commands.length, 78, 'expect exactly 78 curated commands; update this count when adding/removing entries');
     const names = dump.commands.map((c) => c.name);
     const uniqueNames = new Set(names);
     assert.equal(uniqueNames.size, names.length, 'command names must be unique');

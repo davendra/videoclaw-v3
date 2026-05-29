@@ -17,3 +17,6 @@ __pycache__/
 .omc/
 .playwright-mcp/
 vclaw-review-ui-*.png
+
+# Superpowers brainstorm scratch
+.superpowers/

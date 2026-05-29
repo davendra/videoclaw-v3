@@ -172,6 +172,13 @@ const COMMANDS: CommandSpec[] = [
   // --- mcp server ---
   { name: 'mcp serve', usage: 'vclaw mcp serve', description: 'Start the videoclaw MCP server (stdio) exposing read-only project introspection to MCP-aware agent hosts.' },
 
+  // --- human-friendly studio planner ---
+  {
+    name: 'studio',
+    usage: 'vclaw studio --dry-run [--goal <goal>] [--project <slug>] [--title <title>] [--intent <text>] [--input <path-or-url>] [--client <name>] [--duration <seconds>] [--write-session] [--root <path>]',
+    description: 'Generate a guided Studio production plan from high-level goals without running provider work.',
+  },
+
   // --- introspection ---
   { name: 'schema', usage: 'vclaw schema [--json]', description: 'Dump the full v3 contract (commands, flags, artifact schemas, error codes, exit codes) for agent introspection.' },
 ];

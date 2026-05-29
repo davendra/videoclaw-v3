@@ -88,6 +88,32 @@ would create confusion for users with existing scripts.
 
 ---
 
+## Studio Planner
+
+`vclaw studio` is the human-friendly planning front door. It maps goals such as
+presenter video, UGC campaign, music video, copy-reference, review, and publish
+to deterministic CLI commands.
+
+```bash
+vclaw studio --dry-run [--goal <goal>] [--project <slug>] [--intent <text>] [--input <path-or-url>] [--client <name>] [--duration <seconds>] [--write-session]
+```
+
+Supported goals:
+
+- `create-video`
+- `copy-reference`
+- `presenter-video`
+- `music-video`
+- `ugc-campaign`
+- `existing-project`
+- `review-regenerate`
+- `publish-deliver`
+
+Studio is plan-only in Phase 1. It returns a command plan and optional
+`studio-session.json` artifact, but it does not run provider generation.
+
+---
+
 ## Veo (Bun bridge)
 
 The `vclaw veo *` subcommand family bridges to the Bun-based

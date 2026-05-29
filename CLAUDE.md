@@ -62,7 +62,7 @@ npm run check:release-readiness-lite     # one-shot: build + tests + main smokes
 ### Layers (read top-down)
 
 1. `src/cli/vclaw.ts` — the single user-facing entrypoint. It argparses by hand and dispatches into `src/video/*` modules. `src/cli/omx.ts` is a deprecation wrapper that delegates to the same handlers and prints a notice to stderr. `src/cli/provider-adapter.ts` is the built-in adapter binary for `seedance-direct` / `veo-direct`.
-2. `src/video/` — the core domain. Each file is small and single-purpose, e.g. `artifacts.ts`, `artifact-store.ts`, `checkpoints.ts`, `workspace.ts`, `projects.ts`, `status.ts`, `doctor.ts`, `doctor-portfolio.ts`, `readiness.ts`, `execution-plan.ts`, `execute.ts`, `execution-runtime.ts`, `execution-status.ts`, `execution-cancel.ts`, `director-preflight.ts`, `report.ts`, `csv-export.ts`, `obsidian-export.ts`, `project-index.ts`, `metrics.ts`, `next-actions.ts`, `template-store.ts`, `provider-status.ts`, `native-seedance.ts`, `native-veo.ts`, `multi-shot-prompt.ts`.
+2. `src/video/` — the core domain. Each file is small and single-purpose, e.g. `artifacts.ts`, `artifact-store.ts`, `checkpoints.ts`, `workspace.ts`, `projects.ts`, `status.ts`, `doctor.ts`, `doctor-portfolio.ts`, `readiness.ts`, `execution-plan.ts`, `execute.ts`, `execution-runtime.ts`, `execution-status.ts`, `execution-cancel.ts`, `director-preflight.ts`, `report.ts`, `csv-export.ts`, `obsidian-export.ts`, `project-index.ts`, `metrics.ts`, `next-actions.ts`, `template-store.ts`, `provider-status.ts`, `native-seedance.ts`, `native-veo.ts`, `multi-shot-prompt.ts`, `storyboard-grid.ts`. `src/video/studio/` is the planning front door and `src/video/preview-portal/` is the review/delivery portal (both described below).
 3. `src/video/provider-platform/` — route descriptors (Veo / Seedance / Runway direct and useapi flavors).
 4. `src/video/pipeline-manifests/` — built-in stage definitions for the two production modes.
 5. `schemas/video/` — canonical JSON Schema contracts for artifacts and pipeline manifests. Treat these as the source of truth for artifact shapes.
@@ -91,9 +91,31 @@ Canonical stage order: **init → brief → storyboard → assets → review →
 
 Every command accepts `--mode storyboard|director`. Pipeline manifests under `src/video/pipeline-manifests/` define the stage contract per mode. `director` mode adds a storyboard-approval gate: `produce`/`execute` export `storyboard.md` and block before provider submission unless `VIDEOCLAW_APPROVE_STORYBOARD=1` is set. `storyboard-review` (no-execution) can perform preflight + transition the project into `awaiting-approval` without starting a run.
 
+### Studio front door (planning layer)
+
+`vclaw studio` (`src/video/studio/`, handler `handleStudio` in `src/cli/vclaw.ts`) is a human-friendly planning front door that sits *above* the low-level CLI — it does not replace it. **Phase 1 is plan-only:** it builds a `StudioPlan` from a goal and prints the exact `vclaw video ...` commands and artifacts that would run, but never calls providers, FFmpeg, or spends credits (even without `--dry-run`; non-dry-run just adds a "plan-only" warning). The module is pure/deterministic apart from `session.ts`:
+- `recipes.ts` — `STUDIO_RECIPES`, one `StudioRecipe` per goal (command templates, required/optional inputs, `riskLevel`, `executionPolicy`).
+- `planner.ts` — `buildStudioPlan()` resolves the goal, fills `<placeholder>` command templates, computes `missingInputs`/`warnings`, and emits a `StudioPlan` (`schemaVersion: 1`).
+- `project-context.ts` — `loadStudioProjectContext()` reads readiness + next-actions to enrich the plan; `session.ts` `writeStudioSession()` persists `projects/<slug>/artifacts/studio-session.json` when `--write-session` is passed.
+- `types.ts` — shared `StudioGoal` (8 goals), plan, and recipe types.
+
+Goals (each has a short alias, e.g. `presenter`→`presenter-video`): `create-video`, `copy-reference`, `presenter-video`, `music-video`, `ugc-campaign`, `existing-project`, `review-regenerate`, `publish-deliver`. Studio output is JSON on stdout. When extending it, add the recipe to `recipes.ts`, the goal+alias to `handleStudio`, a `studio-*.test.ts`, and update `docs/STUDIO.md`; the command is also registered in `src/video/cli-schema.ts` `COMMANDS` (whose length is asserted by `cli-schema.test.ts`).
+
 ### Review-state ladder
 
 The ops layer tracks a normalized `storyboardReviewState` of `missing | current | stale`. This flows through status, index, report, CSV export, Obsidian export, dashboards, next-actions, snapshot diffs, and the doctor layer. A stale director review blocks `execute`/`execute-status` at runtime even if approval is set. When touching review/approval logic, keep this ladder consistent across all surfaces.
+
+### Review & delivery portal (`src/video/preview-portal/`)
+
+The portal generates the standardized HTML surfaces that used to be hand-written per project: `edit.html`/`review.html` (editor/operator human-in-the-loop, with approve/regenerate controls and `VIDEOCLAW_REVIEW_DECISIONS` copy output), `client-review.html` (lightweight client approve/decline/comment, `VIDEOCLAW_CLIENT_FEEDBACK` copy output), and `preview.html` (polished final showcase with lightbox + downloads). The module is split into `discovery.ts` (find project assets), `generate.ts` + `templates.ts` + `shared-assets.ts` (render the surfaces), `render.ts`/`publish.ts` (emit/ship), and `audit.ts` (drift checks); `src/video/review-ui.ts` (`vclaw video review-ui`) serves the editor surface interactively. The decisions/feedback flow back through env-var copy blocks rather than a server round-trip, keeping the on-disk project the source of truth. See `docs/preview-portal-audit.md`.
+
+### Storyboard grid & multi-shot prompt handoff
+
+`src/video/multi-shot-prompt.ts` builds project-ready, provider-tuned multi-shot prompt packets (presets via `vclaw video multi-shot --presets`; see `references/video/multi-shot-framework.md`, especially its Anti-patterns section).
+
+`src/video/storyboard-grid.ts` (`vclaw video storyboard-grid`, `renderStoryboardGrid`) renders a **deterministic shot-spec sheet** — a 3×3 SVG→PNG of CAM/MOVE/MOOD annotation panels — **not** a cinematic storyboard with character imagery. It is the *layout/intent contract*, not the finished reference image. The intended two-step is: (1) `storyboard-grid` to lock panel order + camera language, then (2) generate the real cinematic 3×3 grid via an image model (always `openai-gpt-image-2` for multi-panel composites) and re-attach it with `vclaw video filmmaking-prompts --storyboard-grid <path>`, which feeds it into the Seedance/Veo/Runway prompt packets.
+
+Two production-learned gotchas baked into the generated packets (see the framework Anti-patterns): (a) grids passed as provider `reference_images` get **reproduced as a moving 9-panel split-screen** unless the prompt explicitly forces single-full-frame output — the packets now embed that guard; (b) real-person content filters (xskill/ARK Seedance) reject photoreal faces as `reference_images`, so use `filmmaking-prompts --no-faces` to render the grid prompt in a silhouette / no-face register.
 
 ### Provider routes and adapters
 
@@ -130,7 +152,7 @@ For `seedance-direct`, `veo-useapi`, and `runway-useapi`, `vclaw` ships a built-
 - 2-space indent; modules stay small and single-purpose.
 - CLI output is machine-readable JSON by default; do not add silent fallbacks across provider routes.
 - Tests use `node:test` with `assert/strict`. Prefer `mkdtemp`/`tmpdir` for temp-directory isolation. Put CLI end-to-end tests under `src/tests/cli-*.test.ts` and module-contract tests under `src/tests/*.test.ts`.
-- When adding a new CLI subcommand: update `src/cli/vclaw.ts`, the relevant `src/video/*` module(s), a schema under `schemas/video/` if it introduces or changes an artifact, add a `cli-*.test.ts`, and update `README.md` + `docs/CLI_REFERENCE.md`. The `check:cleanroom-docs` guardrail watches docs drift.
+- When adding a new CLI subcommand: update `src/cli/vclaw.ts`, the relevant `src/video/*` module(s), a schema under `schemas/video/` if it introduces or changes an artifact, register the command in the `COMMANDS` array of `src/video/cli-schema.ts` (bump the hardcoded command-count assertion in `cli-schema.test.ts` to match), add a `cli-*.test.ts`, and update `README.md` + `docs/CLI_REFERENCE.md`. The `check:cleanroom-docs` guardrail watches docs drift.
 - Project slugs are validated by `isProjectSlug` (`src/video/projects.ts`); both `parseProjectSlug` and `handleVideoInit` (`validateInitSlug`) enforce it so flag-looking values (e.g. `--project`) cannot be silently accepted as slugs. Preserve this guard when adding new slug-accepting commands.
 - Architecture diagrams under `docs/assets/*.jpg` are generated from Mermaid sources in `docs/DIAGRAMS_SOURCE.md`. Edit the Mermaid blocks there and regenerate the images via the Go Bananas Pro model — never hand-edit the JPGs.
 - `check:skill-frontdoor` deliberately ignores `skills/seedance-prompts/SKILL.md` and the three presenter skills (`bunty`, `davendra-presenter`, `nex-presenter`) because their docs legitimately reference the legacy Python pipeline scripts. Don't "fix" the ignore list — it's load-bearing.
@@ -142,4 +164,4 @@ Proceed by default on obvious next steps. Keep work scoped to this repository an
 
 ## Recommended reading order
 
-`docs/ARCHITECTURE.md` → `docs/CLI_REFERENCE.md` → `docs/ASSEMBLE.md` → `docs/PRODUCTION_WORKFLOW.md` → `docs/REVIEW_UI_STORYBOARD_WORKFLOW.md` → `docs/REFERENCE_SHEETS.md` → `docs/SCENE_CANDIDATES.md` → `docs/OPERATIONS.md` → `docs/GENERATION_TELEMETRY.md` → `docs/OBSIDIAN.md` → `docs/TEMPLATES.md` → `docs/MIGRATION.md` → `docs/DEPRECATION.md` → `docs/RELEASE_READINESS.md` → `docs/MASTER_PLAN_ALIGNMENT.md` → `docs/DIAGRAMS_SOURCE.md`.
+`docs/ARCHITECTURE.md` → `docs/CLI_REFERENCE.md` → `docs/STUDIO.md` → `docs/ASSEMBLE.md` → `docs/PRODUCTION_WORKFLOW.md` → `docs/REVIEW_UI_STORYBOARD_WORKFLOW.md` → `docs/preview-portal-audit.md` → `docs/REFERENCE_SHEETS.md` → `docs/SCENE_CANDIDATES.md` → `docs/OPERATIONS.md` → `docs/GENERATION_TELEMETRY.md` → `docs/OBSIDIAN.md` → `docs/TEMPLATES.md` → `docs/MIGRATION.md` → `docs/DEPRECATION.md` → `docs/RELEASE_READINESS.md` → `docs/MASTER_PLAN_ALIGNMENT.md` → `docs/DIAGRAMS_SOURCE.md`.

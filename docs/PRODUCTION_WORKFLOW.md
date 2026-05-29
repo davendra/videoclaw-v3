@@ -4,6 +4,10 @@ VideoClaw should feel like one reliable production workflow, not a catalog of
 commands. Keep the advanced command surface available, but introduce users
 through these three doors.
 
+For human operators, start with `vclaw studio --dry-run`. It maps goals like
+presenter video, UGC campaign, music video, copy-reference, review, and publish
+to the deterministic CLI commands described below.
+
 The matching workflow skills are:
 
 1. `video-production-handoff` for one project from creation into review and

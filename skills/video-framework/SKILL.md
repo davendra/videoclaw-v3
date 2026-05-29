@@ -31,6 +31,7 @@ Initial migration direction:
 - the imported `skills/video-replicator/` tree is treated as the legacy
   workflow/phase-engine reference set
 - the public UX should not leak `.claude` path assumptions, printed MCP commands, or raw Python/Bun entrypoints
+- CLI planning surface: prefer `vclaw studio --dry-run` when the user wants a guided menu-like experience. Studio should produce the command plan; this skill remains the agent reasoning layer that interprets creative intent.
 
 Reference guides:
 - `references/checkpoint-protocol.md`

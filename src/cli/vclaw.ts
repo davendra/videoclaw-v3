@@ -8,6 +8,10 @@ import { createAnalyzeOutput } from '../video/analyze-output.js';
 import { artifactPathFor, writeArtifact } from '../video/artifact-store.js';
 import { buildArtifactHistoryReport } from '../video/artifact-history.js';
 import { appendProjectEvent } from '../video/events.js';
+import { buildStudioPlan } from '../video/studio/planner.js';
+import { loadStudioProjectContext } from '../video/studio/project-context.js';
+import { writeStudioSession } from '../video/studio/session.js';
+import type { StudioGoal } from '../video/studio/types.js';
 import { addCharacterProfile, listCharacterProfiles, readCharacterProfile } from '../video/characters.js';
 import { buildCharacterConsistencyReport } from '../video/character-consistency.js';
 import { autoFixDirectorStoryboardContent, runDirectorPreflight } from '../video/director-preflight.js';
@@ -204,6 +208,7 @@ function printHelp(): void {
   process.stdout.write('    v1 supports chain-from-prev only: --from must equal --scene - 1.\n');
   process.stdout.write('  vclaw video unchain --project <slug> --scene <sceneIndex> [--root <path>]\n');
   process.stdout.write('  vclaw video candidates-migrate-from-assets --project <slug> [--dry-run] [--root <path>]\n');
+  process.stdout.write('  vclaw studio --dry-run [--goal create-video|copy-reference|presenter-video|music-video|ugc-campaign|existing-project|review-regenerate|publish-deliver] [--project <slug>] [--title <title>] [--intent <text>] [--input <path-or-url>] [--client <name>] [--duration <seconds>] [--write-session] [--root <path>]\n');
 }
 
 async function handleVideoRemixNarrated(args: string[]): Promise<void> {
@@ -371,6 +376,98 @@ function parseRepeatableFlag(args: string[], flag: string): string[] {
     }
   }
   return values.filter(Boolean);
+}
+
+const STUDIO_GOAL_ALIASES: Record<string, StudioGoal> = {
+  create: 'create-video',
+  'new': 'create-video',
+  'new-video': 'create-video',
+  'create-video': 'create-video',
+  copy: 'copy-reference',
+  clone: 'copy-reference',
+  reference: 'copy-reference',
+  'copy-reference': 'copy-reference',
+  presenter: 'presenter-video',
+  bunty: 'presenter-video',
+  nex: 'presenter-video',
+  davendra: 'presenter-video',
+  'presenter-video': 'presenter-video',
+  music: 'music-video',
+  'music-video': 'music-video',
+  multishot: 'music-video',
+  'multi-shot': 'music-video',
+  ugc: 'ugc-campaign',
+  'ugc-campaign': 'ugc-campaign',
+  existing: 'existing-project',
+  continue: 'existing-project',
+  'existing-project': 'existing-project',
+  review: 'review-regenerate',
+  regenerate: 'review-regenerate',
+  reroll: 'review-regenerate',
+  'review-regenerate': 'review-regenerate',
+  publish: 'publish-deliver',
+  deliver: 'publish-deliver',
+  'publish-deliver': 'publish-deliver',
+};
+
+function parseStudioGoal(value: string | undefined): StudioGoal | undefined {
+  if (!value) return undefined;
+  const goal = STUDIO_GOAL_ALIASES[value];
+  if (!goal) {
+    throw new VclawError(
+      'invalid_mode',
+      `studio: unknown goal ${JSON.stringify(value)}. Run \`vclaw studio --dry-run --goal existing-project --project <slug>\` or \`vclaw schema --json\` for supported goals.`,
+      { goal: value },
+    );
+  }
+  return goal;
+}
+
+function parseStudioPositiveIntegerFlag(args: string[], flag: string): number | undefined {
+  const raw = parseFlagValue(args, flag);
+  if (!raw) return undefined;
+  const parsed = Number.parseInt(raw, 10);
+  if (!Number.isInteger(parsed) || parsed <= 0 || String(parsed) !== raw) {
+    throw new VclawError(
+      'missing_required_flag',
+      `studio: ${flag} must be a positive integer, got ${JSON.stringify(raw)}`,
+      { flag, value: raw },
+    );
+  }
+  return parsed;
+}
+
+async function handleStudio(args: string[]): Promise<void> {
+  const root = parseFlagValue(args, '--root') ?? process.cwd();
+  const project = parseFlagValue(args, '--project') ?? undefined;
+  const durationSeconds = parseStudioPositiveIntegerFlag(args, '--duration');
+  const mode = (parseFlagValue(args, '--mode') ?? 'storyboard') as VideoProductionMode;
+  const projectContext = await loadStudioProjectContext(root, project, mode);
+  const plan = buildStudioPlan({
+    goal: parseStudioGoal(parseFlagValue(args, '--goal')),
+    project,
+    title: parseFlagValue(args, '--title') ?? undefined,
+    intent: parseFlagValue(args, '--intent') ?? undefined,
+    input: parseFlagValue(args, '--input') ?? undefined,
+    client: parseFlagValue(args, '--client') ?? undefined,
+    ...(durationSeconds !== undefined ? { durationSeconds } : {}),
+    dryRun: true,
+    root,
+    projectContext,
+  });
+
+  if (args.includes('--write-session')) {
+    if (!project) {
+      throw new VclawError('missing_required_flag', 'studio --write-session requires --project <slug>', {
+        flag: '--project',
+      });
+    }
+    const artifactPath = await writeStudioSession(root, project, plan);
+    writeOutput({ ...plan, artifactPath });
+    return;
+  }
+
+  writeOutput(plan);
 }
 
 function slugifyProject(value: string): string {
@@ -3751,6 +3848,11 @@ export async function main(): Promise<void> {
   if (command === 'schema') {
     const { buildSchemaDump } = await import('../video/cli-schema.js');
     writeOutput(buildSchemaDump(), { json: true });
+    return;
+  }
+
+  if (command === 'studio') {
+    await handleStudio(videoArgs);
     return;
   }
 

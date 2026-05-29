@@ -375,8 +375,18 @@ function seedancePromptText(input: {
   const noFaceLine = input.noFaces
     ? 'Keep all figures as backlit silhouettes, backs, or distance with faces obscured (content-filter safe).'
     : '';
+  // Invariant: ANY packet that references a storyboard grid must carry the
+  // single-frame guard, or the grid leaks as an animated split-screen. Enforce
+  // it once at the exit (keyed on gridRef) so a new grid-bearing variant can't
+  // silently omit it. `withGridGuard` is a no-op when the body already includes
+  // the guard text (the explicit branches below keep it inline for wording).
+  const withGridGuard = (body: string): string => (
+    gridRef && !body.includes(GRID_SINGLE_FRAME_GUARD)
+      ? `${body}\n${GRID_SINGLE_FRAME_GUARD}`
+      : body
+  );
   if (input.variant === 'character-sheets-plus-storyboard-grid' && gridRef) {
-    return [
+    return withGridGuard([
       ...characterRefs.map((reference, index) => `Character ${index + 1}: ${reference.slot} (${reference.label})`),
       '',
       `Use the provided character sheets and cinematic storyboard grid ${gridRef.slot} as visual and motion reference. Create a ${duration} cinematic sequence. ${GRID_SINGLE_FRAME_GUARD} Follow the panel order, camera logic, motion, and framing consistently and temporally. NO TEXT ON SCREEN, NO MUSIC.`,
@@ -384,16 +394,16 @@ function seedancePromptText(input: {
       startFrame ? `Use ${startFrame.slot} as the scene start-frame continuity anchor.` : '',
       '',
       `Storyline: ${action}`,
-    ].filter(Boolean).join('\n');
+    ].filter(Boolean).join('\n'));
   }
   if (input.variant === 'storyboard-grid-reference' && gridRef) {
-    return [
+    return withGridGuard([
       `Use the provided cinematic storyboard grid ${gridRef.slot} as visual and motion reference. Create a ${duration} cinematic sequence. ${GRID_SINGLE_FRAME_GUARD} Follow the panel order, camera logic, motion and camera framing consistently. Handheld camera moments may be used to boost realism. NO TEXT ON SCREEN, NO MUSIC.`,
       noFaceLine,
       startFrame ? `Use ${startFrame.slot} as the scene start-frame continuity anchor.` : '',
       '',
       `Storyline: ${action}`,
-    ].filter(Boolean).join('\n');
+    ].filter(Boolean).join('\n'));
   }
   return [
     `FORMAT: ${duration} / 3 CUTS / cinematic grounded realism / NO MUSIC`,

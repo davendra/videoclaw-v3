@@ -1,6 +1,7 @@
 import { existsSync } from 'node:fs';
 import { readdir, readFile, stat } from 'node:fs/promises';
-import { isAbsolute, join, relative, resolve } from 'node:path';
+import { basename, isAbsolute, join, relative, resolve } from 'node:path';
+import { PREVIEW_PORTAL_TEMPLATE_REGISTRY } from './templates.js';
 import type {
   PreviewPortalAsset,
   PreviewPortalCard,
@@ -168,7 +169,7 @@ async function discoverGenerationInputAssets(projectDir: string): Promise<Previe
 }
 
 function resolveAssetPath(projectRoot: string, value: string): string | null {
-  const projectSlug = projectRoot.split('/').pop() ?? '';
+  const projectSlug = basename(projectRoot);
   const normalized = value.replaceAll('\\', '/');
   const projectScopedPrefix = `projects/${projectSlug}/`;
   const localValue = normalized.startsWith(projectScopedPrefix)
@@ -237,7 +238,10 @@ function kindFromPath(path: string): PreviewPortalAsset['kind'] {
 function templateFromManifest(manifest: Record<string, unknown> | null): PreviewPortalTemplateId | null {
   const raw = stringValue(manifest?.template) ?? stringValue(manifest?.previewTemplate);
   if (!raw) return null;
-  if (['music-video', 'story-film', 'documentary', 'product-ad', 'sports-recap', 'generic-video'].includes(raw)) {
+  // Validate against the template registry (single source of truth) so a newly
+  // added template is recognized here automatically instead of being silently
+  // downgraded to 'generic-video' by a stale hardcoded allowlist.
+  if (Object.prototype.hasOwnProperty.call(PREVIEW_PORTAL_TEMPLATE_REGISTRY, raw)) {
     return raw as PreviewPortalTemplateId;
   }
   return null;

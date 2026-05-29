@@ -19,7 +19,7 @@ import { generateAnalyzeOutputWithGemini } from '../video/gemini-analyze.js';
 import type { BriefArtifact, StoryboardArtifact } from '../video/artifacts.js';
 import { listPlaybooks, readPlaybook } from '../video/playbooks.js';
 import { listPromptReferences, readPromptReference } from '../video/prompt-library.js';
-import { CINEMATIC_15S_PRESET, buildShotPlan, generateMultiShotPromptText, listMultiShotPresets, parseMultiShotPrompt, resolvePreset, type MultiShotPreset } from '../video/multi-shot-prompt.js';
+import { CINEMATIC_15S_PRESET, buildShotPlan, generateMultiShotPromptText, listMultiShotPresets, parseMultiShotPrompt, presetNameForProvider, resolvePreset, type MultiShotPreset } from '../video/multi-shot-prompt.js';
 import { generateFilmmakingPrompts } from '../video/filmmaking-prompts.js';
 import { renderStoryboardGrid } from '../video/storyboard-grid.js';
 import { explainPromptQualityIssues, runMultiShotChecks } from '../video/prompt-quality.js';
@@ -2135,12 +2135,9 @@ function parseNonNegativeIntegerFlag(args: string[], flag: string): number | und
 }
 
 function multiShotPresetNameForProviderHint(hint: string | undefined): string | undefined {
-  if (!hint) return undefined;
-  const normalized = hint.toLowerCase();
-  if (normalized.includes('seedance')) return 'seedance-10s';
-  if (normalized.includes('veo') || normalized.includes('google-flow') || normalized.includes('flow')) return 'veo-8s';
-  if (normalized.includes('runway')) return 'runway-10s';
-  return undefined;
+  // Delegates to the registry-adjacent family map so the provider→preset
+  // association lives next to the presets themselves (single source of truth).
+  return presetNameForProvider(hint);
 }
 
 function resolveMultiShotPreset(args: string[]): MultiShotPreset {

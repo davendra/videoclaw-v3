@@ -185,13 +185,17 @@ function extractVideoUrl(result: unknown): string {
   const resultNode = typeof asRecord.result === 'object' && asRecord.result ? asRecord.result as Record<string, unknown> : {};
   const resultOutput = typeof resultNode.output === 'object' && resultNode.output ? resultNode.output as Record<string, unknown> : {};
 
-  const images = Array.isArray(resultOutput.images) ? resultOutput.images : [];
-  if (typeof images[0] === 'string') return images[0];
+  // Video URLs first: a video job's response can also carry an `images` array
+  // (a preview/cover frame), and returning that ahead of the video URL would
+  // download a still frame in place of the rendered clip. Treat `images` as the
+  // last-resort fallback only.
   if (typeof output.video_url === 'string') return output.video_url;
   if (typeof resultNode.video_url === 'string') return resultNode.video_url;
   const videos = Array.isArray(resultOutput.videos) ? resultOutput.videos : [];
   if (typeof videos[0] === 'string') return videos[0];
   if (typeof asRecord.video_url === 'string') return asRecord.video_url;
+  const images = Array.isArray(resultOutput.images) ? resultOutput.images : [];
+  if (typeof images[0] === 'string') return images[0];
   throw new Error('Seedance native poll completed without a video URL.');
 }
 

@@ -319,7 +319,9 @@ describe('executeProject', () => {
       assert.equal(task?.durationSeconds, 15);
       assert.equal(task?.inputKind, 'image');
       assert.deepEqual(task?.referencePaths, ['/tmp/hero-sheet.jpg', '/tmp/scene-grid.jpg']);
-      assert.deepEqual(task?.sourceAssetIds, ['image-a', '@image1', '@image2']);
+      // sourceAssetIds carries asset ids only; packet reference slot names are
+      // surfaced via referenceSlots (asserted below), not mixed in here.
+      assert.deepEqual(task?.sourceAssetIds, ['image-a']);
       assert.equal(task?.promptPacketVariant, 'character-sheets-plus-storyboard-grid');
       assert.deepEqual(task?.referenceSlots, [
         { slot: '@image1', role: 'character-sheet', label: 'Hero character sheet', path: '/tmp/hero-sheet.jpg' },

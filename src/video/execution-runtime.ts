@@ -208,8 +208,17 @@ export async function buildExecutionPayload(
           .filter((asset) => asset.kind === 'image' || asset.kind === 'video' || asset.kind === 'audio')
           .map((asset) => asset.path ?? ''),
       );
+      // A ready prompt packet supplies the IMAGE references, but the scene's
+      // own audio/video reference assets must still survive — otherwise
+      // reference_audios (and any non-packet video reference) silently
+      // disappears from the provider payload for packet-driven scenes.
+      const baseNonImageReferencePaths = unique(
+        sceneAssets
+          .filter((asset) => asset.kind === 'video' || asset.kind === 'audio')
+          .map((asset) => asset.path ?? ''),
+      );
       const packetOrBaseReferencePaths = promptPacketReferencePaths.length > 0
-        ? unique(promptPacketReferencePaths)
+        ? unique([...promptPacketReferencePaths, ...baseNonImageReferencePaths])
         : baseReferencePaths;
       const referencePaths = chainSeed
         ? unique([chainSeed.path, ...packetOrBaseReferencePaths])
@@ -234,10 +243,10 @@ export async function buildExecutionPayload(
           })),
           promptPacketVariant: promptPacket.variant,
         } : {}),
-        sourceAssetIds: unique([
-          ...sceneAssets.map((asset) => asset.id ?? ''),
-          ...(promptPacket ? promptPacket.references.map((reference) => reference.slot) : []),
-        ]),
+        // Asset ids only — packet reference slot names are surfaced separately
+        // via `referenceSlots` and must not pollute the asset-id provenance
+        // contract (telemetry/reports join these back to the asset manifest).
+        sourceAssetIds: unique(sceneAssets.map((asset) => asset.id ?? '')),
         backendHints,
         characters: unique(scene.characters ?? []),
         ...(Number.isFinite(durationSeconds) ? { durationSeconds } : {}),

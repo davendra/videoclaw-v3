@@ -20,3 +20,4 @@ vclaw-review-ui-*.png
 
 # Superpowers brainstorm scratch
 .superpowers/
+.gstack/

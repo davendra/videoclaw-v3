@@ -80,6 +80,25 @@ export function knownPresetNames(): readonly string[] {
   return Array.from(PRESET_REGISTRY.keys());
 }
 
+// Provider/route hint → preset, keyed on the provider FAMILY (the first token of
+// the hint, e.g. `seedance-direct` → `seedance`, `veo-useapi` → `veo`,
+// `google-flow` → `google`). Matching the family token rather than a substring
+// avoids misfires like `veo-via-runway-proxy` resolving to runway, and keeps the
+// mapping next to the preset registry it points at — the single source of truth.
+const PROVIDER_FAMILY_PRESET: ReadonlyMap<string, string> = new Map([
+  ['seedance', SEEDANCE_10S_PRESET.name],
+  ['veo', VEO_8S_PRESET.name],
+  ['google', VEO_8S_PRESET.name],
+  ['flow', VEO_8S_PRESET.name],
+  ['runway', RUNWAY_10S_PRESET.name],
+]);
+
+export function presetNameForProvider(hint: string | undefined): string | undefined {
+  if (!hint) return undefined;
+  const family = hint.trim().toLowerCase().split(/[-_:/\s]/)[0];
+  return PROVIDER_FAMILY_PRESET.get(family);
+}
+
 export function listMultiShotPresets(): readonly MultiShotPreset[] {
   return Array.from(PRESET_REGISTRY.values());
 }
@@ -263,7 +282,10 @@ export { SHOT_SIZES, LENSES, ANGLES, MOVEMENTS, SHOT_TYPE_VOCABULARY };
 
 let stubSequenceIndex = 0;
 
-const TIMECODE_LINE_RE = /^\s*\[(\d{2}):(\d{2})\s*-\s*(\d{2}):(\d{2})\]\s*(.*)$/;
+// Brackets stay required (anchors the match so prose containing a "12:30" time
+// isn't parsed as a shot), but accept ASCII hyphen / en-dash / em-dash and
+// 1-2 digit minutes so a valid Gemini prompt isn't silently parsed to zero shots.
+const TIMECODE_LINE_RE = /^\s*\[(\d{1,2}):(\d{2})\s*[-–—]\s*(\d{1,2}):(\d{2})\]\s*(.*)$/;
 
 function secondsFromParts(mm: string, ss: string): number {
   return Number(mm) * 60 + Number(ss);
@@ -330,6 +352,11 @@ export async function generateMultiShotPromptText(input: {
     try {
       const parsed = JSON.parse(raw);
       if (Array.isArray(parsed) && parsed.every((item) => typeof item === 'string')) {
+        // A call with no repairInstructions is the first attempt of a fresh
+        // generation sequence, so reset the cursor. Retries (repairInstructions
+        // present) advance through the array. This keeps the module-global index
+        // from bleeding across independent in-process generations.
+        if (!input.repairInstructions) stubSequenceIndex = 0;
         const item = parsed[Math.min(stubSequenceIndex, parsed.length - 1)];
         stubSequenceIndex += 1;
         return item.trim();

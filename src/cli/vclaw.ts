@@ -21,6 +21,7 @@ import { listPlaybooks, readPlaybook } from '../video/playbooks.js';
 import { listPromptReferences, readPromptReference } from '../video/prompt-library.js';
 import { CINEMATIC_15S_PRESET, buildShotPlan, generateMultiShotPromptText, listMultiShotPresets, parseMultiShotPrompt, presetNameForProvider, resolvePreset, type MultiShotPreset } from '../video/multi-shot-prompt.js';
 import { generateFilmmakingPrompts } from '../video/filmmaking-prompts.js';
+import { resolveCategory } from '../video/category-registry.js';
 import { renderStoryboardGrid } from '../video/storyboard-grid.js';
 import { registerCharacterAssets } from '../video/seedance-asset-library.js';
 import { explainPromptQualityIssues, runMultiShotChecks } from '../video/prompt-quality.js';
@@ -187,7 +188,7 @@ function printHelp(): void {
   process.stdout.write('  vclaw video execute-cancel --project <slug> [--root <path>] [--mode storyboard|director]\n');
   process.stdout.write('  vclaw video review-ui --project <slug> [--root <path>] [--host <host>] [--port <port>] [--ui-path <path>] [--dry-run]\n');
   process.stdout.write('  vclaw video review-autopilot --project <slug> [--root <path>] [--template <template-id>] [--character <name>] [--run-id <id>]\n');
-  process.stdout.write('  vclaw video filmmaking-prompts --project <slug> [--root <path>] [--duration <seconds>] [--panels 9|12|15|20] [--storyboard-grid <path>] [--genre live-action|pixar|anime|noir|influencer|action|music-video] [--aspect-ratio 16:9|9:16] [--detail terse|standard|rich] [--no-faces] [--write]\n');
+  process.stdout.write('  vclaw video filmmaking-prompts --project <slug> [--root <path>] [--duration <seconds>] [--panels 9|12|15|20] [--storyboard-grid <path>] [--category <id>] [--genre live-action|pixar|anime|noir|influencer|action|music-video] [--aspect-ratio 16:9|9:16] [--detail terse|standard|rich] [--no-faces] [--write]\n');
   process.stdout.write('  vclaw video storyboard-grid --project <slug> [--root <path>] [--output <path>] [--width <px>] [--height <px>] [--dry-run]\n');
   process.stdout.write('  vclaw video seedance-register-assets --project <slug> --character <name>:<imageUrl> [--character ...] [--group <name>] [--root <path>]\n');
   process.stdout.write('  vclaw video portal --project <slug> [--root <path>] [--client <name>] [--run <id>] [--surface edit|review|client-review|preview|compare|index]\n');
@@ -2086,6 +2087,9 @@ async function handleVideoFilmmakingPrompts(args: string[]): Promise<void> {
   const durationSeconds = parsePositiveIntegerFlag(args, '--duration');
   const storyboardGridPath = parseFlagValue(args, '--storyboard-grid');
   const genre = parseFlagValue(args, '--genre');
+  const category = parseFlagValue(args, '--category');
+  // Validate eagerly so an unknown id throws a clear error before any work.
+  if (category !== undefined) resolveCategory(category);
   const aspectRatio = parseFlagValue(args, '--aspect-ratio');
   const panelCount = parsePositiveIntegerFlag(args, '--panels');
   const detailFlag = parseFlagValue(args, '--detail');
@@ -2099,6 +2103,7 @@ async function handleVideoFilmmakingPrompts(args: string[]): Promise<void> {
     ...(storyboardGridPath ? { storyboardGridPath } : {}),
     ...(args.includes('--no-faces') ? { noFaces: true } : {}),
     ...(genre ? { genre } : {}),
+    ...(category ? { category } : {}),
     ...(aspectRatio ? { aspectRatio } : {}),
     ...(panelCount !== undefined ? { panelCount } : {}),
     ...(detailFlag !== undefined ? { detail: detailFlag as 'terse' | 'standard' | 'rich' } : {}),

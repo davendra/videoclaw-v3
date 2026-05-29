@@ -10,6 +10,7 @@ import {
   type DetailLevel,
 } from './cinematography.js';
 import type { AssetManifestArtifact, BriefArtifact, StoryboardArtifact } from './artifacts.js';
+import { resolveCategory } from './category-registry.js';
 import { listCharacterProfiles, type CharacterProfile } from './characters.js';
 import { readReferenceSheetsArtifact } from './reference-sheet-store.js';
 import type { ReferenceSheet, ReferenceSheetsArtifact } from './types.js';
@@ -114,6 +115,14 @@ export interface GenerateFilmmakingPromptsOptions {
    * value is passed through as a free-form style descriptor.
    */
   genre?: string;
+  /**
+   * Category id (see `category-registry.ts`). Resolves to a `CategoryDescriptor`
+   * that supplies a default genre/style. Default (undefined) → the `cinematic`
+   * character descriptor, whose genre is `'live-action'` — i.e. today's default,
+   * so this is a no-op for the existing character/cinematic path. An explicit
+   * `genre` still wins over the descriptor's genre. Unknown ids throw.
+   */
+  category?: string;
   /** Aspect ratio stated in every template (default 16:9; 9:16 for vertical/social). */
   aspectRatio?: string;
   /**
@@ -283,7 +292,14 @@ export async function generateFilmmakingPrompts(
   const root = options.root ?? process.cwd();
   const durationSeconds = options.durationSeconds ?? 15;
   const noFaces = options.noFaces ?? false;
-  const genreStyle = resolveGenreStyle(options.genre);
+  // Resolve the category descriptor (default → cinematic character descriptor).
+  // The descriptor supplies a default genre; an explicit `--genre` still wins.
+  // For the cinematic default this yields `'live-action'`, identical to today's
+  // behavior — purely internal plumbing, no output change on the character path.
+  // subjectType is always 'character' for now (product is Phase D).
+  const descriptor = resolveCategory(options.category);
+  const effectiveGenre = options.genre ?? descriptor.genre;
+  const genreStyle = resolveGenreStyle(effectiveGenre);
   const aspectRatio = options.aspectRatio?.trim() || '16:9';
   const panelCount = resolvePanelCount(options.panelCount);
   const detail = options.detail ?? 'standard';

@@ -194,6 +194,26 @@ describe('filmmaking prompt packets', () => {
     assert.match(action.artifact.storyboardGridPrompt?.promptText ?? '', /\bSTYLE: /);
   });
 
+  it('category: cinematic is a true no-op vs no category (descriptor default === today)', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'vclaw-fp-category-noop-'));
+    await setupGenreProject('cat-p', root);
+    const withDefault = await generateFilmmakingPrompts({ root, projectSlug: 'cat-p' });
+    const withCinematic = await generateFilmmakingPrompts({ root, projectSlug: 'cat-p', category: 'cinematic' });
+    // The cinematic descriptor must reproduce today's character/live-action output byte-for-byte.
+    assert.equal(
+      withCinematic.artifact.storyboardGridPrompt?.promptText,
+      withDefault.artifact.storyboardGridPrompt?.promptText,
+    );
+    assert.equal(
+      withCinematic.artifact.seedancePackets[0]?.promptText,
+      withDefault.artifact.seedancePackets[0]?.promptText,
+    );
+    // An explicit genre still wins over the descriptor's default genre.
+    const cinematicAnime = await generateFilmmakingPrompts({ root, projectSlug: 'cat-p', category: 'cinematic', genre: 'anime' });
+    assert.match(cinematicAnime.artifact.characterSheetPrompts[0]?.promptText ?? '', /2D anime cel-shading/);
+    assert.match(cinematicAnime.artifact.storyboardGridPrompt?.promptText ?? '', /2D anime cel-shading/);
+  });
+
   it('flags a >100-word character description as an error (skill failure threshold)', async () => {
     const root = await mkdtemp(join(tmpdir(), 'vclaw-fp-bloat-'));
     const workspace = await ensureProjectWorkspace('bloat-p', root);

@@ -67,17 +67,50 @@ CategoryDescriptor {
   - `rich` = full numeric stack.
 - The multi-shot `≤1500` char guard still governs; `--detail` scales verbosity to fit.
 
-## Build phases (one plan, four phases; each = tests + docs + commit)
+## Additional adopted prompt-craft (full takeaway set)
 
-- **Phase A — Quant-craft module + `--detail`.** Additive; instantly improves the character path (incl. DHUAAN). Lowest risk, ship first.
-- **Phase B — Category Descriptor registry**; refactor `filmmaking-prompts`/`multi-shot` to consume a descriptor. Character path = default descriptor → no behavior change (existing tests lock it).
-- **Phase C — Commercial categories + product subject:** product-reference path, ad/turntable/lookbook beat templates, orbit grammar.
-- **Phase D — CLI surface** (`--category`, `--detail`, product registration), schema updates, docs (CLI_REFERENCE, CLAUDE.md), tests.
+These are the remaining net-new ideas from the Higgsfield cinema-worldbuilder /
+banana-pro-director / higgsfield-seedance2 research, folded into the same
+modules:
+
+- **Five cinema modes** (the cinema-worldbuilder backbone) drive `cameraVocab`:
+  **Narrative / Studio / Action / Performance / Atmospheric**, each with a
+  canonical camera + lens + movement + filtration + grade block. A
+  `CategoryDescriptor.cameraVocab` resolves to a cinema mode; the cinematic
+  default = Narrative. Lives in `cinematography.ts`.
+- **Named hook-pattern library** for the 2s hook beat (black-to-light burst,
+  silence-to-sound, reverse motion, beat-drop particle explosion, …). The hook
+  beat picks a pattern by category; selectable via `--hook <pattern>`.
+- **Seedance-native paragraph format** as an output option: a single continuous
+  paragraph with inline **Style & Mood / Dynamic Description / Static
+  Description** labels + camera block + audio line (the cinema-worldbuilder
+  shape). Selectable via `--format multishot | seedance-paragraph`; default
+  stays the current timecoded multi-shot.
+- **Per-genre color + lighting + cut-rate lookup table** — enriches each
+  `GenreStyle` with concrete defaults (e.g. hip-hop/EDR/lo-fi grades, cut rates)
+  so the quant-craft emitters have real numbers to start from.
+- **Runtime stated in three places** (title line, in-prompt spec block,
+  confirmation) and **aspect ratio + resolution + duration restated inside the
+  prompt body** — belt-and-suspenders that the Higgsfield UI relies on and that
+  is harmless on the Ark path.
+- **Standing prompt rules codified** (not ad hoc): describe subjects by **visual
+  descriptor, never proper name**; append **"no face morphing"** anti-drift
+  token on character shots; diegetic-audio-only default. Centralized so every
+  builder emits them consistently.
+
+## Build phases (one plan, six phases; each = tests + docs + commit)
+
+- **Phase A — Quant-craft module + standing rules + `--detail`.** New `cinematography.ts` (numeric camera/lighting/grade/audio) + codified standing prompt rules (visual-descriptor not names, "no face morphing", diegetic-audio, runtime-in-3-places, ratio/resolution/duration in-body). Additive; instantly improves the character path (incl. DHUAAN). Lowest risk, ship first.
+- **Phase B — Cinema modes + hook library + genre lookup.** Add the five cinema modes (Narrative/Studio/Action/Performance/Atmospheric) as `cameraVocab` resolvers, the named 2s-hook-pattern library, and the per-genre color/lighting/cut-rate lookup table — all in `cinematography.ts`, wired into the emitters.
+- **Phase C — Category Descriptor registry**; refactor `filmmaking-prompts`/`multi-shot` to consume a descriptor. Character path = default descriptor → no behavior change (existing tests lock it).
+- **Phase D — Commercial categories + product subject:** product-reference path (go-bananas + Asset Library), ad/turntable/lookbook beat templates, orbit grammar, hero-angle bookend.
+- **Phase E — Output format + CLI surface:** Seedance-native paragraph format (`--format`), plus `--category`/`--detail`/`--hook` flags and product registration; schema updates, docs (CLI_REFERENCE, CLAUDE.md), tests.
+- **Phase F — Execution end-to-end wiring:** auto-resolve `artifacts/seedance-assets.json` → per-scene cast → `Asset://` reference paths in `execution-runtime`, so a full cast/product set runs through `produce`/`execute` on `ark/seedance-2.0` without the manual submit scripts. Closes the loop on the proven Asset Library path.
 
 ## Testing & constraints
 
 - Offline, deterministic `node:test` (stub fetch / injected deps), per repo convention.
-- Existing 754 tests must stay green through Phase B (no-change proof for the character path).
+- Existing 754 tests must stay green through Phase C (no-change proof for the character path after the descriptor refactor).
 - New CLI commands register in `cli-schema.ts` COMMANDS + bump the count assertion.
 - Docs: CLI_REFERENCE + CLAUDE.md; `check:cleanroom-docs` clean.
 - The proven `ark/seedance-2.0` + Asset Library mechanism and the visual-descriptor / diegetic-audio / grid-leakage rules are preserved.

@@ -98,6 +98,38 @@ modules:
   token on character shots; diegetic-audio-only default. Centralized so every
   builder emits them consistently.
 
+## Full-skill audit — eight additional adopted items
+
+A second pass over every skill read this session (ai-filmmaking,
+storyboard-prompt-builder, multi-shot-prompt-framework, cinema-worldbuilder,
+banana-pro-director, higgsfield-seedance2) surfaced eight more items to adopt,
+each routed to a phase:
+
+1. **Brand-neutral / no-IP rule** — never emit real brand names or protected IP;
+   use generic visual descriptors ("black three-stripe sneakers" not a brand).
+   A standing rule, critical for the commercial track. → Phase A (standing rules).
+2. **Dialogue support** — quoted lines in the timeline with emotion + micro-gesture
+   fused in; a second speaker's line always opens `She replies:` / `He replies:`
+   (the word "reply" signals consecutive speech and stops speaker-collapse). → Phase E (format) + character path.
+3. **Per-shot video-prompt format** — `SHOT N — [NAME]`: shot size/angle/movement,
+   scene direction, dialogue, SFX, camera-direction verb phrase, with the fixed
+   `Audio: Diegetic sound only — …` footer line. A richer alternative output to
+   the timecoded multi-shot. → Phase E (output format option).
+4. **Reference material budget cap** — Seedance accepts ≤9 images + ≤3 videos
+   (≤15s total) + ≤3 audio (≤12 items). Validate before submit. → Phase F (execution) + asset-library guard.
+5. **Bilingual EN+ZH output** — optional `--lang en|zh|en+zh`; ZH block is a
+   faithful translation preserving all camera/mode/audio specs (xskill is a
+   Chinese platform). → Phase E (output).
+6. **Image-asset build order** — when generating references: neutral
+   white-seamless base reference first → 6-panel/multi-angle sheet → scene
+   plates. Disciplines how we build character AND product references. → Phase D (reference build).
+7. **Two-phase approval gate** — storyboard prompt delivered first; the video
+   prompt is only produced after explicit approval (lighter, prompt-level gate
+   complementing director-mode). → Phase E (workflow).
+8. **Mode-stacking** — when a sequence intercuts cinema modes (e.g. studio void
+   ↔ kitchen), write each shot's camera block per its own mode; don't average
+   them. → Phase B (cinema modes).
+
 ## Build phases (one plan, six phases; each = tests + docs + commit)
 
 - **Phase A — Quant-craft module + standing rules + `--detail`.** New `cinematography.ts` (numeric camera/lighting/grade/audio) + codified standing prompt rules (visual-descriptor not names, "no face morphing", diegetic-audio, runtime-in-3-places, ratio/resolution/duration in-body). Additive; instantly improves the character path (incl. DHUAAN). Lowest risk, ship first.

@@ -60,6 +60,20 @@ vclaw video plan --project <slug> [--root <path>]
   exist and an agent should lock the best available handoff.
 - Use `video review --verdict pass` only when equivalent review evidence already
   exists outside the browser station.
+- Use `video portal` to generate the standardized HTML handoff surfaces from the
+  on-disk project instead of hand-writing them per project:
+
+  ```bash
+  vclaw video portal --project <slug> --surface client-review [--client <name>] [--run <id>]
+  vclaw video portal --project <slug> --surface preview [--run <id>]
+  ```
+
+  `--surface client-review` is the lightweight client approve/decline/comment
+  page; `--surface preview` is the polished final showcase. The `preview`
+  surface auto-discovers a project soundtrack (an explicit `soundtrack`/`audio`
+  field in `project.json`, else the first project-local audio asset) and renders
+  an inline `<audio>` player, and every production image is lightbox-enabled
+  (click to view full screen). Ship a surface with `video publish-preview`.
 
 ## Expected Outputs
 

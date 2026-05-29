@@ -72,6 +72,17 @@ After frontend changes, verify desktop and mobile:
 5. the handoff side panel reflects the same `review-report.json` status as the
    CLI
 
+When the change touches the generated portal surfaces (`vclaw video portal
+--surface edit|review|client-review|preview`), also verify:
+
+6. clicking any production image opens it full screen (lightbox), and `Esc`/
+   click-outside closes it — every production `<img>` must carry
+   `data-lightbox-group`
+7. on the `preview` surface, a discovered project soundtrack renders an inline
+   `<audio>` player, and a project with no audio renders no player (no broken
+   element)
+8. per-video download controls work and point at the correct asset
+
 Keep screenshots and browser session files as generated verification artifacts;
 do not add them to the source diff unless intentionally updating fixtures.
 

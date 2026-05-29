@@ -1,8 +1,8 @@
 #!/usr/bin/env node
-import { basename, join } from 'node:path';
+import { basename, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { existsSync, readFileSync } from 'node:fs';
-import { mkdir, readFile } from 'node:fs/promises';
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { buildProviderStatusReport } from '../video/provider-status.js';
 import { createAnalyzeOutput } from '../video/analyze-output.js';
 import { artifactPathFor, writeArtifact } from '../video/artifact-store.js';
@@ -22,6 +22,7 @@ import { listPromptReferences, readPromptReference } from '../video/prompt-libra
 import { CINEMATIC_15S_PRESET, buildShotPlan, generateMultiShotPromptText, listMultiShotPresets, parseMultiShotPrompt, presetNameForProvider, resolvePreset, type MultiShotPreset } from '../video/multi-shot-prompt.js';
 import { generateFilmmakingPrompts } from '../video/filmmaking-prompts.js';
 import { renderStoryboardGrid } from '../video/storyboard-grid.js';
+import { registerCharacterAssets } from '../video/seedance-asset-library.js';
 import { explainPromptQualityIssues, runMultiShotChecks } from '../video/prompt-quality.js';
 import { getBuiltinPipelineManifest } from '../video/pipeline-manifest.js';
 import { writeStageCheckpoint } from '../video/checkpoints.js';
@@ -188,6 +189,7 @@ function printHelp(): void {
   process.stdout.write('  vclaw video review-autopilot --project <slug> [--root <path>] [--template <template-id>] [--character <name>] [--run-id <id>]\n');
   process.stdout.write('  vclaw video filmmaking-prompts --project <slug> [--root <path>] [--duration <seconds>] [--panels 9|12|15|20] [--storyboard-grid <path>] [--genre live-action|pixar|anime|noir|influencer|action|music-video] [--aspect-ratio 16:9|9:16] [--no-faces] [--write]\n');
   process.stdout.write('  vclaw video storyboard-grid --project <slug> [--root <path>] [--output <path>] [--width <px>] [--height <px>] [--dry-run]\n');
+  process.stdout.write('  vclaw video seedance-register-assets --project <slug> --character <name>:<imageUrl> [--character ...] [--group <name>] [--root <path>]\n');
   process.stdout.write('  vclaw video portal --project <slug> [--root <path>] [--client <name>] [--run <id>] [--surface edit|review|client-review|preview|compare|index]\n');
   process.stdout.write('  vclaw video portal-index [--root <path>] [--client <name>] [--output <path>]\n');
   process.stdout.write('  vclaw video publish-preview --project <slug> --client <name> --bucket <bucket> [--root <path>] [--run <id>] [--surface edit|review|client-review|preview|compare|index] [--public-base-url <url>] [--wrangler-bin <path>] [--dry-run]\n');
@@ -2118,6 +2120,47 @@ async function handleVideoStoryboardGrid(args: string[]): Promise<void> {
     dryRun: args.includes('--dry-run'),
   });
   process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
+}
+
+async function handleVideoSeedanceRegisterAssets(args: string[]): Promise<void> {
+  const projectSlug = parseFlagValue(args, '--project');
+  if (!projectSlug) {
+    throw new Error('video seedance-register-assets requires --project <slug>');
+  }
+  const root = parseFlagValue(args, '--root') ?? process.cwd();
+  const groupName = parseFlagValue(args, '--group') ?? `${projectSlug}-cast`;
+  const characters = parseRepeatableFlag(args, '--character').map((entry) => {
+    const idx = entry.indexOf(':');
+    if (idx <= 0 || idx === entry.length - 1) {
+      throw new Error(`video seedance-register-assets: --character must be <name>:<imageUrl>, got: ${entry}`);
+    }
+    const name = entry.slice(0, idx).trim();
+    const imageUrl = entry.slice(idx + 1).trim();
+    if (!/^https?:\/\//.test(imageUrl)) {
+      throw new Error(`video seedance-register-assets: --character ${name} image must be a public http(s) URL, got: ${imageUrl}`);
+    }
+    return { name, imageUrl };
+  });
+  if (characters.length === 0) {
+    throw new Error('video seedance-register-assets requires at least one --character <name>:<imageUrl>');
+  }
+  const apiKey = process.env.SUTUI_API_KEY;
+  if (!apiKey || !apiKey.trim()) {
+    throw new Error('video seedance-register-assets requires SUTUI_API_KEY in the environment.');
+  }
+  const registered = await registerCharacterAssets({ groupName, characters }, { apiKey });
+  const workspace = await ensureProjectWorkspace(projectSlug, root);
+  const artifactPath = join(workspace.projectDir, 'artifacts', 'seedance-assets.json');
+  const artifact = {
+    schemaVersion: 1 as const,
+    projectSlug,
+    groupName,
+    generatedAt: new Date().toISOString(),
+    assets: registered.map((a) => ({ name: a.name, assetId: a.assetId, assetUri: a.assetUri, intlAssetUri: a.intlAssetUri })),
+  };
+  await mkdir(dirname(artifactPath), { recursive: true });
+  await writeFile(artifactPath, `${JSON.stringify(artifact, null, 2)}\n`);
+  process.stdout.write(`${JSON.stringify({ artifactPath, ...artifact }, null, 2)}\n`);
 }
 
 function parsePositiveIntegerFlag(args: string[], flag: string): number | undefined {
@@ -4081,6 +4124,11 @@ export async function main(): Promise<void> {
 
   if (command === 'video' && subcommand === 'storyboard-grid') {
     await handleVideoStoryboardGrid(rest);
+    return;
+  }
+
+  if (command === 'video' && subcommand === 'seedance-register-assets') {
+    await handleVideoSeedanceRegisterAssets(rest);
     return;
   }
 

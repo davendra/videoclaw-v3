@@ -951,6 +951,29 @@ not a replacement for an image-model-generated cinematic grid; it is the
 reviewable production-board fallback and a stable attachment point for the
 Seedance reference workflow.
 
+## Seedance Asset Library (character consistency)
+
+```bash
+vclaw video seedance-register-assets --project <slug> --character <name>:<imageUrl> [--character ...] [--group <name>] [--root <path>]
+```
+
+Registers character reference images as **xskill Asset Library avatars** and
+returns their `Asset://` URIs — the official `ark/seedance-2.0` mechanism for
+locking character identity across shots. Passing raw photoreal image URLs in
+`reference_images` trips the "real person" content filter and does not lock
+identity; managed assets pass the filter and lock the character (validated
+2026-05-29: identical to the proven endpoint `ep-…`).
+
+- Each `--character` is `<name>:<publicImageUrl>` (the image must be a public
+  http(s) URL). `--group` defaults to `<slug>-cast`.
+- Requires `SUTUI_API_KEY` in the environment.
+- Ensures the Asset group, creates each asset, waits for it to sync to the
+  international Ark profile (`sync_status: active`), and writes
+  `projects/<slug>/artifacts/seedance-assets.json` (name → `Asset://` URI).
+- Feed the resulting `Asset://` URIs into execution as scene reference paths —
+  `native-seedance.ts` already routes `Asset://` references into
+  `reference_images` on `ark/seedance-2.0`.
+
 Example:
 
 ```bash

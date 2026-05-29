@@ -132,6 +132,8 @@ Adapters receive JSON on stdin and must return JSON on stdout (`externalJobId` f
 
 For `seedance-direct`, `veo-useapi`, and `runway-useapi`, `vclaw` ships a built-in adapter binary (`dist/cli/provider-adapter.js`) used automatically unless the full `..._ADAPTER` override is set. The built-in adapters read route-specific `..._SUBMIT_CMD` / `..._POLL_CMD` / `..._CANCEL_CMD` command shims. Routes also have native in-process transports: `native-seedance.ts` (uses `SUTUI_API_KEY`), `native-veo.ts` (drives the local `vclaw-cli` Bun package), `native-runway.ts` (pure Node fetch + fs, UseAPI bearer auth).
 
+**Seedance character consistency = the Asset Library, not raw URLs.** `ark/seedance-2.0` (the official Volcengine Ark Seedance 2.0, Standard = 1080p) locks character identity via managed **Asset Library avatars** (`Asset://` URIs), NOT raw photoreal image URLs (those trip the "real person" content filter and don't lock identity). `src/video/seedance-asset-library.ts` (`vclaw video seedance-register-assets`) registers character images as Assets, waits for international-profile sync, and writes `artifacts/seedance-assets.json`; `native-seedance.ts`'s `seedanceReferenceParams` already routes `Asset://` references into `reference_images`. Describe characters by visual descriptor (not proper names) in prompts — names don't survive across generations. (Validated 2026-05-29 against the same Ark endpoint the user's production project uses.)
+
 ### Gemini key pool
 
 `src/video/gemini-key-pool.ts` provides round-robin selection with per-key cooldown across `GEMINI_API_KEYS`, `GOOGLE_API_KEYS`, `GOOGLE_API_KEY`. `analyze-template --auto` and `analyze --auto` use it via `src/video/gemini-analyze.ts`. `VCLAW_GEMINI_API_ENDPOINT` overrides the endpoint.

@@ -138,6 +138,11 @@ const COMMANDS: CommandSpec[] = [
     usage: 'vclaw video storyboard-grid --project <slug> [--root <path>] [--output <path>] [--width <px>] [--height <px>] [--dry-run]',
     description: 'Render a deterministic 3x3 storyboard grid PNG from filmmaking prompt panels and mark the grid reference ready for execution.',
   },
+  {
+    name: 'video seedance-register-assets',
+    usage: 'vclaw video seedance-register-assets --project <slug> --character <name>:<imageUrl> [--character ...] [--group <name>] [--root <path>]',
+    description: 'Register character reference images as xskill Asset Library avatars (Asset:// URIs) for ark/seedance-2.0 character consistency; writes artifacts/seedance-assets.json.',
+  },
 
   // --- portfolio + status ---
   { name: 'video list', usage: 'vclaw video list [--root <path>]' },

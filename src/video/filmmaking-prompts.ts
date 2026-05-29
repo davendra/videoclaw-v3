@@ -20,6 +20,18 @@ import { readReferenceSheetsArtifact } from './reference-sheet-store.js';
 import type { ReferenceSheet, ReferenceSheetsArtifact } from './types.js';
 import { ensureProjectWorkspace, type VideoProjectWorkspace } from './workspace.js';
 
+/**
+ * Two-phase gate for the generation function (E5). The intended workflow is
+ * (1) lock the storyboard/panel layout + camera language, then (2) generate the
+ * heavy video-generation packets. `phase` selects which slice to return:
+ *   - omitted (default) → full result, byte-identical to today (no behavior change).
+ *   - `'storyboard'`    → storyboard-only: `seedancePackets` is gated to `[]`; the
+ *                         storyboard/camera-language portion (referenceMap,
+ *                         characterSheetPrompts, storyboardGridPrompt) is kept.
+ *   - `'video'`         → full video packets, equivalent to the default.
+ */
+export type FilmmakingPhase = 'storyboard' | 'video';
+
 export type FilmmakingPromptVariant =
   | 'character-sheet'
   | 'storyboard-grid'
@@ -143,6 +155,12 @@ export interface GenerateFilmmakingPromptsOptions {
    * exactly today's output (no behavior change).
    */
   detail?: DetailLevel;
+  /**
+   * Two-phase gate (E5). `'storyboard'` returns the storyboard/camera-language
+   * portion only (video `seedancePackets` gated to `[]`); `'video'` and the
+   * default (omitted) return the full result. See {@link FilmmakingPhase}.
+   */
+  phase?: FilmmakingPhase;
   write?: boolean;
 }
 
@@ -376,18 +394,23 @@ export async function generateFilmmakingPrompts(
     }
   }
 
-  const seedancePackets = buildSeedancePackets({
-    storyboard,
-    brief,
-    referenceMap,
-    durationSeconds,
-    noFaces,
-    genreStyle,
-    aspectRatio,
-    characterContext,
-    detail,
-    issues,
-  });
+  // Two-phase gate (E5): in storyboard phase, omit the heavy video-generation
+  // packets (and their packet-only issues) — return the storyboard/camera-
+  // language portion only. Default/video phase builds the full packets.
+  const seedancePackets = options.phase === 'storyboard'
+    ? []
+    : buildSeedancePackets({
+        storyboard,
+        brief,
+        referenceMap,
+        durationSeconds,
+        noFaces,
+        genreStyle,
+        aspectRatio,
+        characterContext,
+        detail,
+        issues,
+      });
 
   const artifact: FilmmakingPromptsArtifact = {
     schemaVersion: 1,
@@ -461,7 +484,8 @@ async function generateProductPrompts(input: {
   const orbitKind = descriptor.beatTemplate === 'turntable' ? 'product-rotation' : 'camera-orbit';
   const useOrbit = descriptor.cameraVocab === 'orbit' || descriptor.beatTemplate === 'turntable';
 
-  const seedancePackets: FilmmakingSeedancePacket[] = productList.map((product, index) => {
+  // Two-phase gate (E5): storyboard phase omits the video-generation packets.
+  const productPackets: FilmmakingSeedancePacket[] = productList.map((product, index) => {
     const productSlots = referenceMap.filter((slot) => slot.label === `${product.name} reference`);
     const productBeats = beats(descriptor.beatTemplate, durationSeconds, descriptor.hookSeconds);
     return {
@@ -485,6 +509,7 @@ async function generateProductPrompts(input: {
       warnings: productSlots.filter((slot) => slot.status === 'pending').map((slot) => `${slot.slot} ${slot.label} is pending.`),
     };
   });
+  const seedancePackets = options.phase === 'storyboard' ? [] : productPackets;
 
   const artifact: FilmmakingPromptsArtifact = {
     schemaVersion: 1,

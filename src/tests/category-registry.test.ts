@@ -17,6 +17,32 @@ describe('category registry', () => {
   });
   it('exposes the registered ids and throws on an unknown id', () => {
     assert.ok(CATEGORY_IDS.includes('cinematic'));
-    assert.throws(() => resolveCategory('ecommerce-ad'), /unknown category/i);
+    assert.throws(() => resolveCategory('totally-bogus'), /unknown category/i);
+  });
+});
+
+describe('commercial categories', () => {
+  const ids = ['ecommerce-ad','brand-story','product-360','fashion-lookbook','food-beverage','real-estate','motion-design-ad','comic-to-video'];
+  it('registers all eight commercial categories', () => {
+    for (const id of ids) assert.ok(CATEGORY_IDS.includes(id), `${id} registered`);
+  });
+  it('product-360 is a turntable/orbit product category', () => {
+    const d = resolveCategory('product-360');
+    assert.equal(d.subjectType, 'product');
+    assert.equal(d.beatTemplate, 'turntable');
+    assert.equal(d.cameraVocab, 'orbit');
+  });
+  it('ecommerce-ad uses ad beats + a 2s hook + ad-mix audio', () => {
+    const d = resolveCategory('ecommerce-ad');
+    assert.equal(d.beatTemplate, 'ad-hook-feature-cta');
+    assert.equal(d.audioProfile, 'ad-mix');
+    assert.equal(d.hookSeconds, 2);
+  });
+  it('each commercial descriptor is fully populated', () => {
+    for (const id of ids) {
+      const d = resolveCategory(id);
+      assert.ok(d.label && d.subjectType && d.beatTemplate && d.cameraVocab && d.genre && d.audioProfile);
+      assert.equal(typeof d.hookSeconds, 'number');
+    }
   });
 });

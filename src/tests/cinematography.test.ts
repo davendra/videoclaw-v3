@@ -6,6 +6,7 @@ import { hookBeat, HOOK_PATTERN_IDS, type HookPatternId } from '../video/cinemat
 import { genreDefaults, type GenreDefaults } from '../video/cinematography.js';
 import { stackModes, type StackedShot } from '../video/cinematography.js';
 import { beats, type Beat } from '../video/cinematography.js';
+import { orbitGrammar, ORBIT_KINDS, type OrbitKind } from '../video/cinematography.js';
 
 describe('cinematography emitters', () => {
   it('terse omits numbers, rich includes them', () => {
@@ -137,5 +138,27 @@ describe('beat templates', () => {
     const b = beats('lookbook', 12, 0);
     assert.ok(b.length >= 2);
     assert.equal(b[b.length - 1].end, 12);
+  });
+});
+
+describe('orbit grammar', () => {
+  it('exposes the three orbit kinds', () => {
+    assert.deepEqual([...ORBIT_KINDS].sort(), ['camera-orbit','parallax-orbit','product-rotation']);
+  });
+  it('product-rotation keeps the camera static while the object spins', () => {
+    const s = orbitGrammar('product-rotation').toLowerCase();
+    assert.match(s, /static|locked/);
+    assert.match(s, /spin|rotat|turntable/);
+  });
+  it('camera-orbit circles a static subject; parallax-orbit adds depth parallax', () => {
+    assert.match(orbitGrammar('camera-orbit').toLowerCase(), /orbit|circle|arc/);
+    assert.match(orbitGrammar('parallax-orbit').toLowerCase(), /parallax|depth|foreground/);
+  });
+  it('the three kinds produce distinct strings', () => {
+    const a = orbitGrammar('product-rotation'), b = orbitGrammar('camera-orbit'), c = orbitGrammar('parallax-orbit');
+    assert.ok(a !== b && b !== c && a !== c);
+  });
+  it('unknown kind falls back without throwing', () => {
+    assert.equal(typeof orbitGrammar('nope' as OrbitKind), 'string');
   });
 });

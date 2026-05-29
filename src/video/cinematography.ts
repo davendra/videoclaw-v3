@@ -512,6 +512,36 @@ export function beats(
 }
 
 /**
+ * Precise orbit/turntable camera grammar. Product-360 categories need exact
+ * terms — a generic "orbit" conflates three distinct motions:
+ *   - `product-rotation`: the object spins; the camera stays locked/static.
+ *   - `camera-orbit`: the camera circles a static subject.
+ *   - `parallax-orbit`: the camera arcs with foreground/background depth parallax.
+ *
+ * Order is intentional and stable; tests assert the sorted set.
+ */
+export const ORBIT_KINDS = ['product-rotation', 'camera-orbit', 'parallax-orbit'] as const;
+
+export type OrbitKind = (typeof ORBIT_KINDS)[number];
+
+const ORBIT_GRAMMAR: Record<OrbitKind, string> = {
+  'product-rotation':
+    'Camera locked off and static; the object rotates in place on a motorized turntable, spinning a smooth 360° to reveal every surface while the frame stays perfectly still.',
+  'camera-orbit':
+    'Camera arcs in a smooth circle around a static subject, orbiting on a fixed radius so the subject holds dead-center while the background sweeps behind it.',
+  'parallax-orbit':
+    'Camera arcs around the subject with pronounced depth parallax — foreground elements sweep past faster than the distant background, layering the planes for a strong sense of dimensional depth.',
+};
+
+/**
+ * Resolve a precise camera-direction string for an {@link OrbitKind}. Unknown
+ * kinds fall back to the `camera-orbit` grammar rather than throwing.
+ */
+export function orbitGrammar(kind: OrbitKind): string {
+  return ORBIT_GRAMMAR[kind] ?? ORBIT_GRAMMAR['camera-orbit'];
+}
+
+/**
  * Build an audio-mix prompt fragment at the requested detail level.
  *   - terse:    evocative words only, no numbers
  *   - standard: brief layer naming

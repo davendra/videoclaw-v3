@@ -1,6 +1,6 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { cameraSpec, lightingSpec, gradeSpec, type DetailLevel } from '../video/cinematography.js';
+import { cameraSpec, lightingSpec, gradeSpec, audioMix, type DetailLevel } from '../video/cinematography.js';
 
 describe('cinematography emitters', () => {
   it('terse omits numbers, rich includes them', () => {
@@ -20,5 +20,12 @@ describe('cinematography emitters', () => {
   it('unknown lighting/grade ids fall back without throwing', () => {
     assert.equal(typeof lightingSpec('nonexistent', 'standard'), 'string');
     assert.equal(typeof gradeSpec('nonexistent', 'rich'), 'string');
+  });
+});
+
+describe('audio mix', () => {
+  it('rich audio carries a dB hierarchy; terse does not', () => {
+    assert.match(audioMix('rich'), /dB|-?\d+\s?dB/i);
+    assert.doesNotMatch(audioMix('terse'), /dB/);
   });
 });

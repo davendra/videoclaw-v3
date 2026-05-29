@@ -161,3 +161,22 @@ export function gradeSpec(id: string, d: DetailLevel): string {
     `highlights ${preset.highlightHue}° ${preset.highlightSat}% tint, ${words}`
   );
 }
+
+/**
+ * Build an audio-mix prompt fragment at the requested detail level.
+ *   - terse:    evocative words only, no numbers
+ *   - standard: brief layer naming
+ *   - rich:     an explicit dB hierarchy with a silence/re-entry beat
+ */
+export function audioMix(d: DetailLevel): string {
+  if (d === 'terse') {
+    return 'natural ambience, grounded foley, present dialogue';
+  }
+  if (d === 'standard') {
+    return 'ambience bed under foley, dialogue forward, music supportive';
+  }
+  return (
+    'ambient -4 dB, foley -1 dB, dialogue 0 dB ref, music -2 dB; ' +
+    '1.5–2.5s silence then sudden re-entry'
+  );
+}

@@ -168,6 +168,33 @@ describe('preview portal renderer', () => {
     assert.match(html, /Scenes/);
   });
 
+  it('renders a soundtrack audio player in the preview surface when discovered', async () => {
+    const project = await discoverPreviewPortalProjectFixture('music-video');
+    assert.equal(project.soundtrack?.path, 'audio/fixture.mp3');
+    const html = renderPreviewPortalHtml({ surface: 'preview', project });
+    assert.match(html, /<audio controls preload="none"[^>]*src="audio\/fixture\.mp3"/);
+  });
+
+  it('omits the soundtrack player entirely when no soundtrack exists', async () => {
+    const project = await discoverPreviewPortalProjectFixture('story-film', { soundtrack: false });
+    assert.equal(project.soundtrack, undefined);
+    const html = renderPreviewPortalHtml({ surface: 'preview', project });
+    assert.doesNotMatch(html, /class="soundtrack-player"/);
+  });
+
+  it('marks production images in the preview surface as lightbox-enabled', async () => {
+    const project = await discoverPreviewPortalProjectFixture('story-film');
+    const html = renderPreviewPortalHtml({ surface: 'preview', project });
+    // Strip the inlined <script> block (which contains an <img> string literal
+    // inside the lightbox JS) so we only assert on rendered DOM markup.
+    const body = html.replace(/<script>[\s\S]*?<\/script>/g, '');
+    const imgTags = body.match(/<img\b[^>]*>/g) ?? [];
+    assert.ok(imgTags.length > 0, 'expected at least one production image');
+    for (const img of imgTags) {
+      assert.match(img, /data-lightbox-group=/);
+    }
+  });
+
   it('renders an index with links to per-project portal pages', async () => {
     const project = await discoverPreviewPortalProjectFixture('music-video');
     const html = renderPreviewPortalIndexHtml({ projects: [project], client: 'Acme', linkPrefix: '../../' });
@@ -295,7 +322,11 @@ describe('preview portal publish plan', () => {
   });
 });
 
-async function discoverPreviewPortalProjectFixture(template: 'music-video' | 'story-film') {
+async function discoverPreviewPortalProjectFixture(
+  template: 'music-video' | 'story-film',
+  options: { soundtrack?: boolean } = {},
+) {
+  const includeSoundtrack = options.soundtrack !== false;
   const root = await mkdtemp(join(tmpdir(), 'vclaw-preview-portal-fixture-'));
   const projectDir = join(root, 'projects', 'fixture');
   await mkdir(join(projectDir, 'final'), { recursive: true });
@@ -313,7 +344,7 @@ async function discoverPreviewPortalProjectFixture(template: 'music-video' | 'st
   await writeFile(join(projectDir, 'videos', 'scene_01.mp4'), 'clip');
   await writeFile(join(projectDir, 'images', 'scene_01.jpg'), 'image');
   await writeFile(join(projectDir, 'assets', 'upscaled', 'scene_01_4k.jpg'), 'seedance-image');
-  await writeFile(join(projectDir, 'audio', 'fixture.mp3'), 'audio');
+  if (includeSoundtrack) await writeFile(join(projectDir, 'audio', 'fixture.mp3'), 'audio');
   await writeFile(join(projectDir, 'artifacts', 'asset-manifest.json'), JSON.stringify({
     projectSlug: 'fixture',
     assets: [{

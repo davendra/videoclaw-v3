@@ -82,6 +82,20 @@ export interface PreviewPortalProject {
   summary?: string;
   assets: PreviewPortalAsset[];
   cards: PreviewPortalCard[];
+  /**
+   * Optional project soundtrack/score. When present, the polished `preview`
+   * showcase renders an `<audio controls preload="none">` player; when absent,
+   * no audio element is emitted. Discovered from an audio asset (.mp3/.m4a/.wav)
+   * or a `soundtrack`/`audio` manifest field.
+   */
+  soundtrack?: PreviewPortalSoundtrack;
+}
+
+export interface PreviewPortalSoundtrack {
+  /** Project-relative path to the audio file. */
+  path: string;
+  /** Human-readable label for the track. */
+  label: string;
 }
 
 export interface PreviewPortalRenderOptions {

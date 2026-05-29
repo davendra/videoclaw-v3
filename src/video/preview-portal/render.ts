@@ -39,6 +39,7 @@ export function renderPreviewPortalHtml(options: PreviewPortalRenderOptions): st
   <h1>${esc(project.title)}</h1>
   ${project.summary ? `<p class="sub">${esc(project.summary)}</p>` : ''}
   <div class="stats">${stats.map(([value, label]) => `<div class="stat"><div class="v">${esc(value)}</div><div class="l">${esc(label)}</div></div>`).join('')}</div>
+  ${renderSoundtrackPlayer(options.surface, project)}
 </header>
 ${final ? renderHeroVideo(final, template) : ''}
 ${renderTemplateSections(project, template, options.surface)}
@@ -130,6 +131,17 @@ function renderComparePortalHtml(options: PreviewPortalRenderOptions): string {
 </body>
 </html>
 `;
+}
+
+function renderSoundtrackPlayer(surface: PreviewPortalSurface, project: PreviewPortalProject): string {
+  // Soundtrack player is part of the polished final showcase only. When no
+  // soundtrack was discovered, emit nothing (no broken/empty <audio> element).
+  if (surface !== 'preview' || !project.soundtrack) return '';
+  const { path, label } = project.soundtrack;
+  return `<div class="soundtrack-player">
+  <span class="soundtrack-label">${esc(label)}</span>
+  <audio controls preload="none" data-downloadable src="${escAttr(path)}"></audio>
+</div>`;
 }
 
 function renderHeroVideo(asset: PreviewPortalAsset, template: PreviewPortalTemplate): string {

@@ -6,6 +6,7 @@ import type {
   PreviewPortalAsset,
   PreviewPortalCard,
   PreviewPortalProject,
+  PreviewPortalSoundtrack,
   PreviewPortalStatus,
   PreviewPortalTemplateId,
 } from './types.js';
@@ -36,6 +37,7 @@ export async function discoverPreviewPortalProject(
   const status = options.status ?? 'draft';
   const summary = stringValue(manifest?.summary) ?? stringValue(manifest?.intent);
   const client = options.client ?? clientFromManifest(manifest);
+  const soundtrack = await discoverSoundtrack(projectDir, manifest, assets);
   return {
     client,
     slug: options.projectSlug,
@@ -56,7 +58,40 @@ export async function discoverPreviewPortalProject(
     ...(summary ? { summary } : {}),
     assets,
     cards: buildCards(assets),
+    ...(soundtrack ? { soundtrack } : {}),
   };
+}
+
+/**
+ * Discover the project soundtrack/score for the polished preview showcase.
+ * Preference order: an explicit `soundtrack`/`audio` manifest field that points
+ * at an existing project-local audio file, otherwise the first discovered audio
+ * asset. Returns undefined when no soundtrack exists (so the preview renders no
+ * `<audio>` element).
+ */
+async function discoverSoundtrack(
+  projectDir: string,
+  manifest: Record<string, unknown> | null,
+  assets: PreviewPortalAsset[],
+): Promise<PreviewPortalSoundtrack | undefined> {
+  const projectRoot = resolve(projectDir);
+  const manifestPath = stringValue(manifest?.soundtrack) ?? stringValue(manifest?.audio);
+  if (manifestPath && isAudioPath(manifestPath)) {
+    const localPath = resolveAssetPath(projectRoot, manifestPath);
+    if (localPath && existsSync(localPath)) {
+      const rel = relative(projectRoot, localPath).replaceAll('\\', '/');
+      return { path: rel, label: labelFromPath(rel) };
+    }
+  }
+  const audioAsset = assets.find((asset) => asset.kind === 'audio' && isAudioPath(asset.path));
+  if (audioAsset) {
+    return { path: audioAsset.path, label: audioAsset.label };
+  }
+  return undefined;
+}
+
+function isAudioPath(path: string): boolean {
+  return /\.(mp3|m4a|wav|aac)$/i.test(path);
 }
 
 export async function discoverPreviewPortalPortfolio(

@@ -163,6 +163,104 @@ export function gradeSpec(id: string, d: DetailLevel): string {
 }
 
 /**
+ * A fully-specified cinema mode: the camera-worldbuilder backbone.
+ *
+ * Each field is a self-contained prompt fragment describing one axis of
+ * the look, so a caller can assemble a mode into a coherent shot recipe.
+ */
+export interface ModeSpec {
+  camera: string;
+  lens: string;
+  movement: string;
+  filtration: string;
+  grade: string;
+}
+
+/**
+ * The five canonical cinema modes. Order is intentional (narrative first,
+ * as the safe fallback); tests assert the sorted set.
+ */
+export const CINEMA_MODE_IDS = ['narrative', 'studio', 'action', 'performance', 'atmospheric'] as const;
+
+export type CinemaModeId = (typeof CINEMA_MODE_IDS)[number];
+
+const CINEMA_MODES: Record<CinemaModeId, ModeSpec> = {
+  narrative: {
+    camera: 'lived-in real-world coverage, motivated framing, naturalistic eyelines',
+    lens: '35mm spherical primes, shallow-to-medium depth',
+    movement: 'grounded handheld and dolly, motivated reframes',
+    filtration: 'light black pro-mist 1/8, subtle halation on practicals',
+    grade: 'natural skin, gentle filmic contrast, true-to-life palette',
+  },
+  studio: {
+    camera: 'crafted void backdrop, controlled tabletop framing, precise composition',
+    lens: '50mm macro-capable primes, deep controlled focus',
+    movement: 'locked-off and motorized slider, perfectly repeatable moves',
+    filtration: 'clean uncoated glass, no diffusion, crisp specular highlights',
+    grade: 'clean neutral base, controlled contrast, accurate product color',
+  },
+  action: {
+    camera: 'kinetic handheld with whip-pans, fast aggressive coverage, dynamic angles',
+    lens: '24mm wide primes, fast apertures for snap focus',
+    movement: 'fast handheld, whip-pan and crash-zoom, rapid tracking',
+    filtration: 'minimal diffusion, hard contrast, occasional anamorphic flare',
+    grade: 'punchy high-contrast teal-and-orange, crushed shadows',
+  },
+  performance: {
+    camera: 'pit-photographer documentary framing, long-lens isolation, candid energy',
+    lens: '85–135mm telephoto, compressed perspective, creamy bokeh',
+    movement: 'shoulder-rig follow and long-lens pans, reactive not planned',
+    filtration: 'glimmerglass 1/4 for stage glow, gentle bloom on lights',
+    grade: 'saturated stage color, warm highlights, rich contrast',
+  },
+  atmospheric: {
+    camera: 'slow environmental wides, mood-led negative space, patient framing',
+    lens: '40mm primes, soft falloff, atmospheric depth',
+    movement: 'slow creeping push-in and drifting glide, near-static',
+    filtration: 'heavy black pro-mist 1/4, volumetric haze, soft bloom',
+    grade: 'desaturated moody palette, cool shadows, low-key contrast',
+  },
+};
+
+/**
+ * Resolve a cinema mode by id, falling back to `narrative` for unknown
+ * ids rather than throwing.
+ */
+export function cinemaMode(id: CinemaModeId): ModeSpec {
+  return CINEMA_MODES[id] ?? CINEMA_MODES.narrative;
+}
+
+const ORBIT_MODE: ModeSpec = {
+  camera: 'orbiting hero framing, subject centered as the camera arcs around it',
+  lens: '50mm primes, medium depth holding the subject sharp through the arc',
+  movement: 'smooth 360° orbit, steady circular tracking around the subject',
+  filtration: 'light black pro-mist 1/8, clean specular highlights',
+  grade: 'rich contrast, controlled color, hero-product polish',
+};
+
+const VOCAB_TO_MODE: Record<string, CinemaModeId> = {
+  cinematic: 'narrative',
+  'handheld-social': 'action',
+  macro: 'studio',
+  glide: 'atmospheric',
+  stylized: 'performance',
+};
+
+/**
+ * Map a {@link CategoryDescriptor} `cameraVocab` token onto a {@link ModeSpec}.
+ *
+ * `orbit` resolves to a synthesized orbit spec; other known tokens map to a
+ * canonical mode. Unknown tokens fall back to `narrative` rather than throwing.
+ */
+export function resolveCameraVocab(vocab: string): ModeSpec {
+  if (vocab === 'orbit') {
+    return ORBIT_MODE;
+  }
+  const mode = VOCAB_TO_MODE[vocab];
+  return mode ? CINEMA_MODES[mode] : CINEMA_MODES.narrative;
+}
+
+/**
  * Build an audio-mix prompt fragment at the requested detail level.
  *   - terse:    evocative words only, no numbers
  *   - standard: brief layer naming

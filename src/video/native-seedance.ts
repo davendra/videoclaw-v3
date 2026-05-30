@@ -114,6 +114,50 @@ function classifyReferencePaths(referencePaths: string[]): ClassifiedReferencePa
   return classified;
 }
 
+/**
+ * A loosely-typed reference descriptor as seen at the seedance-direct submit
+ * boundary. Callers may pass plain string paths, `Asset://` avatar URIs, or
+ * structured `{ path, assetUri, kind }` descriptors. Only an explicit
+ * `kind: 'photoreal-face'` tag is treated as a blocked photoreal face; every
+ * other shape (Asset Library avatars, silhouette plates, untagged paths) is
+ * allowed.
+ */
+type SeedanceReferenceDescriptor =
+  | string
+  | {
+      path?: string;
+      assetUri?: string;
+      kind?: string;
+      [key: string]: unknown;
+    };
+
+/**
+ * Reject references that are explicitly tagged as photoreal human faces before
+ * they reach the seedance-direct (ark/Seedance 2.0) submit path. The Ark/xskill
+ * "real person" content filter rejects photoreal faces passed as
+ * `reference_images`, and raw face URLs do not lock identity anyway — character
+ * consistency must go through the managed Asset Library (`Asset://` avatars).
+ *
+ * The guard is deliberately conservative: it throws ONLY when a descriptor
+ * carries `kind: 'photoreal-face'`. `Asset://` avatars, silhouette/no-face
+ * plates, and untagged string paths all pass through untouched, so it never
+ * heuristically blocks a legitimate reference. Scoped to seedance-direct; it
+ * runs before `assertReferenceBudget` and does not replace it.
+ */
+export function assertNoPhotorealFaceRefs(refs: readonly SeedanceReferenceDescriptor[]): void {
+  for (const ref of refs) {
+    if (!ref || typeof ref !== 'object') continue;
+    if (ref.kind === 'photoreal-face') {
+      const where = typeof ref.path === 'string' && ref.path ? ` (${ref.path})` : '';
+      throw new Error(
+        `Seedance-direct rejects photoreal face references${where}: the ark/Seedance "real person" content filter blocks photoreal faces passed as reference_images, ` +
+          'and raw face images do not lock character identity. Lock identity via the managed Asset Library (Asset:// avatars; see `vclaw video seedance-register-assets`), ' +
+          'or render the reference in a silhouette / no-face register with `filmmaking-prompts --no-faces`.',
+      );
+    }
+  }
+}
+
 const REFERENCE_BUDGET = { images: 9, videos: 3, audios: 3 } as const;
 
 /**
@@ -277,10 +321,14 @@ export async function submitSeedanceDirectNative(
   const createUrl = `${baseUrl(env)}/api/v3/tasks/create`;
   const externalJobId = `seedance-${Date.now()}`;
 
-  // Preflight: validate every task's reference budget before any network call so
-  // an over-budget task N cannot cause a partial submit (tasks 0..N-1 already
-  // charged against provider credits while task N throws).
+  // Preflight: reject photoreal-face references and validate every task's
+  // reference budget before any network call. The face guard runs first (and
+  // before the budget check) so an explicitly photoreal-face reference fails
+  // fast with a clear remedy; the budget check then ensures an over-budget task
+  // N cannot cause a partial submit (tasks 0..N-1 already charged against
+  // provider credits while task N throws).
   for (const task of payload.tasks) {
+    assertNoPhotorealFaceRefs(task.referencePaths);
     assertReferenceBudget(task.referencePaths);
   }
 

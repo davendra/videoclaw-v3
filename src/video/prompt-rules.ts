@@ -61,3 +61,18 @@ export function noFaceMorphTag(): string {
 export function diegeticAudioLine(): string {
   return 'Audio: Diegetic sound only — natural ambience, environmental foley, and subject-driven sound.';
 }
+
+const NEGATIVE_TO_POSITIVE: ReadonlyArray<[RegExp, string]> = [
+  [/no identity drift\.?/gi, 'face, hair, wardrobe, and silhouette stay identical throughout.'],
+  [/no face morphing\.?/gi, 'facial features stay stable across all frames.'],
+  [/don'?t move (the )?feet\.?/gi, 'boots stay planted on the same ground marks.'],
+];
+
+/** Rewrite known prohibitions into positive positional/behavioral locks. */
+export function negativeToPositive(text: string): string {
+  let out = text;
+  for (const [re, replacement] of NEGATIVE_TO_POSITIVE) {
+    out = out.replace(re, replacement);
+  }
+  return out.replace(/\s{2,}/g, ' ').trim();
+}

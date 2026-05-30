@@ -4,16 +4,36 @@ import { artifactPathFor, writeArtifact } from './artifact-store.js';
 import {
   audioMix,
   beats,
+  captureRealismBlock,
   cameraSpec,
+  backgroundPlate,
   gradeSpec,
   lightingSpec,
+  musicSyncLine,
   orbitGrammar,
   type Beat,
   type CameraMove,
+  type CaptureRealismOpts,
+  type HazeDensity,
+  type PlateKind,
   type DetailLevel,
 } from './cinematography.js';
 import type { AssetManifestArtifact, BriefArtifact, StoryboardArtifact } from './artifacts.js';
-import { resolveCategory, type CategoryDescriptor } from './category-registry.js';
+import {
+  referenceBuildOrder,
+  resolveCategory,
+  type CategoryDescriptor,
+  type ReferenceBuildStep,
+} from './category-registry.js';
+import {
+  crossFrameBlock,
+  frameMapBlock,
+  lastFrameBlock,
+  subjectLockBlock,
+  POSITIONAL_BINDING,
+  type FrameMapEntry,
+  type SubjectLockEntry,
+} from './seedance-blocks.js';
 import { listCharacterProfiles, type CharacterProfile } from './characters.js';
 import { readProductReferences } from './product-references.js';
 import { readReferenceSheetsArtifact } from './reference-sheet-store.js';
@@ -41,7 +61,7 @@ export type FilmmakingPromptVariant =
 
 export interface FilmmakingReferenceSlot {
   slot: string;
-  role: 'character-sheet' | 'storyboard-grid' | 'start-frame' | 'end-frame' | 'reference-image';
+  role: 'character-sheet' | 'storyboard-grid' | 'start-frame' | 'end-frame' | 'reference-image' | 'background-plate';
   label: string;
   path?: string;
   characterName?: string;
@@ -94,7 +114,8 @@ export interface FilmmakingPromptIssue {
     | 'storyboard-missing'
     | 'storyboard-grid-pending'
     | 'reference-slot-pending'
-    | 'seedance-music-default';
+    | 'seedance-music-default'
+    | 'seedance-block-order';
   severity: 'warning' | 'error';
   message: string;
   path?: string;
@@ -162,6 +183,37 @@ export interface GenerateFilmmakingPromptsOptions {
    */
   phase?: FilmmakingPhase;
   write?: boolean;
+  /**
+   * Character sheet layout variant (default `'8-shot'` — unchanged behavior).
+   * Set to `'6-panel'` to opt into the compact 3-column × 2-row mid-gray sheet
+   * built by {@link characterSheetSixPanelPrompt}.
+   */
+  sheetLayout?: '8-shot' | '6-panel';
+  /**
+   * Joey opt-in anti-plastic realism block (`captureRealismBlock`). When set, the
+   * `rich`-detail storyboard-grid + text-driven CAMERA CAPTURE Style lines append
+   * the keystone capture-realism clause. Omitted (default) → byte-identical to
+   * today (the suffix is the legacy no-arg form). `wet`/`haze` only apply when
+   * `realism` is enabled.
+   */
+  realism?: CaptureRealismOpts | false;
+  /**
+   * Lighting register id for the `rich`-detail cinematography suffix (default
+   * `'neutral-studio'`). Omitted → legacy default. See `lightingSpec`.
+   */
+  lightingId?: string;
+  /**
+   * Color-grade register id for the `rich`-detail cinematography suffix (default
+   * `'teal-orange'`). Omitted → legacy default. See `gradeSpec`.
+   */
+  gradeId?: string;
+  /**
+   * Backdrop plate kind. When set, appends a `backgroundPlate` clause to the
+   * storyboard-grid Style line (opt-in, additive). Omitted (default) → no plate
+   * clause, output unchanged. The character-sheet prompts keep their own
+   * mid-gray default verbatim.
+   */
+  plateKind?: PlateKind;
 }
 
 // Quantified cinematography suffix appended only at detail === 'rich'. Built from
@@ -174,12 +226,21 @@ const RICH_CAMERA_MOVE: CameraMove = {
   movement: 'dolly',
 };
 
-function richCinematographySuffix(): string {
-  return (
+export function richCinematographySuffix(opts: {
+  lightingId?: string;
+  gradeId?: string;
+  realism?: CaptureRealismOpts | false;
+} = {}): string {
+  const lightingId = opts.lightingId ?? 'neutral-studio';
+  const gradeId = opts.gradeId ?? 'teal-orange';
+  const base =
     `Cinematography: ${cameraSpec(RICH_CAMERA_MOVE, 'rich')}; ` +
-    `${lightingSpec('neutral-studio', 'rich')}; ` +
-    `${gradeSpec('teal-orange', 'rich')}.`
-  );
+    `${lightingSpec(lightingId, 'rich')}; ` +
+    `${gradeSpec(gradeId, 'rich')}.`;
+  if (opts.realism) {
+    return `${base} ${captureRealismBlock(opts.realism, 'rich')}`;
+  }
+  return base;
 }
 
 function richAudioSuffix(): string {
@@ -351,8 +412,9 @@ export async function generateFilmmakingPrompts(
   const characters = await listCharacterProfiles(workspace);
   const issues: FilmmakingPromptIssue[] = [];
 
+  const sheetLayout = options.sheetLayout ?? '8-shot';
   const referenceMap = buildReferenceMap(referenceSheets, characters, assetManifest);
-  const characterSheetPrompts = buildCharacterSheetPrompts(characters, referenceMap, issues, genreStyle, aspectRatio);
+  const characterSheetPrompts = buildCharacterSheetPrompts(characters, referenceMap, issues, genreStyle, aspectRatio, sheetLayout);
   // Character lock: carry each character's identity description + its @imageN
   // slot forward into the Seedance Variant A SUBJECT lines (verbatim reuse is
   // the skill's most important rule).
@@ -365,7 +427,12 @@ export async function generateFilmmakingPrompts(
     });
   }
   const storyboardGridPrompt = storyboard
-    ? buildStoryboardGridPrompt(storyboard, brief, characterSheetPrompts, noFaces, genreStyle, aspectRatio, panelCount, durationSeconds, detail)
+    ? buildStoryboardGridPrompt(storyboard, brief, characterSheetPrompts, noFaces, genreStyle, aspectRatio, panelCount, durationSeconds, detail, {
+        ...(options.realism !== undefined ? { realism: options.realism } : {}),
+        ...(options.lightingId !== undefined ? { lightingId: options.lightingId } : {}),
+        ...(options.gradeId !== undefined ? { gradeId: options.gradeId } : {}),
+        ...(options.plateKind !== undefined ? { plateKind: options.plateKind } : {}),
+      })
     : null;
   if (!storyboard) {
     issues.push({
@@ -572,17 +639,37 @@ function productPromptText(input: {
   return lines.filter(Boolean).join('\n');
 }
 
+/**
+ * Map a reference slot's role onto its canonical build step (the banana-pro-
+ * director discipline). `background-plate` is the scene-context-free `base-ref`;
+ * the character sheet is the `sheet`; every in-context frame is a `scene-plate`.
+ */
+function buildStepForRole(role: FilmmakingReferenceSlot['role']): ReferenceBuildStep {
+  switch (role) {
+    case 'background-plate':
+      return 'base-ref';
+    case 'character-sheet':
+      return 'sheet';
+    case 'storyboard-grid':
+    case 'start-frame':
+    case 'end-frame':
+    case 'reference-image':
+      return 'scene-plate';
+  }
+}
+
 function buildReferenceMap(
   referenceSheets: ReferenceSheetsArtifact,
   characters: CharacterProfile[],
   assetManifest: AssetManifestArtifact | undefined,
 ): FilmmakingReferenceSlot[] {
-  const slots: FilmmakingReferenceSlot[] = [];
+  // Collect every slot first (the `slot` field is assigned last, once the final
+  // build-order is known, so `@imageN == array order` per WS0).
+  const collected: Omit<FilmmakingReferenceSlot, 'slot'>[] = [];
   for (const character of characters) {
     const identitySheet = findIdentitySheet(referenceSheets, character.name);
     const path = firstCharacterReference(character, identitySheet);
-    slots.push({
-      slot: nextSlot(slots.length),
+    collected.push({
       role: 'character-sheet',
       label: `${character.name} character sheet`,
       characterName: character.name,
@@ -592,10 +679,21 @@ function buildReferenceMap(
   }
 
   for (const asset of assetManifest?.assets ?? []) {
-    if (asset.kind !== 'image' || !Number.isInteger(asset.sceneIndex)) continue;
-    if (slots.some((slot) => slot.path === asset.path && slot.sceneIndex === asset.sceneIndex)) continue;
-    slots.push({
-      slot: nextSlot(slots.length),
+    if (asset.kind !== 'image') continue;
+    if (asset.role === 'background-plate') {
+      // A scene-context-free background/base plate (no sceneIndex required).
+      if (collected.some((slot) => slot.role === 'background-plate' && slot.path === asset.path)) continue;
+      collected.push({
+        role: 'background-plate',
+        label: 'Background plate',
+        path: asset.path,
+        status: 'ready',
+      });
+      continue;
+    }
+    if (!Number.isInteger(asset.sceneIndex)) continue;
+    if (collected.some((slot) => slot.path === asset.path && slot.sceneIndex === asset.sceneIndex)) continue;
+    collected.push({
       role: 'start-frame',
       label: `Scene ${asset.sceneIndex} start frame`,
       path: asset.path,
@@ -603,7 +701,25 @@ function buildReferenceMap(
       status: 'ready',
     });
   }
-  return slots;
+
+  // Consult the canonical reference build order (base-ref -> sheet -> scene-plate)
+  // and group the collected slots by build step. The sort is STABLE, so within a
+  // step the original collection order is preserved — and the canonical character
+  // sheet (a `sheet` step) is never displaced/replaced by a scene plate. A default
+  // single-character project (sheet only) keeps its original order unchanged.
+  const order = referenceBuildOrder('character');
+  const rank = new Map<ReferenceBuildStep, number>(order.map((step, index) => [step, index] as const));
+  const ordered = collected
+    .map((slot, index) => ({ slot, index }))
+    .sort((left, right) => {
+      const leftRank = rank.get(buildStepForRole(left.slot.role)) ?? order.length;
+      const rightRank = rank.get(buildStepForRole(right.slot.role)) ?? order.length;
+      if (leftRank !== rightRank) return leftRank - rightRank;
+      return left.index - right.index;
+    })
+    .map((entry) => entry.slot);
+
+  return ordered.map((slot, index) => ({ slot: nextSlot(index), ...slot }));
 }
 
 function buildCharacterSheetPrompts(
@@ -612,6 +728,7 @@ function buildCharacterSheetPrompts(
   issues: FilmmakingPromptIssue[],
   genreStyle: GenreStyle,
   aspectRatio: string,
+  sheetLayout: '8-shot' | '6-panel' = '8-shot',
 ): FilmmakingCharacterSheetPrompt[] {
   return characters.map((character) => {
     const slots = referenceMap.filter((slot) => slot.role === 'character-sheet' && slot.characterName === character.name);
@@ -644,9 +761,11 @@ function buildCharacterSheetPrompts(
       characterName: character.name,
       mode,
       referenceSlots: readySlots,
-      promptText: mode === 'reference-image'
-        ? characterSheetReferencePrompt(readySlots, genreStyle.charSheetStyle, aspectRatio)
-        : characterSheetDescriptionPrompt(description, genreStyle.charSheetStyle, aspectRatio),
+      promptText: sheetLayout === '6-panel'
+        ? characterSheetSixPanelPrompt(description, genreStyle.charSheetStyle, aspectRatio)
+        : mode === 'reference-image'
+          ? characterSheetReferencePrompt(readySlots, genreStyle.charSheetStyle, aspectRatio)
+          : characterSheetDescriptionPrompt(description, genreStyle.charSheetStyle, aspectRatio),
     };
   });
 }
@@ -661,6 +780,13 @@ function buildStoryboardGridPrompt(
   panelCount = 15,
   durationSeconds = 15,
   detail: DetailLevel = 'standard',
+  // Joey opt-in cinematography overrides (default {} → byte-identical output).
+  cinematics: {
+    realism?: CaptureRealismOpts | false;
+    lightingId?: string;
+    gradeId?: string;
+    plateKind?: PlateKind;
+  } = {},
 ): FilmmakingStoryboardGridPrompt {
   const { rows, cols } = gridLayout(panelCount, aspectRatio);
   const panels = buildPanels(storyboard, panelCount, durationSeconds, cols);
@@ -674,14 +800,30 @@ function buildStoryboardGridPrompt(
     ? ' Render ALL figures as backlit silhouettes, shot from behind, or at distance — faces obscured, in shadow, or turned away, with NO clear frontal facial features (this keeps the sheet usable as a provider reference image despite real-person content filters).'
     : '';
   // At `rich`, append a quantified cinematography suffix to the Style line.
-  // `terse`/`standard` keep the line byte-identical to today.
-  const richStyleSuffix = detail === 'rich' ? ` ${richCinematographySuffix()}` : '';
+  // `terse`/`standard` keep the line byte-identical to today. When any Joey
+  // cinematography override is set, pass them through; otherwise the no-arg call
+  // reproduces today's legacy suffix exactly.
+  const hasCinematicsOverride =
+    cinematics.realism !== undefined
+    || cinematics.lightingId !== undefined
+    || cinematics.gradeId !== undefined;
+  const richStyleSuffix = detail === 'rich'
+    ? ` ${hasCinematicsOverride ? richCinematographySuffix({
+        ...(cinematics.realism !== undefined ? { realism: cinematics.realism } : {}),
+        ...(cinematics.lightingId !== undefined ? { lightingId: cinematics.lightingId } : {}),
+        ...(cinematics.gradeId !== undefined ? { gradeId: cinematics.gradeId } : {}),
+      }) : richCinematographySuffix()}`
+    : '';
+  // Opt-in backdrop plate clause. Omitted → no clause, Style line unchanged.
+  const plateClause = cinematics.plateKind !== undefined
+    ? ` Backdrop: ${backgroundPlate(cinematics.plateKind, detail)}.`
+    : '';
   const promptText = [
     // A) Title & format header
     `Create a professional ${durationSeconds}-second ${genreStyle.formatTone} storyboard sheet for "${location}" — a complete production presentation page of ${panelCount} sequential cinematic panels arranged in a clean ${rows}×${cols} grid layout, depicting ONE CONTINUOUS ${sceneType}.`,
     '',
     // B) Style declaration
-    `Style: Cinematic, production-grade, ${genreStyle.gridStyleDescriptors}.${noFaceClause} Aspect ratio = ${aspectRatio} page layout.${richStyleSuffix}`,
+    `Style: Cinematic, production-grade, ${genreStyle.gridStyleDescriptors}.${noFaceClause} Aspect ratio = ${aspectRatio} page layout.${richStyleSuffix}${plateClause}`,
     '',
     // C) Character descriptions + lock
     'CHARACTER LOCK - all recurring characters must appear IDENTICAL across every panel (same face, same build, same clothing, same props). Use the descriptions below as the source of truth. If reference images are attached, treat them as additional identity anchors and match them precisely.',
@@ -734,11 +876,13 @@ function buildSeedancePackets(input: {
       message: `${gridSlot.slot} is reserved for the storyboard grid, but the rendered grid image is not attached yet.`,
     });
   }
-  input.issues.push({
-    code: 'seedance-music-default',
-    severity: 'warning',
-    message: 'Seedance packets default to NO MUSIC unless a scene prompt explicitly asks for music.',
-  });
+  if (input.genreStyle?.genre !== 'music-video') {
+    input.issues.push({
+      code: 'seedance-music-default',
+      severity: 'warning',
+      message: 'Seedance packets default to NO MUSIC unless a scene prompt explicitly asks for music.',
+    });
+  }
   return scenes.map((scene) => {
     const startFrame = input.referenceMap.find((slot) => slot.role === 'start-frame' && slot.sceneIndex === scene.sceneIndex);
     const references = [
@@ -751,27 +895,80 @@ function buildSeedancePackets(input: {
       : gridSlot
         ? 'storyboard-grid-reference'
         : 'text-driven';
+    const promptText = seedancePromptText({
+      scene,
+      brief: input.brief,
+      references,
+      variant,
+      durationSeconds: scene.durationSeconds ?? input.durationSeconds,
+      noFaces: input.noFaces ?? false,
+      genreStyle: input.genreStyle,
+      aspectRatio: input.aspectRatio,
+      characterContext: input.characterContext,
+      detail: input.detail,
+    });
+    // QA gate (WS6): only the text-driven packet follows the 10-block contract;
+    // grid variants intentionally use the grid-reference body shape.
+    if (variant === 'text-driven') {
+      const blockIssue = checkSeedanceBlockOrder(promptText);
+      if (blockIssue) input.issues.push(blockIssue);
+    }
     return {
       sceneIndex: scene.sceneIndex,
       variant,
       durationSeconds: scene.durationSeconds ?? input.durationSeconds,
       references,
-      promptText: seedancePromptText({
-        scene,
-        brief: input.brief,
-        references,
-        variant,
-        durationSeconds: scene.durationSeconds ?? input.durationSeconds,
-        noFaces: input.noFaces ?? false,
-        genreStyle: input.genreStyle,
-        aspectRatio: input.aspectRatio,
-        characterContext: input.characterContext,
-        detail: input.detail,
-      }),
+      promptText,
       warnings: references.filter((reference) => reference.status === 'pending')
         .map((reference) => `${reference.slot} ${reference.label} is pending.`),
     };
   });
+}
+
+// Canonical 10-block order for the text-driven Seedance master-prompt (WS6).
+// Source of truth shared by seedancePromptText (which emits them) and
+// checkSeedanceBlockOrder (which validates them) so they cannot drift.
+const SEEDANCE_BLOCK_ORDER = [
+  'SCENE & MOOD',
+  'FRAME MAP',
+  'SUBJECT LOCK',
+  'CROSS-FRAME',
+  'MOVEMENT',
+  'LAST FRAME',
+  'WORLD PLATE',
+  'SOUND BED',
+  'CAPTURE REALISM',
+  'CAMERA CAPTURE',
+] as const;
+
+/**
+ * QA validator (WS6): confirm a text-driven Seedance packet carries all ten
+ * Joey master-prompt blocks in the canonical order. Returns a warning-level
+ * {@link FilmmakingPromptIssue} when a block is missing or out of sequence, or
+ * `null` when the packet is well-formed. Pure/deterministic — operates on the
+ * rendered prompt text only.
+ */
+export function checkSeedanceBlockOrder(promptText: string): FilmmakingPromptIssue | null {
+  let last = -1;
+  for (const block of SEEDANCE_BLOCK_ORDER) {
+    const idx = promptText.indexOf(block);
+    if (idx === -1) {
+      return {
+        code: 'seedance-block-order',
+        severity: 'warning',
+        message: `text-driven Seedance packet is missing the "${block}" block (expected the 10-block order: ${SEEDANCE_BLOCK_ORDER.join(' → ')}).`,
+      };
+    }
+    if (idx < last) {
+      return {
+        code: 'seedance-block-order',
+        severity: 'warning',
+        message: `text-driven Seedance packet has the "${block}" block out of order (expected the 10-block order: ${SEEDANCE_BLOCK_ORDER.join(' → ')}).`,
+      };
+    }
+    last = idx;
+  }
+  return null;
 }
 
 // Positive-direction guard so the model performs the grid panels over time
@@ -780,7 +977,8 @@ function buildSeedancePackets(input: {
 const GRID_SINGLE_FRAME_GUARD =
   'Output a single full-frame cinematic shot that fills the entire frame edge to edge — no 3x3 grid, no split-screen, no panel borders, no collage, no multi-panel montage. The storyboard grid is reference ONLY; perform its panels as consecutive moments over time, never as one image.';
 
-function seedancePromptText(input: {
+/** @internal — exported for testing the text-driven AUDIO / MOOD branch only. */
+export function seedancePromptText(input: {
   scene: StoryboardArtifact['scenes'][number];
   brief: BriefArtifact | undefined;
   references: FilmmakingReferenceSlot[];
@@ -833,38 +1031,89 @@ function seedancePromptText(input: {
       `Storyline: ${action}`,
     ].filter(Boolean).join('\n'));
   }
-  // Variant A: carry each character's locked identity description + its @imageN
-  // slot into the SUBJECT lines (verbatim reuse = character lock). Falls back to
-  // the bare name when no stored description/slot exists.
-  const subjectLines = input.scene.characters?.length
-    ? input.scene.characters.map((name, index) => {
-      const ctx = input.characterContext?.get(name);
-      const desc = ctx?.description ?? name;
-      const ref = ctx?.slot ? ` Reference ${ctx.slot}.` : '';
-      return `SUBJECT ${index + 1}: ${desc}.${ref}`;
-    })
-    : ['SUBJECT: Primary subject from the storyboard scene.'];
+  // Variant A (text-driven) — the Joey 10-block Seedance master-prompt (WS6, now
+  // the default packet shape). The blocks are assembled in a fixed contract order
+  // (SCENE & MOOD → FRAME MAP → SUBJECT LOCK → CROSS-FRAME → MOVEMENT → LAST FRAME
+  // → WORLD PLATE → SOUND BED → CAPTURE REALISM → CAMERA CAPTURE) using the
+  // shared seedance-blocks.ts / cinematography.ts emitters. `terse`/`standard`
+  // detail emit no quantified cinematography tokens; `rich` appends them.
+  const soundBed = genreStyle.genre === 'music-video'
+    ? `SOUND BED: Music-driven — ${musicSyncLine(undefined, detail)}.`
+    : `SOUND BED: No music. Natural ambience and subject-driven sound only.${detail === 'rich' ? ` ${richAudioSuffix()}` : ''}`;
   return [
-    `FORMAT: ${duration} / 3 CUTS / ${genreStyle.formatTone} / ${aspectRatio} / NO MUSIC`,
+    `SCENE & MOOD: ${duration} ${genreStyle.formatTone} at ${aspectRatio}. ${cleanSentence(input.brief?.intent ?? input.scene.description)}.`,
     '',
-    ...subjectLines,
-    `ENVIRONMENT: ${input.brief?.title ?? input.brief?.intent ?? input.scene.description}.`,
-    `STYLE: ${genreStyle.gridStyleDescriptors}. Aspect ratio ${aspectRatio} held across every shot.${detail === 'rich' ? ` ${richCinematographySuffix()}` : ''}`,
-    `AUDIO / MOOD: No music. Natural ambience and subject-driven sound only.${detail === 'rich' ? ` ${richAudioSuffix()}` : ''}`,
+    frameMapBlock(threeBeatFrameMap(input.durationSeconds, action, aspectRatio)),
     '',
-    `TIMELINE (must cover full 0:00-${formatSeconds(input.durationSeconds)}):`,
-    `0:00-${formatSeconds(Math.floor(input.durationSeconds / 3))}: Wide establishing shot, ${aspectRatio} - ${action}.`,
-    `${formatSeconds(Math.floor(input.durationSeconds / 3))}-${formatSeconds(Math.floor((input.durationSeconds * 2) / 3))}: Medium shot, ${aspectRatio} - preserve subject identity and geography while the action develops.`,
-    `${formatSeconds(Math.floor((input.durationSeconds * 2) / 3))}-${formatSeconds(input.durationSeconds)}: Close-up or resolved final frame, ${aspectRatio} - complete the scene beat cleanly.`,
-  ].join('\n');
+    subjectLockBlock(subjectLockEntriesFromContext(input)),
+    '',
+    crossFrameBlock(),
+    '',
+    `MOVEMENT: ${cameraSpec(RICH_CAMERA_MOVE, detail)}.`,
+    '',
+    lastFrameBlock('resolved final beat, clean composition'),
+    '',
+    `WORLD PLATE: ${input.brief?.title ?? input.scene.description}.`,
+    '',
+    soundBed,
+    '',
+    `CAPTURE REALISM: ${captureRealismBlock({}, detail)}`,
+    '',
+    `CAMERA CAPTURE: ${genreStyle.gridStyleDescriptors}, ${aspectRatio} held across every shot.${detail === 'rich' ? ` ${richCinematographySuffix({ realism: {} })}` : ''}`,
+    noFaceLine,
+  ].filter(Boolean).join('\n');
 }
 
-function characterSheetReferencePrompt(referenceSlots: string[], style: string, aspectRatio: string): string {
-  return `Create a professional character reference sheet for the attached character using ${referenceSlots.join(', ')} as strong reference, 1:1 similarity, ${style}. Divide the sheet into four vertical columns for a total of eight shots. The top row shows full-body views from head to toe: front, side, three-quarter, and back. No cropping at ankles, knees, or head. The bottom row contains four matching face close-ups, including front and profile views. Use clean neutral studio lighting. Background should be simple and not distracting from character design. Aspect ratio = ${aspectRatio}.`;
+// FRAME MAP rows for the text-driven packet — the original three-beat timeline
+// (wide establish → medium develop → resolved close), now emitted as ordered
+// FrameMapEntry rows keyed on the same 0:00 / d÷3 / 2d÷3 / d split.
+function threeBeatFrameMap(durationSeconds: number, action: string, aspectRatio: string): FrameMapEntry[] {
+  const third = Math.floor(durationSeconds / 3);
+  const twoThirds = Math.floor((durationSeconds * 2) / 3);
+  return [
+    { t: `0:00-${formatSeconds(third)}`, beat: `Wide establishing shot, ${aspectRatio} — ${action}` },
+    { t: `${formatSeconds(third)}-${formatSeconds(twoThirds)}`, beat: `Medium shot, ${aspectRatio} — preserve subject identity and geography while the action develops` },
+    { t: `${formatSeconds(twoThirds)}-${formatSeconds(durationSeconds)}`, beat: `Close-up or resolved final frame, ${aspectRatio} — complete the scene beat cleanly` },
+  ];
 }
 
-function characterSheetDescriptionPrompt(description: string, style: string, aspectRatio: string): string {
-  return `Create a professional character reference sheet for ${description}. Divide the sheet into four vertical columns for a total of eight shots. The top row shows full-body views from head to toe: front, side, three-quarter, and back. No cropping at ankles, knees, or head. The bottom row contains four matching face close-ups, including front and profile views. Style: ${style}. Use clean neutral studio lighting, no scene-specific lighting. Background should be simple and not distracting from character design. Aspect ratio = ${aspectRatio}.`;
+// SUBJECT LOCK entries from the carried character context. Per WS0/WS5, @imageN
+// slots are emitted as hard binding labels ONLY when POSITIONAL_BINDING is true;
+// otherwise each character's locked identity description is carried as a
+// descriptor-only guidance label (visual descriptor, never a proper name as the
+// binding key). Falls back to a single primary-subject entry when no characters
+// are present on the scene.
+function subjectLockEntriesFromContext(input: {
+  scene: StoryboardArtifact['scenes'][number];
+  characterContext?: Map<string, { slot?: string; description: string }>;
+}): SubjectLockEntry[] {
+  const names = input.scene.characters ?? [];
+  if (names.length === 0) return [];
+  return names.map((name, index) => {
+    const ctx = input.characterContext?.get(name);
+    const label = ctx?.description ?? name;
+    const slot = POSITIONAL_BINDING && ctx?.slot ? ctx.slot : `subject ${index + 1}`;
+    return { label, slot };
+  });
+}
+
+export function characterSheetReferencePrompt(referenceSlots: string[], style: string, aspectRatio: string): string {
+  return `Create a professional character reference sheet for the attached character using ${referenceSlots.join(', ')} as strong reference, 1:1 similarity, ${style}. Divide the sheet into four vertical columns for a total of eight shots. The top row shows full-body views from head to toe: front, side, three-quarter, and back. No cropping at ankles, knees, or head. The bottom row contains four matching face close-ups, including front and profile views. Use clean neutral studio lighting. Background: even neutral mid-gray seamless, no seam line, no gradient, subject rendered at true natural tone against the neutral gray. Aspect ratio = ${aspectRatio}.`;
+}
+
+export function characterSheetDescriptionPrompt(description: string, style: string, aspectRatio: string): string {
+  return `Create a professional character reference sheet for ${description}. Divide the sheet into four vertical columns for a total of eight shots. The top row shows full-body views from head to toe: front, side, three-quarter, and back. No cropping at ankles, knees, or head. The bottom row contains four matching face close-ups, including front and profile views. Style: ${style}. Use clean neutral studio lighting, no scene-specific lighting. Background: even neutral mid-gray seamless, no seam line, no gradient, subject rendered at true natural tone against the neutral gray. Aspect ratio = ${aspectRatio}.`;
+}
+
+export function characterSheetSixPanelPrompt(description: string, style: string, aspectRatio: string): string {
+  return [
+    `A 6-panel character reference sheet arranged as a 3-column by 2-row grid in a single ${aspectRatio} frame, thin clean white gutters between panels.`,
+    `Each panel shows the same single character — ${description}.`,
+    'Panel 1 (top-left): full body front. Panel 2 (top-center): side profile close headshot, left side. Panel 3 (top-right): full body back.',
+    'Panel 4 (bottom-left): side profile close headshot, right side. Panel 5 (bottom-center): front face close headshot. Panel 6 (bottom-right): detail shot (hands / accessory / held prop).',
+    'Even neutral mid-gray seamless backdrop applied uniformly across all six panels, no seam line, no gradient.',
+    `Style: ${style}. Identical character identity locked across all six panels — same face, skin, hair, wardrobe, accessories, proportions in every cell.`,
+  ].join(' ');
 }
 
 function buildPanels(

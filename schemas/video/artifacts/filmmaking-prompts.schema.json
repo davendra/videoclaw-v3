@@ -115,7 +115,7 @@
         "slot": { "type": "string" },
         "role": {
           "type": "string",
-          "enum": ["character-sheet", "storyboard-grid", "start-frame", "end-frame", "reference-image"]
+          "enum": ["character-sheet", "storyboard-grid", "start-frame", "end-frame", "reference-image", "background-plate"]
         },
         "label": { "type": "string" },
         "path": { "type": "string" },

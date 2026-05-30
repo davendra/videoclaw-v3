@@ -77,6 +77,24 @@ const PRESET_REGISTRY: ReadonlyMap<string, MultiShotPreset> = new Map([
   [RUNWAY_10S_PRESET.name, RUNWAY_10S_PRESET],
 ]);
 
+const GENRE_STYLE_LINES: ReadonlyMap<string, string> = new Map([
+  ['music-video', 'Saturated stage color, rhythmic lighting, performance energy. Bold contrast, expressive grade, beat-driven cutting.'],
+  ['action', 'Punchy high-contrast teal-and-orange, kinetic handheld, crushed shadows, aggressive coverage.'],
+  ['anime', '2D anime cel-shading, clean line work, painterly backgrounds, vivid saturated palette.'],
+  ['noir', 'High-contrast black and white, harsh chiaroscuro, deep shadow, 35mm grain.'],
+  ['influencer', 'Bright clean social-first look, soft flattering key, natural skin, crisp and current.'],
+  ['pixar', 'Stylized 3D render, soft global illumination, expressive proportions, warm inviting palette.'],
+]);
+
+/**
+ * Resolve a preset style line for a genre. Falls back to the cinematic Nolan
+ * line (today's hardcoded default) for unknown/absent genres.
+ */
+export function resolveStyleLine(genre?: string): string {
+  if (!genre) return CINEMATIC_15S_PRESET.styleLine;
+  return GENRE_STYLE_LINES.get(genre.toLowerCase()) ?? CINEMATIC_15S_PRESET.styleLine;
+}
+
 export function knownPresetNames(): readonly string[] {
   return Array.from(PRESET_REGISTRY.keys());
 }
@@ -261,11 +279,13 @@ export function assembleMetadataBlock(
   preset: MultiShotPreset,
   location: string,
   timeOfDay: string,
+  genre?: string,
 ): string {
   const loc = timeOfDay ? `${location}, ${timeOfDay}` : location;
+  const styleLine = genre !== undefined ? resolveStyleLine(genre) : preset.styleLine;
   return [
     `Location: ${loc}`,
-    `Style: ${preset.styleLine}`,
+    `Style: ${styleLine}`,
     `Audio: ${preset.audioLine}`,
   ].join('\n');
 }

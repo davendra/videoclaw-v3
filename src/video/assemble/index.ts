@@ -149,3 +149,10 @@ export type {
   BuildConcatFilterOptions,
   BuildMusicMixOptions,
 } from './stitch.js';
+
+// WS9 post-production: per-clip cut-at-N trim + letterbox filter (ffmpeg.ts) and
+// the gated, opt-in Topaz upscale planner (upscale.ts). Pure arg/plan builders;
+// the real upscale shell-out is a separate wrapper gated on plan.run.
+export { trimTailArgs, letterboxFilter } from './ffmpeg.js';
+export { topazUpscalePlan } from './upscale.js';
+export type { TopazUpscaleOptions, TopazUpscalePlan } from './upscale.js';

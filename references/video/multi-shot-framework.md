@@ -393,6 +393,22 @@ The generated Seedance packets in `filmmaking-prompts.ts` now embed this
 guard for both grid-bearing variants; preserve it if you touch
 `seedancePromptText`.
 
+### Plastic / AI skin and negative tempo direction
+
+- **Plastic / AI skin.** A subject-only description with no physics clauses renders the default "AI" look. Add `--realism` on `filmmaking-prompts` (at `--detail rich`) for the `captureRealismBlock` keystone — per-zone specular kill, subsurface scattering, strand hair, contrast-curve, `--haze thin|light|heavy` volumetric depth, and `--wet` moisture (`moistureMatteClause`).
+- **Negative tempo direction.** "no slow motion" / "not slow" does NOT work on these models (warned by the `negative-direction` lint). Use positive tempo phrasing; `--genre music-video` pulls in `musicSyncLine` (beat-synced, positive phrasing only).
+
+---
+
+## Joey cinematic-adaptation opt-in flags
+
+All flags are opt-in / additive — omitting them keeps output byte-identical to the legacy default. They route through the existing `filmmaking-prompts` and `multi-shot` commands (no new subcommand). See `docs/CLI_REFERENCE.md` → "Joey cinematic opt-in flags" for the full per-flag table.
+
+- `filmmaking-prompts`: `--sheet 8-shot|6-panel` (`characterSheetSixPanelPrompt`), `--realism`/`--wet`/`--haze thin|light|heavy` (`captureRealismBlock` + `volumetricHaze`, at `--detail rich`), `--background mid-gray|white|black` (`backgroundPlate`), `--lighting <id>`/`--grade <id>` (rich cinematography-suffix registers, e.g. `night-fire`/`bleach-bypass`).
+- `multi-shot`: `--genre <id>` (`resolveStyleLine`, Nolan fallback).
+
+Operator trigger-word map: mid-gray → `backgroundPlate`; haze → `volumetricHaze`; anti-plastic → `captureRealismBlock`; wet → moisture clause; bleach-bypass / lifted-blacks → lift/gamma grade; no-on-screen-text → Last Frame suppression (10-block Seedance packet).
+
 ---
 
 ## Validator Issue Codes

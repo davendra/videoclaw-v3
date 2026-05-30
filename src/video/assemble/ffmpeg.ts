@@ -62,6 +62,34 @@ export function resolveFfprobeBin(explicit?: string): string {
   return explicit ?? process.env.VCLAW_FFPROBE_BIN ?? 'ffprobe';
 }
 
+/**
+ * Per-clip cut-at-N tail trim (WS9). Returns the ffmpeg `-t <seconds>` flag pair
+ * when `maxSeconds` is a positive number, else `[]` (no trim). PURE — splice the
+ * result into a per-clip ffmpeg arg array just before the output path.
+ */
+export function trimTailArgs(maxSeconds?: number): string[] {
+  return maxSeconds && maxSeconds > 0 ? ['-t', String(maxSeconds)] : [];
+}
+
+/**
+ * Letterbox normalization filter (WS9). Scales the source to the canvas
+ * `width` (preserving aspect via `-2`) and pads it onto a `width`x`height`
+ * black canvas, producing cinematic bars. Mirrors the DHUAAN TITLEFIT pattern
+ * (`scale=W:-2,pad=W:H:0:(oh-ih)/2:black`). Returns '' when no `ratio` is given
+ * (an empty/undefined ratio disables the filter). PURE — no ffmpeg spawned.
+ *
+ * `ratio` is the target aspect ratio label (e.g. '2.39:1'); the actual letterbox
+ * geometry comes from the `width`/`height` canvas the caller already targets.
+ */
+export function letterboxFilter(
+  ratio: string | undefined,
+  width: number,
+  height: number,
+): string {
+  if (!ratio) return '';
+  return `scale=${width}:-2,pad=${width}:${height}:0:(oh-ih)/2:black`;
+}
+
 export interface RunFfmpegOptions {
   /** Build + return the command string without spawning ffmpeg. */
   dryRun?: boolean;

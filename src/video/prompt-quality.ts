@@ -7,6 +7,7 @@ export type PromptQualityIssueCode =
   | 'prompt-quality-style-word-overload'
   | 'prompt-quality-literary-emotion'
   | 'prompt-quality-overlong'
+  | 'negative-direction'
   | 'multi-shot-timecode-parse'
   | 'multi-shot-timecode-start'
   | 'multi-shot-timecode-gap'
@@ -424,6 +425,28 @@ function checkAdjectiveSoup(
   return null;
 }
 
+const SANCTIONED_NEGATIONS = [
+  /no on-?screen text/i, /no captions?/i, /no signage/i, /no rendered text/i,
+  /specular[^.]*removed/i, /no .*shine/i, /no oily/i, /never .*plastic/i, /no acne|no blemish/i,
+];
+const NEGATIVE_DIRECTION = /\b(no|dont|don't|avoid|without|never)\b[^.]*\b(slow[- ]?motion|blur|fast|motion|movement|camera shake|zoom)\b/i;
+
+function checkNegativeDirection(
+  prompt: string,
+  severity: PromptQualitySeverity,
+): PromptQualityIssue | null {
+  for (const s of prompt.split(/(?<=[.!?])\s+/)) {
+    if (NEGATIVE_DIRECTION.test(s) && !SANCTIONED_NEGATIONS.some((re) => re.test(s))) {
+      return {
+        code: 'negative-direction',
+        severity,
+        message: `negative direction ("${s.trim().slice(0, 60)}") — these models ignore negated motion/tempo; rephrase as positive ("smooth controlled push-in", "crisp focus"). Negatives are only sanctioned for on-screen text, specular kill, and anti-plastic.`,
+      };
+    }
+  }
+  return null;
+}
+
 export function runPromptQualityChecks(prompt: string): PromptQualityIssue[] {
   const severity = currentSeverity();
   const issues: PromptQualityIssue[] = [];
@@ -439,6 +462,8 @@ export function runPromptQualityChecks(prompt: string): PromptQualityIssue[] {
   if (literary) issues.push(literary);
   const overlong = checkOverlongPrompt(prompt, severity);
   if (overlong) issues.push(overlong);
+  const negativeDirection = checkNegativeDirection(prompt, severity);
+  if (negativeDirection) issues.push(negativeDirection);
   return issues;
 }
 

@@ -946,6 +946,37 @@ the storyboard/camera-language portion only (video `seedancePackets` gated to
 the full packet. `--category <id>` selects the category descriptor (character vs
 product path); unknown ids fail fast.
 
+### Joey cinematic opt-in flags
+
+These flags are **opt-in and additive** — omitting them keeps output byte-identical to the legacy default. They route through the existing `filmmaking-prompts` and `multi-shot` commands (no new subcommand, so the `vclaw schema --json` command count is unchanged).
+
+`filmmaking-prompts`:
+
+- `--sheet 8-shot|6-panel` — character-sheet layout. `8-shot` (default) is the four-column / eight-shot sheet; `6-panel` emits the compact 3-column × 2-row mid-gray sheet (`characterSheetSixPanelPrompt`).
+- `--realism` — append the keystone anti-plastic `captureRealismBlock` (per-zone specular kill, subsurface scattering, strand hair, contrast curve, volumetric haze, flattering-realism ceiling, film grain) to the **rich**-detail Style line. Only takes effect at `--detail rich`.
+- `--wet` — add the moisture-matte clause (`moistureMatteClause`) to the realism block (requires `--realism`).
+- `--haze thin|light|heavy` — volumetric-haze density (`volumetricHaze`) inside the realism block (requires `--realism`; default `light`).
+- `--background mid-gray|white|black` — append a backdrop-plate clause (`backgroundPlate`) to the storyboard-grid Style line. Mid-gray is the locked character-work default; white/black are explicit opt-ins.
+- `--lighting <id>` / `--grade <id>` — swap the lighting / color-grade register in the **rich**-detail cinematography suffix (e.g. `--lighting night-fire`, `--grade bleach-bypass`). Default `neutral-studio` / `teal-orange`.
+
+`multi-shot`:
+
+- `--genre <id>` — resolve the preset's Style line via `resolveStyleLine` (`music-video`, `action`, `anime`, `noir`, `influencer`, `pixar`). Unknown/absent genre falls back to the cinematic Nolan default. The resolved style line flows into the plan JSON and the `seedance-paragraph` / `per-shot` rendered formats.
+
+Trigger-word map (operator phrasing → emitter):
+
+| You say… | Flag / emitter |
+| --- | --- |
+| "mid-gray" / "neutral backdrop" | `--background mid-gray` → `backgroundPlate` |
+| "add haze" / "atmosphere" | `--haze` → `volumetricHaze` |
+| "anti-plastic" / "not AI-looking" | `--realism` → `captureRealismBlock` |
+| "wet" / "rain-soaked" / "moisture" | `--wet` → `moistureMatteClause` |
+| "bleach-bypass" / "lifted blacks" | `--grade bleach-bypass` → lift/gamma/gain |
+| "no on-screen text" | Last Frame suppression (10-block Seedance packet) |
+| "music video" / "beat-synced" | `--genre music-video` → `resolveStyleLine` + `musicSyncLine` |
+
+Additional Joey-adaptation surfaces wired in earlier phases: the **10-block Seedance master-prompt** is the default `seedancePackets` format; the **negative-direction lint** warns on tempo negation (use positive phrasing); **outfit-swap** / two-step outfit-build prompt emitters; the assemble post-production helpers (`cut-at-3s` tail trim, `letterbox` normalization, gated Topaz upscale); and the **photoreal-face guard** that keeps real-person face refs off the `seedance-direct` route.
+
 The packet includes:
 
 - `characterSheetPrompts[]` — 8-view character reference sheet prompts. When a

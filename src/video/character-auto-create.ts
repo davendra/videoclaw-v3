@@ -29,9 +29,9 @@ function authHeaders(apiKey: string): Record<string, string> {
   };
 }
 
-function buildPortraitPrompt(input: CharacterAutoCreateInput): string {
+export function buildPortraitPrompt(input: CharacterAutoCreateInput): string {
   const stylePrefix = input.style?.trim() || 'photorealistic cinematic portrait';
-  return `${stylePrefix} character portrait of ${input.description.trim()}, front-facing, neutral background, full-body composition, high detail, consistent character design. No text, no watermarks.`;
+  return `${stylePrefix} character portrait of ${input.description.trim()}, front-facing, even neutral mid-gray seamless background with no seam line, full-body composition, high detail, consistent character design. No text, no watermarks.`;
 }
 
 function buildBasePrompt(input: CharacterAutoCreateInput): string {

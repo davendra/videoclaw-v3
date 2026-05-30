@@ -34,6 +34,14 @@ export interface AssetManifestArtifact {
     path: string;
     sceneIndex?: number;
     backend?: string;
+    /**
+     * Optional reference role hint. A `background-plate` is a scene-context-free
+     * environment/base reference (the banana-pro-director `base-ref` step); the
+     * filmmaking-prompts reference map lifts it ahead of character sheets and
+     * scene plates. Absent → treated as a scene plate when it carries a
+     * `sceneIndex` (unchanged behavior).
+     */
+    role?: 'background-plate';
   }>;
 }
 

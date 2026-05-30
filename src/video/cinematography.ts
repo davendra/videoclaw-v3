@@ -41,6 +41,9 @@ interface GradePreset {
   shadowSat: number;
   highlightHue: number;
   highlightSat: number;
+  lift?: number;
+  gamma?: number;
+  gain?: number;
 }
 
 const DEFAULT_VELOCITY: Record<CameraMovement, number> = {
@@ -72,6 +75,15 @@ const LIGHTING: Record<string, LightingPreset> = {
   'golden-hour': { kelvin: 3200, keyDeg: 15, ratio: '3:1' },
   'neutral-studio': { kelvin: 5600, keyDeg: 45, ratio: '2:1' },
   'night-fire': { kelvin: 2000, keyDeg: 30, ratio: '8:1' },
+  moonlight: { kelvin: 7000, keyDeg: 35, ratio: '6:1' },
+  overcast: { kelvin: 6500, keyDeg: 60, ratio: '1.5:1' },
+  'neon-split': { kelvin: 4500, keyDeg: 40, ratio: '3:1' },
+  chiaroscuro: { kelvin: 3400, keyDeg: 20, ratio: '12:1' },
+  silhouette: { kelvin: 5000, keyDeg: 10, ratio: '16:1' },
+  fluorescent: { kelvin: 4300, keyDeg: 70, ratio: '1.2:1' },
+  'night-practical': { kelvin: 2800, keyDeg: 25, ratio: '7:1' },
+  'night-urban-neon': { kelvin: 5200, keyDeg: 30, ratio: '5:1' },
+  'rembrandt-gray': { kelvin: 5200, keyDeg: 40, ratio: '3:1' },
 };
 
 const LIGHTING_WORDS: Record<string, string> = {
@@ -79,18 +91,37 @@ const LIGHTING_WORDS: Record<string, string> = {
   'golden-hour': 'warm low golden-hour glow, soft long shadows',
   'neutral-studio': 'clean balanced studio light, even and neutral',
   'night-fire': 'flickering warm firelight against deep night shadow',
+  moonlight: 'cool blue moonlight, soft and directional with deep shadows',
+  overcast: 'flat soft overcast daylight, low contrast and even',
+  'neon-split': 'split warm/cool neon key, magenta-and-cyan separation',
+  chiaroscuro: 'extreme chiaroscuro, a single hard source carving light from darkness',
+  silhouette: 'strong backlight rendering the subject as a near-silhouette',
+  fluorescent: 'flat green-tinged overhead fluorescent, institutional and even',
+  'night-practical': 'warm practical pools against deep night, motivated sources only',
+  'night-urban-neon': 'wet-street urban neon, mixed signage color spill at night',
+  'rembrandt-gray': 'lean single-source Rembrandt close on a gray plate, matte and warm',
 };
 
 const GRADE: Record<string, GradePreset> = {
   'desaturated-earth': { shadowHue: 30, shadowSat: 18, highlightHue: 45, highlightSat: 22 },
   'teal-orange': { shadowHue: 190, shadowSat: 45, highlightHue: 30, highlightSat: 55 },
   'noir-bw': { shadowHue: 0, shadowSat: 0, highlightHue: 0, highlightSat: 0 },
+  'warm-nostalgia': { shadowHue: 35, shadowSat: 25, highlightHue: 40, highlightSat: 30, gamma: 1.05 },
+  'cool-isolation': { shadowHue: 210, shadowSat: 30, highlightHue: 205, highlightSat: 20 },
+  'cyberpunk-neon': { shadowHue: 280, shadowSat: 60, highlightHue: 320, highlightSat: 65 },
+  'bleach-bypass': { shadowHue: 0, shadowSat: 6, highlightHue: 0, highlightSat: 4, lift: 0.12, gamma: 1.1, gain: 0.92 },
+  'mono-accent': { shadowHue: 0, shadowSat: 0, highlightHue: 0, highlightSat: 8 },
 };
 
 const GRADE_WORDS: Record<string, string> = {
   'desaturated-earth': 'muted earthy palette, dusty and restrained',
   'teal-orange': 'cinematic teal-and-orange contrast',
   'noir-bw': 'high-contrast monochrome noir',
+  'warm-nostalgia': 'warm faded nostalgia, soft amber memory tone',
+  'cool-isolation': 'cool desaturated isolation, blue-grey distance',
+  'cyberpunk-neon': 'saturated magenta-and-cyan cyberpunk neon',
+  'bleach-bypass': 'low-saturation high-density bleach-bypass with lifted blacks',
+  'mono-accent': 'near-monochrome with a single restrained accent hue',
 };
 
 /**
@@ -127,6 +158,12 @@ export function lightingSpec(id: string, d: DetailLevel): string {
   if (d === 'terse') {
     return words;
   }
+  if (id === 'rembrandt-gray') {
+    const lean =
+      'one broad diffused source from camera-left and slightly above, a soft triangle of light on the shadow cheek, ' +
+      'no hard shadow edges, no rim light, no hair light, no kicker; skin matte and velvety, warmth preserved and natural, never pale or cool-shifted';
+    return d === 'standard' ? '5200K key at 40°, 3:1 ratio' : `5200K key at 40°, 3:1 ratio, ${lean}`;
+  }
   const core = `${preset.kelvin}K key at ${preset.keyDeg}°, ${preset.ratio} ratio`;
   if (d === 'standard') {
     return core;
@@ -156,10 +193,15 @@ export function gradeSpec(id: string, d: DetailLevel): string {
   if (d === 'standard') {
     return `${words} grade`;
   }
-  return (
+  const richBase =
     `shadows ${preset.shadowHue}° ${preset.shadowSat}% tint; ` +
-    `highlights ${preset.highlightHue}° ${preset.highlightSat}% tint, ${words}`
-  );
+    `highlights ${preset.highlightHue}° ${preset.highlightSat}% tint, ${words}`;
+  const curve = [
+    preset.lift !== undefined ? `lift ${preset.lift}` : '',
+    preset.gamma !== undefined ? `gamma ${preset.gamma}` : '',
+    preset.gain !== undefined ? `gain ${preset.gain}` : '',
+  ].filter(Boolean).join(', ');
+  return curve ? `${richBase}; ${curve}` : richBase;
 }
 
 /**
@@ -305,6 +347,12 @@ export const HOOK_PATTERN_IDS = [
   'beat-drop',
   'match-cut-in',
   'whip-reveal',
+  'speed-ramp',
+  'first-person-rush',
+  'impact-freeze',
+  'title-burn-in',
+  'slow-reveal',
+  'snap-zoom',
 ] as const;
 
 export type HookPatternId = (typeof HOOK_PATTERN_IDS)[number];
@@ -322,6 +370,18 @@ const HOOK_PATTERNS: Record<HookPatternId, string> = {
     'A graphic match cut carries a shape, motion, or color straight from an everyday object into the hero subject in one seamless jump.',
   'whip-reveal':
     'A fast whip-pan smears the frame into motion blur, then decelerates hard to reveal the hero subject dead-center.',
+  'speed-ramp':
+    'Action ramps from slow-motion into real time on a single continuous move, time compressing as the hero subject commits.',
+  'first-person-rush':
+    'A first-person rush hurtles forward through the environment, motion close and visceral, before braking hard on the hero subject.',
+  'impact-freeze':
+    'The frame slams to a freeze on the exact instant of impact, debris suspended mid-air, then releases back into motion.',
+  'title-burn-in':
+    'A single word burns in from particulate or light, holds for a beat, then dissolves as the scene takes over.',
+  'slow-reveal':
+    'A slow tilt or pull gradually uncovers the hero subject from an obscuring foreground element, withholding then granting the full view.',
+  'snap-zoom':
+    'A fast snap-zoom punches from a wide to a tight frame on the hero subject, landing hard with no settle.',
 };
 
 /**
@@ -573,4 +633,143 @@ export function audioMix(d: DetailLevel): string {
     'ambient -4 dB, foley -1 dB, dialogue 0 dB ref, music -2 dB; ' +
     '1.5–2.5s silence then sudden re-entry'
   );
+}
+
+/**
+ * Anti-plastic physics clauses (banana-pro-director). Each is a standalone
+ * exported string helper so callers can compose them individually before the
+ * full captureRealismBlock lands. Per-zone specular naming is required —
+ * "matte skin" alone is too weak and gets overridden by the model default.
+ */
+export function specularKillClause(): string {
+  return 'all specular highlights surgically removed from skin — zero shine on forehead, nose bridge, cheekbones, temples, and chin, no oily T-zone, skin matte and velvety';
+}
+
+export function subsurfaceScatteringClause(): string {
+  return 'subsurface scattering at ear edges, nostrils, and around the eye sockets with warm undertone bleed, reading as semi-translucent biology never opaque plastic';
+}
+
+export function strandHairClause(): string {
+  return 'hair rendered strand by strand with flyaways and baby hairs at the hairline, hair physics responding to the actual environment, matte by default never glossy';
+}
+
+export function contrastCurveClause(): string {
+  return 'shadows lifted gently, highlights rolled off, nothing clipping or crushing — a low-contrast slightly-desaturated grade with warmth preserved';
+}
+
+export function moistureMatteClause(): string {
+  return 'damp not beaded, wet not glossy — moisture mutes and saturates the surface without a single specular hotspot';
+}
+
+export function flatteringRealismClause(): string {
+  return 'no acne, no blemishes, no enlarged or rough pores, no harsh clinical texture — fine flattering even skin';
+}
+
+export type HazeDensity = 'thin' | 'light' | 'heavy';
+
+const HAZE_WORDS: Record<HazeDensity, string> = {
+  thin: 'a faint trace of atmosphere',
+  light: 'light atmospheric haze',
+  heavy: 'heavy volumetric haze and visible air density',
+};
+
+/**
+ * Volumetric depth ("lighting the air") — the single biggest anti-plastic
+ * depth lever. Exposed standalone; previously reachable only inside the
+ * `atmospheric` cinema mode's filtration field.
+ */
+export function volumetricHaze(density: HazeDensity, d: DetailLevel): string {
+  const words = HAZE_WORDS[density];
+  if (d === 'terse') {
+    return `${words} between camera, subject, and background`;
+  }
+  const core =
+    `${words} between the camera, subject, and background — distant planes rendered softer, ` +
+    'desaturated, and lower-contrast than the foreground';
+  if (d === 'standard') {
+    return core;
+  }
+  return `${core}; real volumetric atmosphere, never a flat backdrop`;
+}
+
+export interface CaptureRealismOpts {
+  /** Emit the moisture-matte clause (skipped when false/omitted). */
+  wet?: boolean;
+  /** Haze density for the depth clause (default 'light'). */
+  haze?: HazeDensity;
+  /** Film-grain stock descriptor (default '35mm'). */
+  grainStock?: string;
+}
+
+/**
+ * The keystone anti-AI-look block: physics-vs-hardware separation that does not
+ * exist anywhere else in the codebase. Composes per-zone specular kill,
+ * subsurface scattering, strand hair, contrast-curve-three-ways, volumetric
+ * haze, optional moisture, the flattering-realism ceiling, and film grain.
+ * Pure and deterministic; density scales with DetailLevel.
+ */
+export function captureRealismBlock(opts: CaptureRealismOpts, d: DetailLevel): string {
+  const grain = opts.grainStock ?? '35mm';
+  const haze = volumetricHaze(opts.haze ?? 'light', d);
+  // terse: condensed summary (full clause composition only on standard/rich)
+  if (d === 'terse') {
+    return `Matte anti-plastic skin, soft ${grain} grain, ${haze}.`;
+  }
+  const parts = [
+    specularKillClause(),
+    subsurfaceScatteringClause(),
+    strandHairClause(),
+    contrastCurveClause(),
+    haze,
+    flatteringRealismClause(),
+  ];
+  if (opts.wet) {
+    parts.push(moistureMatteClause());
+  }
+  parts.push(`soft natural ${grain} film grain, photographed not generated`);
+  return `Capture realism: ${parts.join('; ')}.`;
+}
+
+export type PlateKind = 'mid-gray' | 'white' | 'black';
+
+const PLATE_WORDS: Record<PlateKind, string> = {
+  'mid-gray':
+    'even neutral mid-gray seamless background, no seam line, no gradient, no falloff to black or white',
+  white: 'clean white seamless background, evenly lit, no gradient',
+  black: 'deep matte black seamless background, no spill, no falloff edge',
+};
+
+/**
+ * Backdrop plate spec. Mid-gray is the locked default for ALL character work —
+ * it lowers subject-to-background contrast so downstream video inherits cleaner
+ * edges. White/black are explicit opt-ins.
+ */
+export function backgroundPlate(kind: PlateKind, d: DetailLevel): string {
+  const words = PLATE_WORDS[kind];
+  if (d === 'terse') {
+    return words;
+  }
+  if (kind === 'mid-gray') {
+    // standard: plate words only; rich: add the true-natural-tone elaboration
+    return d === 'rich'
+      ? `${words}; subject and wardrobe rendered at their true natural tone against the neutral gray`
+      : words;
+  }
+  return words;
+}
+
+/**
+ * Beat-aligned audio direction for music videos. Positive tempo phrasing only
+ * (negative direction like "no slow motion" does not work on these models).
+ */
+export function musicSyncLine(bpm: number | undefined, d: DetailLevel): string {
+  if (d === 'terse') {
+    return 'cuts and motion land on the beat';
+  }
+  const tempo = bpm ? ` at ${bpm} BPM` : '';
+  const core = `cuts, accents, and subject motion land on the downbeat${tempo}, edited to the music's rhythm`;
+  if (d === 'standard') {
+    return core;
+  }
+  return `${core}; energy builds into each drop and holds through the bar`;
 }

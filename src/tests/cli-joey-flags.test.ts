@@ -94,9 +94,11 @@ describe('vclaw video filmmaking-prompts Joey flags', () => {
     const root = await mkdtemp(join(tmpdir(), 'vclaw-joey-realism-'));
     try {
       await seedProject(root, 'realism');
+      // `--register numeric` keeps the quantified register so the night-fire
+      // Kelvin assertion holds (the resolved default register is now prose).
       const res = run([
         'video', 'filmmaking-prompts', '--project', 'realism', '--root', root,
-        '--detail', 'rich', '--realism', '--wet', '--haze', 'heavy',
+        '--detail', 'rich', '--register', 'numeric', '--realism', '--wet', '--haze', 'heavy',
         '--lighting', 'night-fire', '--grade', 'bleach-bypass',
       ]);
       assert.equal(res.status, 0, res.stderr);
@@ -110,15 +112,31 @@ describe('vclaw video filmmaking-prompts Joey flags', () => {
     }
   });
 
-  it('without realism/lighting/grade flags the rich Style line stays the legacy default', async () => {
+  it('--no-realism + --register numeric dials the rich Style line back to the lean numeric register', async () => {
     const root = await mkdtemp(join(tmpdir(), 'vclaw-joey-rich-default-'));
     try {
       await seedProject(root, 'richdef');
-      const res = run(['video', 'filmmaking-prompts', '--project', 'richdef', '--root', root, '--detail', 'rich']);
+      // Dial down: drop the capture-realism block and use the numeric register,
+      // recovering the legacy quantified teal-and-orange grade words.
+      const res = run(['video', 'filmmaking-prompts', '--project', 'richdef', '--root', root, '--detail', 'rich', '--register', 'numeric', '--no-realism']);
       assert.equal(res.status, 0, res.stderr);
       const grid = JSON.parse(res.stdout).artifact.storyboardGridPrompt;
       assert.doesNotMatch(grid.promptText, /Capture realism:/);
       assert.match(grid.promptText, /teal-and-orange/);
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  it('default rich output is the full photoreal treatment (capture-realism + prose grade)', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'vclaw-joey-rich-photoreal-'));
+    try {
+      await seedProject(root, 'photoreal');
+      const res = run(['video', 'filmmaking-prompts', '--project', 'photoreal', '--root', root, '--detail', 'rich']);
+      assert.equal(res.status, 0, res.stderr);
+      const grid = JSON.parse(res.stdout).artifact.storyboardGridPrompt;
+      assert.match(grid.promptText, /Capture realism:/);
+      assert.match(grid.promptText, /contemporary teal-amber cinema grade/);
     } finally {
       await rm(root, { recursive: true, force: true });
     }

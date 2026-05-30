@@ -5,12 +5,16 @@ import {
   submitDreaminaJob,
   pollDreaminaJob,
   uploadDreaminaAsset,
+  DREAMINA_MAX_IMAGE_REFS,
+  DREAMINA_MAX_VIDEO_REFS,
+  DREAMINA_MAX_AUDIO_REFS,
   type DreaminaAspectRatio,
   type DreaminaDurationSeconds,
   type DreaminaModel,
   type DreaminaResolution,
 } from './providers/dreamina-useapi.js';
 import type { VideoExecutionCancelResult, VideoExecutionPayload, VideoExecutionPollResult } from './types.js';
+import { isContentViolation, preValidatePrompt, sanitizePrompt } from './seedance-content-filter.js';
 
 interface DreaminaJobSceneState {
   sceneIndex: number;
@@ -122,26 +126,133 @@ function clampDuration(seconds: number | undefined): DreaminaDurationSeconds {
   return 4;
 }
 
-function classifyReferences(referencePaths: string[]): { images: string[]; videos: string[] } {
+function classifyReferences(referencePaths: string[]): { images: string[]; videos: string[]; audios: string[] } {
   const imageExt = new Set(['.jpg', '.jpeg', '.png', '.webp', '.gif']);
   const videoExt = new Set(['.mp4', '.mov', '.webm', '.avi', '.mkv']);
+  const audioExt = new Set(['.mp3', '.wav', '.m4a', '.aac', '.flac', '.ogg']);
   const images: string[] = [];
   const videos: string[] = [];
+  const audios: string[] = [];
   for (const path of referencePaths) {
     if (!path) continue;
     const ext = (path.split('?')[0]?.match(/\.[^.\\/]+$/)?.[0] ?? '').toLowerCase();
     if (videoExt.has(ext)) videos.push(path);
+    else if (audioExt.has(ext)) audios.push(path);
     else if (imageExt.has(ext)) images.push(path);
     else images.push(path); // unknown → treat as image to avoid silently dropping
   }
-  return { images, videos };
+  return { images, videos, audios };
 }
 
-function imageContentType(path: string): string {
+/**
+ * Preflight the Dreamina Omni Reference budget before any upload or submit.
+ * Mirrors `assertRunwayReferenceBudget` (native-runway) and Seedance's
+ * `assertReferenceBudget`: fail-fast with a clear error rather than letting the
+ * gateway reject a partially-uploaded payload. Dreamina caps: 9 img / 3 vid /
+ * 3 aud per submission.
+ */
+function assertDreaminaReferenceBudget(
+  sceneIndex: number,
+  images: string[],
+  videos: string[],
+  audios: string[],
+): void {
+  if (images.length > DREAMINA_MAX_IMAGE_REFS) {
+    throw new Error(
+      `dreamina-useapi scene ${sceneIndex}: ${images.length} image references exceed the Dreamina cap of ${DREAMINA_MAX_IMAGE_REFS}.`,
+    );
+  }
+  if (videos.length > DREAMINA_MAX_VIDEO_REFS) {
+    throw new Error(
+      `dreamina-useapi scene ${sceneIndex}: ${videos.length} video references exceed the Dreamina cap of ${DREAMINA_MAX_VIDEO_REFS}.`,
+    );
+  }
+  if (audios.length > DREAMINA_MAX_AUDIO_REFS) {
+    throw new Error(
+      `dreamina-useapi scene ${sceneIndex}: ${audios.length} audio references exceed the Dreamina cap of ${DREAMINA_MAX_AUDIO_REFS}.`,
+    );
+  }
+}
+
+/**
+ * Asset:// URIs are ARK Asset-Library avatar references — they are NOT valid
+ * Dreamina assetRefs and cannot be resolved against UseAPI's Dreamina proxy, so
+ * they are skipped here (with a warning), exactly as the Runway transport does.
+ * Only real file-path / HTTP-URL references are uploadable as Dreamina assets.
+ */
+function filterUploadableRefs(
+  refs: string[],
+  sceneIndex: number,
+  kind: 'image' | 'video' | 'audio',
+  warnings: string[],
+): string[] {
+  return refs.filter((path) => {
+    if (path.startsWith('Asset://')) {
+      warnings.push(
+        `dreamina-useapi scene ${sceneIndex}: skipped Asset:// ${kind} reference (ARK avatar, not a Dreamina assetRef): ${path}`,
+      );
+      return false;
+    }
+    return true;
+  });
+}
+
+function referenceContentType(path: string): string {
   const ext = (path.split('?')[0]?.match(/\.[^.\\/]+$/)?.[0] ?? '').toLowerCase();
   if (ext === '.png') return 'image/png';
   if (ext === '.webp') return 'image/webp';
+  if (ext === '.gif') return 'image/gif';
+  if (ext === '.mp4') return 'video/mp4';
+  if (ext === '.mov') return 'video/quicktime';
+  if (ext === '.webm') return 'video/webm';
+  if (ext === '.mp3') return 'audio/mpeg';
+  if (ext === '.wav') return 'audio/wav';
+  if (ext === '.m4a' || ext === '.aac') return 'audio/aac';
+  if (ext === '.flac') return 'audio/flac';
+  if (ext === '.ogg') return 'audio/ogg';
   return 'image/jpeg';
+}
+
+/**
+ * Best-effort prompt pre-validation against the shared Seedance content filter.
+ * Seedance moderation is identical across all three gateways (ARK / Runway /
+ * Dreamina), so the Dreamina transport reuses `seedance-content-filter`. Returns
+ * formatted HIGH/MEDIUM warning strings (advisory — never blocks submission),
+ * iterating the `ContentFilterWarning[]` directly like native-seedance does.
+ */
+function preValidateDreaminaPrompt(prompt: string): string[] {
+  const notes: string[] = [];
+  for (const warning of preValidatePrompt(prompt)) {
+    if (warning.level === 'HIGH' || warning.level === 'MEDIUM') {
+      notes.push(`${warning.level} risk: ${warning.reason} (match: ${warning.match})`);
+    }
+  }
+  return notes;
+}
+
+/**
+ * Upload each reference in order, returning the assetRefs of the ones that
+ * resolved to bytes (missing/unresolvable paths are skipped). Used for the Omni
+ * Reference multi-character path.
+ */
+async function uploadReferenceAssets(
+  paths: string[],
+  ctx: { apiToken: string; account: string; fetchImpl: FetchLike },
+): Promise<string[]> {
+  const refs: string[] = [];
+  for (const path of paths) {
+    const bytes = await readReferenceBytes(path, ctx.fetchImpl);
+    if (!bytes) continue;
+    const uploaded = await uploadDreaminaAsset({
+      apiToken: ctx.apiToken,
+      account: ctx.account,
+      bytes,
+      contentType: referenceContentType(path),
+      fetchImpl: ctx.fetchImpl as unknown as Parameters<typeof uploadDreaminaAsset>[0]['fetchImpl'],
+    });
+    refs.push(uploaded.assetRef);
+  }
+  return refs;
 }
 
 async function readReferenceBytes(path: string, fetchImpl: FetchLike): Promise<Buffer | null> {
@@ -218,41 +329,94 @@ export async function submitDreaminaUseApiNative(
 
   const scenes: DreaminaJobSceneState[] = [];
   const rawResponses: unknown[] = [];
+  const warnings: string[] = [];
+
+  // Preflight the 9/3/3 Omni Reference budget for EVERY task before any network
+  // call, so an over-budget task N cannot cause a partial submit (tasks 0..N-1
+  // already charged against credits while task N throws). Asset:// avatar URIs
+  // are dropped first (they are not Dreamina assetRefs).
+  for (const task of payload.tasks) {
+    const { images, videos, audios } = classifyReferences(task.referencePaths);
+    assertDreaminaReferenceBudget(
+      task.sceneIndex,
+      filterUploadableRefs(images, task.sceneIndex, 'image', []),
+      filterUploadableRefs(videos, task.sceneIndex, 'video', []),
+      filterUploadableRefs(audios, task.sceneIndex, 'audio', []),
+    );
+  }
 
   for (const task of payload.tasks) {
-    const { images } = classifyReferences(task.referencePaths);
-    // Use the first usable image as the keyframe (first frame). Dreamina takes
-    // an uploaded assetRef as firstFrameRef, which switches the job into
-    // image-to-video (first_frame) mode.
-    let firstFrameRef: string | null = null;
-    if (images[0]) {
-      const bytes = await readReferenceBytes(images[0], fetchImpl);
-      if (bytes) {
-        const uploaded = await uploadDreaminaAsset({
-          apiToken,
-          account,
-          bytes,
-          contentType: imageContentType(images[0]),
-          fetchImpl: fetchImpl as unknown as Parameters<typeof uploadDreaminaAsset>[0]['fetchImpl'],
-        });
-        firstFrameRef = uploaded.assetRef;
-      }
+    const { images, videos, audios } = classifyReferences(task.referencePaths);
+
+    // Surface Seedance content-moderation warnings (shared across gateways;
+    // advisory only — never blocks or alters the submit).
+    for (const note of preValidateDreaminaPrompt(task.prompt)) {
+      warnings.push(`dreamina-useapi scene ${task.sceneIndex}: content-filter: ${note}`);
     }
 
+    // Drop ARK Asset:// avatar URIs (not valid Dreamina assetRefs), recording a
+    // warning per skipped reference.
+    const uploadableImages = filterUploadableRefs(images, task.sceneIndex, 'image', warnings);
+    const uploadableVideos = filterUploadableRefs(videos, task.sceneIndex, 'video', warnings);
+    const uploadableAudios = filterUploadableRefs(audios, task.sceneIndex, 'audio', warnings);
+
+    // Routing:
+    //  - exactly 1 image, no video/audio → single firstFrameRef (first_frame
+    //    image-to-video mode), unchanged from the original behavior.
+    //  - multiple images, or any video/audio reference → Omni Reference
+    //    multi-character lock via omni_N_imageRef/videoRef/audioRef.
+    const multiRef =
+      uploadableImages.length > 1 || uploadableVideos.length > 0 || uploadableAudios.length > 0;
+
+    let firstFrameRef: string | null = null;
+    let imageRefs: string[] = [];
+    let videoRefs: string[] = [];
+    let audioRefs: string[] = [];
+
+    if (multiRef) {
+      imageRefs = await uploadReferenceAssets(uploadableImages, { apiToken, account, fetchImpl });
+      videoRefs = await uploadReferenceAssets(uploadableVideos, { apiToken, account, fetchImpl });
+      audioRefs = await uploadReferenceAssets(uploadableAudios, { apiToken, account, fetchImpl });
+    } else if (uploadableImages[0]) {
+      // Use the first usable image as the keyframe (first frame). Dreamina takes
+      // an uploaded assetRef as firstFrameRef, which switches the job into
+      // image-to-video (first_frame) mode.
+      const single = await uploadReferenceAssets([uploadableImages[0]], { apiToken, account, fetchImpl });
+      firstFrameRef = single[0] ?? null;
+    }
+
+    // If a multi-ref upload yielded nothing usable (e.g. all paths unresolved),
+    // fall back to single-keyframe/text routing semantics (no omni fields).
+    const hasOmniRefs = imageRefs.length > 0 || videoRefs.length > 0 || audioRefs.length > 0;
+
     const duration = clampDuration(task.durationSeconds);
-    const submit = await submitDreaminaJob({
+    // Submit with the content-filter retry-with-sanitization loop, consistent
+    // with native-seedance: on a content-violation (ark error 2038 / 违规)
+    // submit error, retry once with level-1 then level-2 sanitized prompt. A
+    // non-violation error is re-thrown immediately; a clean prompt takes the
+    // exact same single-submit path as before.
+    const buildSubmitInput = (prompt: string) => ({
       apiToken,
       model,
-      prompt: task.prompt,
+      prompt,
       account,
       duration,
       resolution,
-      // first_frame mode auto-detects ratio from the image; only send ratio for
-      // pure text-to-video.
-      ...(firstFrameRef ? { firstFrameRef } : { ratio: aspectRatio }),
+      // Omni Reference mode and first_frame mode both auto-detect the ratio from
+      // the references; only send ratio for pure text-to-video.
+      ...(hasOmniRefs
+        ? { imageRefs, videoRefs, audioRefs }
+        : firstFrameRef
+          ? { firstFrameRef }
+          : { ratio: aspectRatio }),
       fetchImpl: fetchImpl as unknown as Parameters<typeof submitDreaminaJob>[0]['fetchImpl'],
     });
-    rawResponses.push({ sceneIndex: task.sceneIndex, jobid: submit.jobid, firstFrameRef });
+    const submit = await submitWithContentFilter(task.prompt, buildSubmitInput);
+    rawResponses.push({
+      sceneIndex: task.sceneIndex,
+      jobid: submit.jobid,
+      ...(hasOmniRefs ? { imageRefs, videoRefs, audioRefs } : { firstFrameRef }),
+    });
 
     scenes.push({
       sceneIndex: task.sceneIndex,
@@ -280,8 +444,49 @@ export async function submitDreaminaUseApiNative(
       account,
       submittedScenes: scenes.map((scene) => ({ sceneIndex: scene.sceneIndex, jobid: scene.jobid })),
       responses: rawResponses,
+      ...(warnings.length > 0 ? { warnings } : {}),
     },
   };
+}
+
+function errorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}
+
+/**
+ * Submit with the content-filter retry-with-sanitization loop ported from
+ * native-seedance / `seedance_client.py`: submit with the original prompt; on a
+ * content-violation submit error (`isContentViolation`, e.g. ark error code
+ * 2038 / Chinese 违规 patterns), retry once with `sanitizePrompt(prompt, 1)`,
+ * then once more with level 2. A non-content-violation error is re-thrown
+ * immediately, and a clean prompt takes the exact same single-submit path as
+ * before (no behavior change without a violation). `buildSubmitInput(prompt)`
+ * rebuilds the full submit input so the retried submission keeps the same
+ * references/profile, swapping only the sanitized prompt.
+ */
+async function submitWithContentFilter(
+  prompt: string,
+  buildSubmitInput: (prompt: string) => Parameters<typeof submitDreaminaJob>[0],
+): ReturnType<typeof submitDreaminaJob> {
+  try {
+    return await submitDreaminaJob(buildSubmitInput(prompt));
+  } catch (error) {
+    if (!isContentViolation(errorMessage(error))) {
+      throw error;
+    }
+    for (const level of [1, 2] as const) {
+      const sanitized = sanitizePrompt(prompt, level);
+      try {
+        return await submitDreaminaJob(buildSubmitInput(sanitized));
+      } catch (retryError) {
+        if (!isContentViolation(errorMessage(retryError)) || level === 2) {
+          throw retryError;
+        }
+      }
+    }
+    // Unreachable: the level-2 branch above always either returns or throws.
+    throw error;
+  }
 }
 
 export async function pollDreaminaUseApiNative(

@@ -48,7 +48,26 @@ export interface SubmitRunwayJobInput {
    * firstImageAssetId (Gen-4.x i2v) — Seedance-2 uses startFrameAssetId.
    */
   startFrameAssetId?: string;
+  /**
+   * Seedance-2 multi-reference image asset ids (up to 11). When more than one
+   * is supplied on the `seedance-2.0` model, the request emits individual
+   * `imageAssetId1`..`imageAssetIdN` fields (1-based, capped at 11) and does
+   * NOT set `startFrameAssetId` — keyframe mode and multi-reference mode are
+   * mutually exclusive per the UseAPI Runway contract. Exactly one id keeps the
+   * single-keyframe `startFrameAssetId` path. See
+   * `references/video/seedance-transport-payloads.md` (Gateway B).
+   */
+  imageAssetIds?: string[];
+  /**
+   * Seedance-2 multi-reference video asset ids (up to 3). Emitted as
+   * `videoAssetId`, `videoAssetId2`, `videoAssetId3`.
+   */
+  videoAssetIds?: string[];
 }
+
+/** Runway Seedance-2 caps: up to 11 image refs, up to 3 video refs. */
+export const RUNWAY_MAX_IMAGE_REFS = 11;
+export const RUNWAY_MAX_VIDEO_REFS = 3;
 
 export interface SubmitRunwayJobResult {
   /** Namespaced taskId, e.g. "user:N-runwayml:email@x:task:uuid". Use as-is in poll/fetch. */
@@ -98,7 +117,48 @@ export async function submitRunwayJob(input: SubmitRunwayJobInput): Promise<Subm
   if (input.resolution) body.resolution = input.resolution;
   if (input.seed) body.seed = input.seed;
   if (input.firstImageAssetId) body.firstImage_assetId = input.firstImageAssetId;
-  if (input.startFrameAssetId) body.startFrameAssetId = input.startFrameAssetId;
+
+  // Seedance-2 multi-reference: when >1 image asset id is supplied, emit the
+  // individual `imageAssetId1`..`imageAssetIdN` fields (1-based, capped 11) and
+  // OMIT `startFrameAssetId` — keyframe and multi-ref modes are mutually
+  // exclusive. Exactly one image asset id falls through to the single
+  // `startFrameAssetId` keyframe path (unchanged behavior). Multi-ref is only
+  // valid on the unified seedance-2 endpoint.
+  const imageRefs = (input.imageAssetIds ?? []).filter((id) => !!id);
+  const videoRefs = (input.videoAssetIds ?? []).filter((id) => !!id);
+  const useMultiRef = input.model === 'seedance-2.0' && imageRefs.length > 1;
+
+  if (useMultiRef) {
+    if (imageRefs.length > RUNWAY_MAX_IMAGE_REFS) {
+      throw new Error(
+        `Runway seedance-2 multi-reference accepts at most ${RUNWAY_MAX_IMAGE_REFS} image refs (got ${imageRefs.length}).`,
+      );
+    }
+    if (videoRefs.length > RUNWAY_MAX_VIDEO_REFS) {
+      throw new Error(
+        `Runway seedance-2 multi-reference accepts at most ${RUNWAY_MAX_VIDEO_REFS} video refs (got ${videoRefs.length}).`,
+      );
+    }
+    imageRefs.forEach((assetId, idx) => {
+      body[`imageAssetId${idx + 1}`] = assetId;
+    });
+    videoRefs.forEach((assetId, idx) => {
+      body[idx === 0 ? 'videoAssetId' : `videoAssetId${idx + 1}`] = assetId;
+    });
+    // startFrameAssetId is intentionally NOT set in multi-ref mode.
+  } else {
+    if (input.startFrameAssetId) body.startFrameAssetId = input.startFrameAssetId;
+    // Single-ref convenience: a lone image asset id routes to the keyframe
+    // field on the seedance-2 endpoint when startFrameAssetId was not given.
+    if (!input.startFrameAssetId && input.model === 'seedance-2.0' && imageRefs.length === 1) {
+      body.startFrameAssetId = imageRefs[0];
+    }
+    if (videoRefs.length > 0) {
+      videoRefs.slice(0, RUNWAY_MAX_VIDEO_REFS).forEach((assetId, idx) => {
+        body[idx === 0 ? 'videoAssetId' : `videoAssetId${idx + 1}`] = assetId;
+      });
+    }
+  }
 
   const fetchImpl = input.fetchImpl ?? (fetch as unknown as RunwayFetchLike);
   const response = await fetchImpl(routing.url, {

@@ -36,6 +36,16 @@ export type DreaminaFetchLike = (
 
 const USEAPI_BASE = 'https://api.useapi.net/v1';
 
+/**
+ * Dreamina Omni Reference budget (Seedance 2.0 via UseAPI's Dreamina proxy):
+ * up to 9 image refs + 3 video refs + 3 audio refs per submission — the same
+ * 9/3/3 reference budget Seedance enforces on every gateway. Emitted as the
+ * individual `omni_N_imageRef` / `omni_N_videoRef` / `omni_N_audioRef` fields.
+ */
+export const DREAMINA_MAX_IMAGE_REFS = 9;
+export const DREAMINA_MAX_VIDEO_REFS = 3;
+export const DREAMINA_MAX_AUDIO_REFS = 3;
+
 export interface SubmitDreaminaJobInput {
   apiToken: string;
   model: DreaminaModel;
@@ -56,6 +66,19 @@ export interface SubmitDreaminaJobInput {
    * Dreamina auto-detects the ratio from the uploaded image.
    */
   firstFrameRef?: string;
+  /**
+   * Omni Reference (multi-character identity-lock): up to 9 image assetRefs,
+   * emitted as INDIVIDUAL `omni_1_imageRef`..`omni_9_imageRef` fields (NOT an
+   * array), per the UseAPI Dreamina contract. Mutually exclusive with the
+   * single-keyframe `firstFrameRef` frame-mode path: when any omni ref is
+   * present the builder emits the omni fields and drops `firstFrameRef`/`ratio`
+   * (Omni mode auto-detects the ratio from the references, like first_frame).
+   */
+  imageRefs?: string[];
+  /** Omni Reference videos: up to 3, emitted as omni_1_videoRef..omni_3_videoRef. */
+  videoRefs?: string[];
+  /** Omni Reference audios: up to 3, emitted as omni_1_audioRef..omni_3_audioRef. */
+  audioRefs?: string[];
   /** Optional fetch override (defaults to global fetch). Used by tests + native wrapper. */
   fetchImpl?: DreaminaFetchLike;
 }
@@ -90,7 +113,27 @@ export function buildDreaminaSubmitBody(input: SubmitDreaminaJobInput): Record<s
   if (input.account) body.account = input.account;
   if (input.duration) body.duration = input.duration;
   if (input.resolution) body.resolution = input.resolution;
-  if (input.firstFrameRef) {
+
+  // Omni Reference (multi-character) path: individual omni_N_imageRef /
+  // omni_N_videoRef / omni_N_audioRef fields (1-based, NOT an array), capped at
+  // 9/3/3. Mutually exclusive with the single-keyframe firstFrameRef frame mode:
+  // when any image/video/audio omni ref is present we drop firstFrameRef and
+  // ratio (Dreamina auto-detects the ratio in Omni mode just like first_frame).
+  const imageRefs = (input.imageRefs ?? []).filter(Boolean).slice(0, DREAMINA_MAX_IMAGE_REFS);
+  const videoRefs = (input.videoRefs ?? []).filter(Boolean).slice(0, DREAMINA_MAX_VIDEO_REFS);
+  const audioRefs = (input.audioRefs ?? []).filter(Boolean).slice(0, DREAMINA_MAX_AUDIO_REFS);
+
+  if (imageRefs.length > 0 || videoRefs.length > 0 || audioRefs.length > 0) {
+    imageRefs.forEach((ref, i) => {
+      body[`omni_${i + 1}_imageRef`] = ref;
+    });
+    videoRefs.forEach((ref, i) => {
+      body[`omni_${i + 1}_videoRef`] = ref;
+    });
+    audioRefs.forEach((ref, i) => {
+      body[`omni_${i + 1}_audioRef`] = ref;
+    });
+  } else if (input.firstFrameRef) {
     // first_frame mode: ratio is auto-detected from the image and cannot be sent.
     body.firstFrameRef = input.firstFrameRef;
   } else if (input.ratio) {

@@ -259,6 +259,9 @@ export async function buildExecutionPayload(
         ...(promptPacket ? ['filmmaking-prompts', `prompt-variant:${promptPacket.variant}`] : []),
       ]);
       const durationSeconds = promptPacket?.durationSeconds ?? scene.durationSeconds;
+      // OUTPUT-DEPENDENT render resolution, threaded from the prompt packet.
+      // Absent on legacy packets -> field omitted (no change to existing tasks).
+      const resolution = promptPacket?.resolution;
 
       return {
         sceneIndex,
@@ -281,6 +284,7 @@ export async function buildExecutionPayload(
         backendHints,
         characters: unique(scene.characters ?? []),
         ...(Number.isFinite(durationSeconds) ? { durationSeconds } : {}),
+        ...(resolution ? { resolution } : {}),
         ...(chainSeed ? { chainedFromCandidateId: chainSeed.sourceCandidateId } : {}),
       };
     });

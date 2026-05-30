@@ -21,7 +21,9 @@ import { listPlaybooks, readPlaybook } from '../video/playbooks.js';
 import { listPromptReferences, readPromptReference } from '../video/prompt-library.js';
 import { CINEMATIC_15S_PRESET, buildShotPlan, composeBilingual, composePerShotFormat, composeSeedanceParagraph, generateMultiShotPromptText, listMultiShotPresets, parseDialogueLine, parseMultiShotPrompt, presetNameForProvider, resolvePreset, resolveStyleLine, withDialogue, type Lang, type MultiShotPreset } from '../video/multi-shot-prompt.js';
 import { HOOK_PATTERN_IDS, resolveHookPattern, type HookPatternId } from '../video/cinematography.js';
-import { generateFilmmakingPrompts, type FilmmakingPhase } from '../video/filmmaking-prompts.js';
+import { generateFilmmakingPrompts, type FilmmakingPhase, type FilmmakingPromptsArtifact } from '../video/filmmaking-prompts.js';
+import { lintFilmmakingPrompts } from '../video/prompt-lint.js';
+import type { CastDescriptor } from '../video/prompt-rules.js';
 import { resolveCategory } from '../video/category-registry.js';
 import { renderStoryboardGrid } from '../video/storyboard-grid.js';
 import { registerCharacterAssets } from '../video/seedance-asset-library.js';
@@ -192,7 +194,7 @@ import {
   ROLE_VOCABULARY,
 } from '../video/reference-sheets.js';
 import type { GbRefKind, ReferenceRole, ReferenceSheetType } from '../video/types.js';
-import { ensureProjectWorkspace, readProjectManifest, updateProjectManifestMetadata, updateProjectManifestState, writeProjectManifest } from '../video/workspace.js';
+import { ensureProjectWorkspace, readProjectManifest, resolveProjectWorkspace, updateProjectManifestMetadata, updateProjectManifestCinemaProfile, updateProjectManifestState, writeProjectManifest, type VideoCinemaProfile } from '../video/workspace.js';
 import {
   createBriefArtifact,
   createPublishReportArtifact,
@@ -206,7 +208,9 @@ function printHelp(): void {
   process.stdout.write('  vclaw video execute-cancel --project <slug> [--root <path>] [--mode storyboard|director]\n');
   process.stdout.write('  vclaw video review-ui --project <slug> [--root <path>] [--host <host>] [--port <port>] [--ui-path <path>] [--dry-run]\n');
   process.stdout.write('  vclaw video review-autopilot --project <slug> [--root <path>] [--template <template-id>] [--character <name>] [--run-id <id>]\n');
-  process.stdout.write('  vclaw video filmmaking-prompts --project <slug> [--root <path>] [--duration <seconds>] [--panels 9|12|15|20] [--storyboard-grid <path>] [--category <id>] [--genre live-action|pixar|anime|noir|influencer|action|music-video] [--aspect-ratio 16:9|9:16] [--phase storyboard|video] [--detail terse|standard|rich] [--sheet 8-shot|6-panel] [--realism] [--wet] [--haze thin|light|heavy] [--background mid-gray|white|black] [--lighting <id>] [--grade <id>] [--no-faces] [--write]\n');
+  process.stdout.write('  vclaw video filmmaking-prompts --project <slug> [--root <path>] [--duration <seconds>] [--panels 9|12|15|20] [--storyboard-grid <path>] [--category <id>] [--genre live-action|pixar|anime|noir|influencer|action|music-video] [--aspect-ratio 16:9|9:16] [--phase storyboard|video] [--detail terse|standard|rich] [--register prose|numeric] [--sheet 8-shot|6-panel] [--realism] [--no-realism] [--wet] [--haze thin|light|heavy] [--background mid-gray|white|black] [--lighting <id>] [--grade <id>] [--no-faces] [--write]\n');
+  process.stdout.write('  vclaw video prompt-lint (--project <slug> | --file <path>) [--root <path>] [--register prose|numeric] [--cast <Name:descriptor> ...] [--brand <token> ...]\n');
+  process.stdout.write('  vclaw video cinema-profile --project <slug> [--detail terse|standard|rich] [--register prose|numeric] [--realism on|off] [--no-realism] [--haze thin|light|heavy] [--capture cinema|phone] [--root <path>]\n');
   process.stdout.write('  vclaw video storyboard-grid --project <slug> [--root <path>] [--output <path>] [--width <px>] [--height <px>] [--dry-run]\n');
   process.stdout.write('  vclaw video seedance-register-assets --project <slug> --character <name>:<imageUrl> [--character ...] [--group <name>] [--root <path>]\n');
   process.stdout.write('  vclaw video portal --project <slug> [--root <path>] [--client <name>] [--run <id>] [--surface edit|review|client-review|preview|compare|index]\n');
@@ -2137,13 +2141,24 @@ async function handleVideoFilmmakingPrompts(args: string[]): Promise<void> {
   }
   const lightingFlag = parseFlagValue(args, '--lighting');
   const gradeFlag = parseFlagValue(args, '--grade');
+  const registerFlag = parseFlagValue(args, '--register');
+  if (registerFlag !== undefined && !['prose', 'numeric'].includes(registerFlag)) {
+    throw new Error('video filmmaking-prompts --register must be one of prose, numeric');
+  }
+  // `--realism` is the legacy explicit opt-in (with optional `--wet`/`--haze`).
+  // `--no-realism` is the dial-DOWN that disables the capture-realism block even
+  // though the project default (cinema profile) has it on. They are mutually
+  // exclusive; `--no-realism` wins if both are passed.
   const realismEnabled = args.includes('--realism');
-  const realism = realismEnabled
-    ? {
-        ...(args.includes('--wet') ? { wet: true } : {}),
-        ...(hazeFlag !== undefined ? { haze: hazeFlag as 'thin' | 'light' | 'heavy' } : {}),
-      }
-    : undefined;
+  const realism: { wet?: boolean; haze?: 'thin' | 'light' | 'heavy' } | false | undefined =
+    args.includes('--no-realism')
+      ? false
+      : realismEnabled
+        ? {
+            ...(args.includes('--wet') ? { wet: true } : {}),
+            ...(hazeFlag !== undefined ? { haze: hazeFlag as 'thin' | 'light' | 'heavy' } : {}),
+          }
+        : undefined;
   const result = await generateFilmmakingPrompts({
     root,
     projectSlug,
@@ -2155,6 +2170,7 @@ async function handleVideoFilmmakingPrompts(args: string[]): Promise<void> {
     ...(aspectRatio ? { aspectRatio } : {}),
     ...(panelCount !== undefined ? { panelCount } : {}),
     ...(detailFlag !== undefined ? { detail: detailFlag as 'terse' | 'standard' | 'rich' } : {}),
+    ...(registerFlag !== undefined ? { register: registerFlag as 'prose' | 'numeric' } : {}),
     ...(phaseFlag !== undefined ? { phase: phaseFlag as FilmmakingPhase } : {}),
     ...(sheetFlag !== undefined ? { sheetLayout: sheetFlag as '8-shot' | '6-panel' } : {}),
     ...(realism !== undefined ? { realism } : {}),
@@ -2164,6 +2180,103 @@ async function handleVideoFilmmakingPrompts(args: string[]): Promise<void> {
     write: args.includes('--write'),
   });
   process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
+}
+
+async function handleVideoPromptLint(args: string[]): Promise<void> {
+  // Source the artifact from either --file <path> or --project <slug> (reading
+  // projects/<slug>/artifacts/filmmaking-prompts.json). Exactly one is required.
+  const file = parseFlagValue(args, '--file');
+  const projectSlug = parseFlagValue(args, '--project');
+  if (!file && !projectSlug) {
+    throw new Error('video prompt-lint requires --project <slug> or --file <path>');
+  }
+  if (file && projectSlug) {
+    throw new Error('video prompt-lint: pass only one of --project or --file');
+  }
+  const root = parseFlagValue(args, '--root') ?? process.cwd();
+  const path = file ?? join(root, 'projects', projectSlug!, 'artifacts', 'filmmaking-prompts.json');
+  if (!existsSync(path)) {
+    throw new Error(`video prompt-lint: filmmaking-prompts artifact not found: ${path}`);
+  }
+  const artifact = JSON.parse(await readFile(path, 'utf-8')) as FilmmakingPromptsArtifact;
+
+  const registerFlag = parseFlagValue(args, '--register');
+  if (registerFlag !== undefined && !['prose', 'numeric'].includes(registerFlag)) {
+    throw new Error('video prompt-lint --register must be one of prose, numeric');
+  }
+  // --cast <Name:descriptor> and --brand <token> are optional scrub inputs.
+  const cast: CastDescriptor[] = parseRepeatableFlag(args, '--cast').map((entry) => {
+    const idx = entry.indexOf(':');
+    if (idx <= 0) {
+      throw new Error(`video prompt-lint: --cast must be <name>:<descriptor>, got: ${entry}`);
+    }
+    return { name: entry.slice(0, idx).trim(), descriptor: entry.slice(idx + 1).trim() };
+  });
+  const brands = parseRepeatableFlag(args, '--brand');
+
+  const result = lintFilmmakingPrompts(artifact, {
+    ...(registerFlag !== undefined ? { register: registerFlag as 'prose' | 'numeric' } : {}),
+    ...(cast.length > 0 ? { cast } : {}),
+    ...(brands.length > 0 ? { brands } : {}),
+  });
+  process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
+  if (!result.ok) process.exitCode = 1;
+}
+
+async function handleVideoCinemaProfile(args: string[]): Promise<void> {
+  const projectSlug = parseFlagValue(args, '--project');
+  if (!projectSlug) {
+    throw new Error('video cinema-profile requires --project <slug>');
+  }
+  const root = parseFlagValue(args, '--root') ?? process.cwd();
+  const workspace = resolveProjectWorkspace(projectSlug, root);
+
+  const patch: VideoCinemaProfile = {};
+  const detailFlag = parseFlagValue(args, '--detail');
+  if (detailFlag !== undefined) {
+    if (!['terse', 'standard', 'rich'].includes(detailFlag)) {
+      throw new Error('video cinema-profile --detail must be one of terse, standard, rich');
+    }
+    patch.detail = detailFlag as 'terse' | 'standard' | 'rich';
+  }
+  const registerFlag = parseFlagValue(args, '--register');
+  if (registerFlag !== undefined) {
+    if (!['prose', 'numeric'].includes(registerFlag)) {
+      throw new Error('video cinema-profile --register must be one of prose, numeric');
+    }
+    patch.register = registerFlag as 'prose' | 'numeric';
+  }
+  // `--realism on|off` is the explicit setter; `--no-realism` is shorthand for off.
+  const realismFlag = parseFlagValue(args, '--realism');
+  if (realismFlag !== undefined) {
+    if (!['on', 'off'].includes(realismFlag)) {
+      throw new Error('video cinema-profile --realism must be one of on, off');
+    }
+    patch.realism = realismFlag === 'on';
+  }
+  if (args.includes('--no-realism')) {
+    patch.realism = false;
+  }
+  const hazeFlag = parseFlagValue(args, '--haze');
+  if (hazeFlag !== undefined) {
+    if (!['thin', 'light', 'heavy'].includes(hazeFlag)) {
+      throw new Error('video cinema-profile --haze must be one of thin, light, heavy');
+    }
+    patch.haze = hazeFlag as 'thin' | 'light' | 'heavy';
+  }
+  const captureFlag = parseFlagValue(args, '--capture');
+  if (captureFlag !== undefined) {
+    if (!['cinema', 'phone'].includes(captureFlag)) {
+      throw new Error('video cinema-profile --capture must be one of cinema, phone');
+    }
+    patch.captureRegister = captureFlag as 'cinema' | 'phone';
+  }
+  if (Object.keys(patch).length === 0) {
+    throw new Error('video cinema-profile requires at least one of --detail, --register, --realism/--no-realism, --haze, --capture');
+  }
+
+  const manifest = await updateProjectManifestCinemaProfile(workspace, patch);
+  process.stdout.write(`${JSON.stringify({ project: projectSlug, cinemaProfile: manifest.cinemaProfile }, null, 2)}\n`);
 }
 
 async function handleVideoStoryboardGrid(args: string[]): Promise<void> {
@@ -4454,6 +4567,16 @@ export async function main(): Promise<void> {
 
   if (command === 'video' && subcommand === 'filmmaking-prompts') {
     await handleVideoFilmmakingPrompts(rest);
+    return;
+  }
+
+  if (command === 'video' && subcommand === 'prompt-lint') {
+    await handleVideoPromptLint(rest);
+    return;
+  }
+
+  if (command === 'video' && subcommand === 'cinema-profile') {
+    await handleVideoCinemaProfile(rest);
     return;
   }
 

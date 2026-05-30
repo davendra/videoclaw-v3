@@ -2,6 +2,7 @@ import { existsSync } from 'node:fs';
 import { mkdir, readFile, rename, unlink, writeFile } from 'node:fs/promises';
 import { dirname, extname, join } from 'node:path';
 import type { VideoExecutionCancelResult, VideoExecutionPayload, VideoExecutionPollResult } from './types.js';
+import { isContentViolation, preValidatePrompt, sanitizePrompt } from './seedance-content-filter.js';
 
 interface SeedanceJobSceneState {
   sceneIndex: number;
@@ -291,6 +292,72 @@ async function postJson(
   return response.json();
 }
 
+/**
+ * Submit one seedance-direct create request with the content-filter
+ * retry-with-sanitization loop ported from `seedance_client.py`'s create/poll
+ * flow:
+ *
+ *   1. Pre-validate the prompt and log HIGH/MEDIUM warnings (advisory only — a
+ *      warning never blocks or alters the submit).
+ *   2. Submit with the original prompt. On a submit failure whose error is a
+ *      content violation (`isContentViolation`, e.g. ark error code 2038), retry
+ *      once with `sanitizePrompt(prompt, 1)`, then once more with level 2.
+ *   3. A non-content-violation error is re-thrown immediately (no retry), and a
+ *      clean prompt that succeeds on the first attempt takes the exact same
+ *      single-POST path as before — NO behavior change without a violation.
+ *
+ * `buildBody(prompt)` rebuilds the full create body so the retried submission
+ * keeps the same reference params / profile, only swapping in the sanitized
+ * prompt.
+ */
+async function createWithContentFilter(
+  fetchImpl: FetchLike,
+  createUrl: string,
+  requestHeaders: Record<string, string>,
+  prompt: string,
+  buildBody: (prompt: string) => unknown,
+): Promise<unknown> {
+  for (const warning of preValidatePrompt(prompt)) {
+    if (warning.level === 'HIGH' || warning.level === 'MEDIUM') {
+      console.warn(
+        `[seedance-direct] content-filter ${warning.level} risk: ${warning.reason} (match: ${warning.match})`,
+      );
+    }
+  }
+
+  try {
+    return await postJson(fetchImpl, createUrl, { headers: requestHeaders, body: buildBody(prompt) });
+  } catch (error) {
+    if (!isContentViolation(errorMessage(error))) {
+      throw error;
+    }
+    // Retry with progressively heavier sanitization (level 1, then level 2),
+    // matching the Python recovery loop.
+    for (const level of [1, 2] as const) {
+      const sanitized = sanitizePrompt(prompt, level);
+      console.warn(
+        `[seedance-direct] content violation on submit; retrying with level-${level} sanitized prompt.`,
+      );
+      try {
+        return await postJson(fetchImpl, createUrl, { headers: requestHeaders, body: buildBody(sanitized) });
+      } catch (retryError) {
+        if (!isContentViolation(errorMessage(retryError))) {
+          throw retryError;
+        }
+        if (level === 2) {
+          throw retryError;
+        }
+      }
+    }
+    // Unreachable: the level-2 branch above always either returns or throws.
+    throw error;
+  }
+}
+
+function errorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}
+
 async function downloadToFile(fetchImpl: FetchLike, url: string, outputPath: string): Promise<void> {
   const response = await fetchImpl(url);
   if (!response.ok) {
@@ -335,23 +402,27 @@ export async function submitSeedanceDirectNative(
   const scenes: SeedanceJobSceneState[] = [];
   const rawResults: unknown[] = [];
   for (const task of payload.tasks) {
-    const result = await postJson(fetchImpl, createUrl, {
-      headers: headers(apiKey),
-      body: {
-        model: 'ark/seedance-2.0',
-        params: {
-          prompt: task.prompt,
-          ratio: payload.executionProfile.aspectRatio,
-          duration: String(task.durationSeconds ?? 8),
-          model: payload.executionProfile.quality === 'quality' ? 'seedance_2.0' : 'seedance_2.0_fast',
-          resolution: payload.executionProfile.resolution,
-          generate_audio: payload.executionProfile.generateAudio,
-          watermark: false,
-          ...seedanceReferenceParams(task.referencePaths),
-        },
-        channel: null,
+    const buildCreateBody = (prompt: string): unknown => ({
+      model: 'ark/seedance-2.0',
+      params: {
+        prompt,
+        ratio: payload.executionProfile.aspectRatio,
+        duration: String(task.durationSeconds ?? 8),
+        model: payload.executionProfile.quality === 'quality' ? 'seedance_2.0' : 'seedance_2.0_fast',
+        resolution: payload.executionProfile.resolution,
+        generate_audio: payload.executionProfile.generateAudio,
+        watermark: false,
+        ...seedanceReferenceParams(task.referencePaths),
       },
+      channel: null,
     });
+    const result = await createWithContentFilter(
+      fetchImpl,
+      createUrl,
+      headers(apiKey),
+      task.prompt,
+      buildCreateBody,
+    );
     rawResults.push(result);
     scenes.push({
       sceneIndex: task.sceneIndex,

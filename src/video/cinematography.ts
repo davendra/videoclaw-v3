@@ -204,6 +204,175 @@ export function gradeSpec(id: string, d: DetailLevel): string {
   return curve ? `${richBase}; ${curve}` : richBase;
 }
 
+/* ------------------------------------------------------------------------- *
+ * PROSE register — the Joey 2.0 "behavior-not-brand" emitters.
+ *
+ * The numeric register above (cameraSpec/lightingSpec/gradeSpec) stays for the
+ * provider numeric handoff and the storyboard-grid Style line. This PROSE
+ * register is the sibling Joey 2.0 wording: evocative *physical* phrasing that
+ * describes what the light/grade/lens DOES, with NO Kelvin, key-angle degrees,
+ * contrast ratio, hue°, sat°, or lift/gamma/gain numerals — but it KEEPS the
+ * real optical numerals (focal length mm, fps, shutter) that Joey 2.0 keeps,
+ * because those are genuine camera facts, not synthetic colour math.
+ *
+ * All emitters are pure/deterministic (no Date, no Math.random, no I/O).
+ * ------------------------------------------------------------------------- */
+
+/**
+ * Joey 2.0 lighting *behaviour* descriptions, keyed by the same ids as
+ * {@link LIGHTING}. Each describes the source, the shadow shape, and what is
+ * deliberately absent (rim / hair light / kicker) — never a Kelvin or angle.
+ */
+const LIGHTING_PROSE: Record<string, string> = {
+  'rembrandt-gray':
+    'one broad diffused source from camera-left and slightly above, a soft triangle of light on the shadow cheek, ' +
+    'gentle wrap, no rim, no hair light, no kicker',
+  'hard-dawn':
+    'a single hard low source raking in from the side, long crisp shadows stretching across the frame, ' +
+    'a clean edge where light meets dark',
+  'golden-hour':
+    'warm low sun grazing the subject from behind and to the side, soft long shadows, a gentle amber wrap on the skin',
+  'neutral-studio':
+    'one broad even diffused source filling the frame, soft balanced shadows, nothing harsh and nothing carved',
+  'night-fire':
+    'a warm flickering source from below and to one side, deep shadow on the far cheek, light dancing across the face',
+  moonlight:
+    'a cool soft source from high and to the side, deep gentle shadows, a quiet blue wash with no warmth',
+  overcast:
+    'flat soft light from a wide grey sky, shadows almost gone, even and undirectional across the whole frame',
+  'neon-split':
+    'a warm source on one cheek and a cool source on the other, the two colours meeting down the centre line of the face',
+  chiaroscuro:
+    'a single hard source carving the subject out of near-darkness, most of the frame falling away into shadow',
+  silhouette:
+    'a strong source behind the subject, the front left almost unlit, the figure read as shape against light',
+  fluorescent:
+    'a flat even overhead wash, soft shadows under the brow and chin, an institutional cool-green cast',
+  'night-practical':
+    'warm pools from motivated practicals only, deep shadow between them, light falling off fast into the dark',
+  'night-urban-neon':
+    'mixed coloured spill from off-screen signage, wet-street bounce, light pooling and shifting across the subject',
+};
+
+/**
+ * Build a PROSE lighting fragment at the requested detail level. Carries NO
+ * Kelvin / degrees / ratio numerals (use {@link lightingSpec} for those).
+ * Unknown ids fall back to a neutral description rather than throwing.
+ */
+export function lightingProse(id: string, d: DetailLevel): string {
+  const prose = LIGHTING_PROSE[id];
+  if (!prose) {
+    const words = LIGHTING_WORDS[id];
+    return words ?? 'one soft diffused source, gentle even shadows, naturally lit';
+  }
+  if (d === 'terse') {
+    // condense to the leading clause (up to the first comma) for the terse form
+    const head = prose.split(',')[0];
+    return head;
+  }
+  return prose;
+}
+
+/**
+ * Joey 2.0 grade *behaviour* descriptions, keyed by the same ids as
+ * {@link GRADE}. Each describes how shadows and highlights are shaped in
+ * physical terms — never a hue°, sat%, or lift/gamma numeral.
+ */
+const GRADE_PROSE: Record<string, string> = {
+  'teal-orange':
+    'contemporary teal-amber cinema grade, warm key meeting cool fill, shadows lifted gently into deep blue-grey ' +
+    'never crushed, highlights rolled off softly never clipping',
+  'desaturated-earth':
+    'muted earthy grade, colour pulled back toward dust and stone, shadows lifted gently never crushed, ' +
+    'highlights rolled off softly never clipping',
+  'noir-bw':
+    'rich black-and-white grade, deep luminous shadows holding detail never crushed, bright highlights rolled off never clipping',
+  'warm-nostalgia':
+    'warm faded grade with a soft amber memory tone, shadows lifted gently never crushed, highlights rolled off softly never clipping',
+  'cool-isolation':
+    'cool desaturated grade leaning blue-grey, shadows lifted into distance never crushed, highlights rolled off softly never clipping',
+  'cyberpunk-neon':
+    'saturated magenta-and-cyan neon grade, colour pushed in the highlights, shadows lifted into deep blue never crushed, ' +
+    'highlights rolled off before clipping',
+  'bleach-bypass':
+    'low-saturation high-density bleach-bypass grade, blacks lifted and milky never crushed, highlights held back from clipping',
+  'mono-accent':
+    'near-monochrome grade with a single restrained accent colour, shadows lifted gently never crushed, highlights rolled off softly never clipping',
+};
+
+/**
+ * Build a PROSE grade fragment at the requested detail level. Carries NO
+ * hue° / sat% / lift-gamma numerals (use {@link gradeSpec} for those).
+ * Unknown ids fall back to a neutral description rather than throwing.
+ */
+export function gradeProse(id: string, d: DetailLevel): string {
+  const prose = GRADE_PROSE[id];
+  if (!prose) {
+    const words = GRADE_WORDS[id];
+    if (words) {
+      return d === 'terse'
+        ? words
+        : `${words}, shadows lifted gently never crushed, highlights rolled off softly never clipping`;
+    }
+    return 'natural balanced grade, shadows lifted gently never crushed, highlights rolled off softly never clipping';
+  }
+  if (d === 'terse') {
+    return prose.split(',').slice(0, 2).join(',');
+  }
+  return prose;
+}
+
+/**
+ * Joey 2.0 camera/optics *behaviour* descriptions, keyed by {@link CameraMovement}.
+ * Each KEEPS the real optical numerals (focal length mm) Joey keeps, while
+ * describing the glass and operator in physical prose — no Kelvin / degrees / ratio.
+ */
+const CAMERA_PROSE: Record<CameraMovement, string> = {
+  dolly:
+    'wide-latitude cinema capture, vintage 75mm 2x anamorphic at a wide aperture, oval bokeh, soft diffusion bloom, ' +
+    'smooth dolly with natural operator breath, color-negative film rendition with fine 35mm grain',
+  track:
+    'wide-latitude cinema capture, vintage 75mm 2x anamorphic at a wide aperture, oval bokeh, soft diffusion bloom, ' +
+    'a tracking move with natural operator breath, color-negative film rendition with fine 35mm grain',
+  'push-in':
+    'wide-latitude cinema capture, 50mm spherical prime at a wide aperture, soft diffusion bloom, ' +
+    'a slow push-in with natural operator breath, color-negative film rendition with fine 35mm grain',
+  'pull-out':
+    'wide-latitude cinema capture, 40mm spherical prime at a wide aperture, soft diffusion bloom, ' +
+    'a slow pull-out with natural operator breath, color-negative film rendition with fine 35mm grain',
+  orbit:
+    'wide-latitude cinema capture, vintage 75mm 2x anamorphic at a wide aperture, oval bokeh, soft diffusion bloom, ' +
+    'a steady orbit with natural operator breath, color-negative film rendition with fine 35mm grain',
+  pan:
+    'wide-latitude cinema capture, 35mm spherical prime at a wide aperture, soft diffusion bloom, ' +
+    'a controlled pan with natural operator breath, color-negative film rendition with fine 35mm grain',
+  tilt:
+    'wide-latitude cinema capture, 35mm spherical prime at a wide aperture, soft diffusion bloom, ' +
+    'a controlled tilt with natural operator breath, color-negative film rendition with fine 35mm grain',
+  handheld:
+    'wide-latitude cinema capture, vintage 75mm 2x anamorphic at a wide aperture, oval bokeh, soft diffusion bloom, ' +
+    'handheld with natural operator breath, color-negative film rendition with fine 35mm grain',
+  'locked-off':
+    'wide-latitude cinema capture, 50mm spherical prime at a wide aperture, soft diffusion bloom, ' +
+    'locked-off with no movement, color-negative film rendition with fine 35mm grain',
+};
+
+/**
+ * Build a PROSE camera fragment for a {@link CameraMovement} at the requested
+ * detail level. KEEPS focal length mm (and any fps/shutter the caller adds) —
+ * those are real optical numerals — but carries NO Kelvin / key-angle degrees /
+ * contrast ratio. Unknown movements fall back to a handheld description.
+ */
+export function cameraProse(move: CameraMovement, d: DetailLevel): string {
+  const prose = CAMERA_PROSE[move] ?? CAMERA_PROSE.handheld;
+  if (d === 'terse') {
+    // keep the lens clause + the movement clause; drop the grade/grain tail
+    const parts = prose.split(', ');
+    return [parts[1], parts[parts.length - 2]].filter(Boolean).join(', ');
+  }
+  return prose;
+}
+
 /**
  * A fully-specified cinema mode: the camera-worldbuilder backbone.
  *
@@ -728,6 +897,103 @@ export function captureRealismBlock(opts: CaptureRealismOpts, d: DetailLevel): s
   }
   parts.push(`soft natural ${grain} film grain, photographed not generated`);
   return `Capture realism: ${parts.join('; ')}.`;
+}
+
+export interface PhoneCaptureOpts {
+  /** Emit the flattering-skin clause (default true; set false to drop it). */
+  flatteringSkin?: boolean;
+}
+
+/**
+ * The amateur / anti-AI phone-capture register — the UGC sibling of
+ * {@link captureRealismBlock}. Where captureRealismBlock describes high-end
+ * cinema hardware (anamorphic glass, diffusion, film grain), THIS register
+ * deliberately strips all of that and reads as an unstaged smartphone clip:
+ * available light, computational-HDR flatness, slight phone-lens softness, and
+ * the casual imperfection that signals "not an ad." This is a NEW sibling
+ * register — the phone/UGC voice is NOT part of Joey's 2.0 skills (those are
+ * cinema-only); it is inspired by Joey's anti-AI / "avoid commercial gloss"
+ * philosophy rather than lifted from his wording.
+ *
+ * A flattering-skin clause is kept by default (good UGC still flatters the
+ * subject); that clause IS from banana-pro-director-2.0. The cinema gear — film
+ * grain, anamorphic, diffusion bloom — is dropped. Pure and deterministic;
+ * density scales with DetailLevel.
+ */
+export function phoneCaptureBlock(opts: PhoneCaptureOpts, d: DetailLevel): string {
+  const flattering = opts.flatteringSkin !== false;
+  const skin = flattering
+    ? 'fine flattering even skin, no acne, no blemishes, no harsh clinical texture'
+    : '';
+  if (d === 'terse') {
+    const head = 'shot on a modern smartphone camera, natural available light, the casual imperfection of an unstaged phone clip — never cinematic, never an ad';
+    return skin ? `${head}; ${skin}.` : `${head}.`;
+  }
+  const parts = [
+    'shot on a modern smartphone camera',
+    'natural available light',
+    'mild auto-exposure drift',
+    'slightly soft phone-lens focus',
+    'flat computational-HDR tonality',
+    'no film grain',
+    'no anamorphic',
+    'no diffusion bloom',
+    'the casual imperfection of an unstaged phone clip — never color-graded, never cinematic, never an ad',
+  ];
+  if (skin) {
+    parts.push(skin);
+  }
+  return `Phone capture: ${parts.join('; ')}.`;
+}
+
+export interface ThreePlaneHazeOpts {
+  /** Haze density (default 'light'). */
+  density?: HazeDensity;
+  /** Foreground plane label — what sits sharpest/most-saturated nearest camera. */
+  foreground?: string;
+  /** Midground plane label — the softening transitional plane. */
+  midground?: string;
+  /** Background plane label — softest, most desaturated, lowest-contrast. */
+  background?: string;
+}
+
+/**
+ * Three-plane volumetric haze: the depth-staging extension of
+ * {@link volumetricHaze}. When given foreground / midground / background plane
+ * labels it emits the explicit three-plane relationship — the foreground sharp
+ * and saturated, the midground softening, the background softest, most
+ * desaturated, and lowest-contrast — so the haze reads as real staged depth
+ * rather than a flat wash.
+ *
+ * Backward-compatible: with NO plane labels it returns exactly today's
+ * single-register {@link volumetricHaze} string. Carries no Kelvin / degrees /
+ * ratio numerals. Pure and deterministic.
+ */
+export function volumetricHazeThreePlane(opts: ThreePlaneHazeOpts, d: DetailLevel): string {
+  const density = opts.density ?? 'light';
+  const { foreground, midground, background } = opts;
+  // No plane labels => identical to the single-register haze (backward compatible).
+  if (!foreground && !midground && !background) {
+    return volumetricHaze(density, d);
+  }
+  const words = HAZE_WORDS[density];
+  const fg = foreground ?? 'the foreground';
+  const mg = midground ?? 'the midground';
+  const bg = background ?? 'the background';
+  const relationship =
+    `${fg} held sharp and fully saturated nearest camera, ` +
+    `${mg} softening and stepping back through the haze, ` +
+    `${bg} the softest, most desaturated, and lowest-contrast plane of all`;
+  if (d === 'terse') {
+    return `${words} staged across three planes: ${relationship}`;
+  }
+  const core =
+    `${words} layered across three depth planes — ${relationship} — ` +
+    'so the air itself carves the depth between them';
+  if (d === 'standard') {
+    return core;
+  }
+  return `${core}; real volumetric atmosphere staged front-to-back, never a flat backdrop`;
 }
 
 export type PlateKind = 'mid-gray' | 'white' | 'black';

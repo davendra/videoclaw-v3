@@ -287,31 +287,38 @@ describe('filmmaking prompt packets', () => {
     assert.ok(result.artifact.issues.some((issue) => issue.code === 'storyboard-missing'));
   });
 
-  it('appends quantified cinematography only at detail:rich (default unchanged)', async () => {
+  it('default is the full photoreal treatment (rich + realism + prose); dial-down recovers the lean output', async () => {
     const root = await mkdtemp(join(tmpdir(), 'vclaw-fp-detail-'));
     await setupGenreProject('detail-p', root);
-    // NB: the baseline grid prompt already says "35mm film grain", so the
-    // \d+mm alternative would false-positive on the default output. Assert on
-    // the Kelvin / key-angle / dB / ft-per-sec tokens the rich suffix adds and
-    // the default output never contains.
+    // Quantified = the Kelvin / key-angle / dB / ft-per-sec tokens the NUMERIC
+    // register emits. The default PROSE register never carries them (it strips
+    // synthetic colour-math numerals while keeping the look in physical prose).
     const QUANTIFIED = /\d+K|\d+°|dB|ft\/s/;
 
-    // Default (omitted detail) must NOT carry any quantified tokens — proves the
-    // standard output is byte-identical to today.
+    // Default (zero flags) is the load-bearing photoreal default: rich detail,
+    // realism on, prose register. The grid Style line carries the prose
+    // cinematography suffix + the capture-realism block + the mid-gray plate.
     const dflt = await generateFilmmakingPrompts({ root, projectSlug: 'detail-p' });
-    assert.doesNotMatch(dflt.artifact.storyboardGridPrompt?.promptText ?? '', QUANTIFIED);
-    for (const packet of dflt.artifact.seedancePackets) {
-      assert.doesNotMatch(packet.promptText, QUANTIFIED);
-    }
-    const standard = await generateFilmmakingPrompts({ root, projectSlug: 'detail-p', detail: 'standard' });
-    assert.doesNotMatch(standard.artifact.storyboardGridPrompt?.promptText ?? '', QUANTIFIED);
-    assert.equal(
-      standard.artifact.storyboardGridPrompt?.promptText,
-      dflt.artifact.storyboardGridPrompt?.promptText,
-    );
+    const dfltGrid = dflt.artifact.storyboardGridPrompt?.promptText ?? '';
+    assert.match(dfltGrid, /wide-latitude cinema capture/);
+    assert.match(dfltGrid, /Capture realism:/);
+    assert.match(dfltGrid, /contemporary teal-amber cinema grade/);
+    assert.match(dfltGrid, /even neutral mid-gray seamless background/);
+    // Prose register carries NO synthetic colour-math numerals.
+    assert.doesNotMatch(dfltGrid, QUANTIFIED);
 
-    // Rich: the storyboard grid Style line now carries quantified cinematography.
-    const rich = await generateFilmmakingPrompts({ root, projectSlug: 'detail-p', detail: 'rich' });
-    assert.match(rich.artifact.storyboardGridPrompt?.promptText ?? '', QUANTIFIED);
+    // Dial DOWN via detail:standard — the rich cinematography suffix and the
+    // capture-realism block drop off the Style line.
+    const standard = await generateFilmmakingPrompts({ root, projectSlug: 'detail-p', detail: 'standard' });
+    const stdGrid = standard.artifact.storyboardGridPrompt?.promptText ?? '';
+    assert.doesNotMatch(stdGrid, /wide-latitude cinema capture/);
+    assert.doesNotMatch(stdGrid, /Capture realism:/);
+    assert.doesNotMatch(stdGrid, QUANTIFIED);
+    assert.notEqual(stdGrid, dfltGrid);
+
+    // Dial the register to NUMERIC (still rich) — now the quantified Kelvin /
+    // key-angle / contrast-ratio tokens appear instead of the prose register.
+    const numeric = await generateFilmmakingPrompts({ root, projectSlug: 'detail-p', register: 'numeric' });
+    assert.match(numeric.artifact.storyboardGridPrompt?.promptText ?? '', QUANTIFIED);
   });
 });

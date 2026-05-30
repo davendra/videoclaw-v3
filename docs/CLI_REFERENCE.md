@@ -919,8 +919,18 @@ Full framework rules and the variation guide: `vclaw video prompt-lib-show --nam
 ## Filmmaking prompt packets
 
 ```bash
-vclaw video filmmaking-prompts --project <slug> [--root <path>] [--duration <seconds>] [--panels 9|12|15|20] [--detail terse|standard|rich] [--storyboard-grid <path>] [--category <id>] [--genre live-action|pixar|anime|noir|influencer|action|music-video] [--aspect-ratio 16:9|9:16] [--phase storyboard|video] [--no-faces] [--write]
+vclaw video filmmaking-prompts --project <slug> [--root <path>] [--duration <seconds>] [--panels 9|12|15|20] [--detail terse|standard|rich] [--register prose|numeric] [--storyboard-grid <path>] [--category <id>] [--genre live-action|pixar|anime|noir|influencer|action|music-video] [--aspect-ratio 16:9|9:16] [--phase storyboard|video] [--realism] [--no-realism] [--no-faces] [--write]
 ```
+
+**Photorealism is the universal default — dial down by exception** (Joey 2.0:
+"Photoreal is the universal default"). With zero flags and no project
+cinema-profile, a project resolves the full detailed treatment: `rich` detail,
+capture-realism on, and the `prose` cinematography register (behaviour-not-
+numbers physical wording, no Kelvin / key-angle / ratio numerals). Dial it down
+per-call with `--detail`, `--register numeric`, or `--no-realism`, or persist a
+project-wide reduction with `vclaw video cinema-profile` (below). Precedence is
+CLI flag > `project.cinemaProfile` > genre default > the photoreal hard default;
+the `influencer`/`ugc` genres default to a `phone` capture register.
 
 Generates the first-class prompt packet layer derived from the
 `ai-filmmaking` workflow. This command is deterministic: it reads existing
@@ -946,18 +956,39 @@ the storyboard/camera-language portion only (video `seedancePackets` gated to
 the full packet. `--category <id>` selects the category descriptor (character vs
 product path); unknown ids fail fast.
 
-### Joey cinematic opt-in flags
+### Joey cinematic flags
 
-These flags are **opt-in and additive** — omitting them keeps output byte-identical to the legacy default. They route through the existing `filmmaking-prompts` and `multi-shot` commands (no new subcommand, so the `vclaw schema --json` command count is unchanged).
+The photoreal default (rich + realism + prose) is now the zero-flag output of
+`filmmaking-prompts`; these flags tune or dial it down. `vclaw video
+cinema-profile` adds one new subcommand, so the `vclaw schema --json` command
+count moved from 82 to 83.
 
 `filmmaking-prompts`:
 
+- `--register prose|numeric` — prose (Joey behaviour wording, no colour-math numerals) vs numeric (Kelvin / key-angle / ratio) cinematography register. Resolved default `prose`.
+- `--no-realism` — dial the capture-realism block OFF (recovers the lean register even though the resolved default has it on).
 - `--sheet 8-shot|6-panel` — character-sheet layout. `8-shot` (default) is the four-column / eight-shot sheet; `6-panel` emits the compact 3-column × 2-row mid-gray sheet (`characterSheetSixPanelPrompt`).
-- `--realism` — append the keystone anti-plastic `captureRealismBlock` (per-zone specular kill, subsurface scattering, strand hair, contrast curve, volumetric haze, flattering-realism ceiling, film grain) to the **rich**-detail Style line. Only takes effect at `--detail rich`.
-- `--wet` — add the moisture-matte clause (`moistureMatteClause`) to the realism block (requires `--realism`).
-- `--haze thin|light|heavy` — volumetric-haze density (`volumetricHaze`) inside the realism block (requires `--realism`; default `light`).
+- `--realism` — the keystone anti-plastic `captureRealismBlock` (per-zone specular kill, subsurface scattering, strand hair, contrast curve, volumetric haze, flattering-realism ceiling, film grain) on the **rich**-detail Style line. On by default; pass it explicitly to tune `--wet`/`--haze`.
+- `--wet` — add the moisture-matte clause (`moistureMatteClause`) to the realism block.
+- `--haze thin|light|heavy` — volumetric-haze density (`volumetricHaze`) inside the realism block (default `light`).
 - `--background mid-gray|white|black` — append a backdrop-plate clause (`backgroundPlate`) to the storyboard-grid Style line. Mid-gray is the locked character-work default; white/black are explicit opt-ins.
 - `--lighting <id>` / `--grade <id>` — swap the lighting / color-grade register in the **rich**-detail cinematography suffix (e.g. `--lighting night-fire`, `--grade bleach-bypass`). Default `neutral-studio` / `teal-orange`.
+
+### Project cinema-profile
+
+`vclaw video cinema-profile` persists a project-level look profile onto
+`project.json` so every later `filmmaking-prompts` run inherits it (the
+dial-down-by-exception path). Each flag is optional; at least one is required.
+
+```bash
+vclaw video cinema-profile --project <slug> [--detail terse|standard|rich] [--register prose|numeric] [--realism on|off] [--no-realism] [--haze thin|light|heavy] [--capture cinema|phone] [--root <path>]
+
+# dial a project down to a lean, numeric, no-realism register
+vclaw video cinema-profile --project dhuaan --detail standard --register numeric --no-realism
+
+# pin a UGC project to the phone capture register
+vclaw video cinema-profile --project promo --capture phone
+```
 
 `multi-shot`:
 
@@ -1097,6 +1128,41 @@ animation prompt, duration, and reference list; pending packets are ignored and
 execution falls back to the normal storyboard plus asset manifest inputs. This
 prevents incomplete prompts such as `@image3` storyboard-grid references from
 being submitted before the matching image exists.
+
+## Prompt lint
+
+```
+vclaw video prompt-lint (--project <slug> | --file <path>) [flags]
+```
+
+A **pure validator** over a `filmmaking-prompts` artifact (the JSON produced by `vclaw video filmmaking-prompts --write`, or any equivalent file passed with `--file`). It runs no providers and never spends credits — it only reads and checks. Per Seedance packet it reports:
+
+- **10-block order** — text-driven packets must carry the canonical Joey block order (`SCENE & MOOD → FRAME MAP → SUBJECT LOCK → CROSS-FRAME → MOVEMENT → LAST FRAME → WORLD PLATE → SOUND BED → CAPTURE REALISM → CAMERA CAPTURE`).
+- **Word count** — warns when a packet falls outside the 280–600 words/packet window.
+- **Required video blocks** — text-driven packets must carry `SUBJECT LOCK`, `CAPTURE REALISM`, and `CAMERA CAPTURE` (error). Grid-reference variants carry the same discipline inline and are exempt.
+- **Grid guard** — when a `storyboard-grid` reference is attached, the single-full-frame guard must be present, or the grid leaks as a moving 9-panel split-screen (error).
+- **Prose-register hygiene** — flags Kelvin (`5200K`) and hue/angle degree (`40°`) numeric-register tokens in a prose-register packet (error). Pass `--register numeric` to suppress when those numerals are intentional.
+- **Brand / proper-name scrub** — with `--cast <Name:descriptor>` and/or `--brand <token>`, flags any packet whose text still contains a cast proper name or a brand token (error).
+
+| Flag | Default | Notes |
+|---|---|---|
+| `--project <slug>` | — | Lint `projects/<slug>/artifacts/filmmaking-prompts.json`. |
+| `--file <path>` | — | Lint an arbitrary artifact file instead. Exactly one of `--project`/`--file` is required. |
+| `--root <path>` | cwd | Workspace root for `--project`. |
+| `--register prose\|numeric` | `prose` | Suppress the Kelvin/hue check under `numeric`. |
+| `--cast <Name:descriptor>` | — | Repeatable; enables the proper-name leak check. |
+| `--brand <token>` | — | Repeatable; enables the brand leak check. |
+
+Output is machine-readable JSON `{ packets: [{ sceneIndex, issues: [...] }], ok }`. The command exits non-zero when `ok` is `false` (any error-severity issue), so it can gate a pipeline.
+
+```bash
+# Lint a project's prompt packets
+vclaw video prompt-lint --project rani-rooftop
+
+# Lint an artifact file, enforcing brand/name scrub
+vclaw video prompt-lint --file out/filmmaking-prompts.json \
+  --cast "Rani:a compact woman in a navy tactical vest" --brand "Nike"
+```
 
 ## Overnight batch video queue
 

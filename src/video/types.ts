@@ -167,6 +167,12 @@ export interface VideoExecutionTask {
   backendHints: string[];
   characters: string[];
   durationSeconds?: number;
+  /**
+   * OUTPUT-DEPENDENT render resolution (e.g. `720p`, `1080p`) threaded from the
+   * filmmaking-prompts packet, so a per-render resolution can flow to the
+   * provider instead of a fixed one. Absent when the packet did not carry it.
+   */
+  resolution?: string;
   promptPacketVariant?: string;
   /**
    * When a scene was resolved via chain-from-prev, this carries the source

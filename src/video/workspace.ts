@@ -19,6 +19,34 @@ export interface VideoProjectWorkspace {
   manifestPath: string;
 }
 
+/**
+ * Project-level cinematic look profile. Persisted on the manifest so a project
+ * carries its default cinematography register across every `vclaw` invocation
+ * (Joey 2.0: "photorealism is the universal default, dial down by exception").
+ * Every field is optional and backward-compatible — an absent block resolves to
+ * the HARD DEFAULT in {@link ../video/cinema-profile.resolveCinemaProfile}.
+ */
+export interface VideoCinemaProfile {
+  /** Cinematography language density. Default (resolved) `'rich'`. */
+  detail?: 'terse' | 'standard' | 'rich';
+  /** Whether the anti-plastic capture-realism block is emitted. Default `true`. */
+  realism?: boolean;
+  /** Prose (behaviour) vs numeric (Kelvin/°/ratio) cinematography register. Default `'prose'`. */
+  register?: 'prose' | 'numeric';
+  /** Volumetric-haze density for the realism block. Default `'light'`. */
+  haze?: 'thin' | 'light' | 'heavy';
+  /** Emit the moisture-matte clause in the realism block. Default off. */
+  wet?: boolean;
+  /** Lighting register id (see cinematography `lightingSpec`/`lightingProse`). */
+  lightingId?: string;
+  /** Color-grade register id (see cinematography `gradeSpec`/`gradeProse`). */
+  gradeId?: string;
+  /** Backdrop plate kind. Default `'mid-gray'`. */
+  plateKind?: 'mid-gray' | 'white' | 'black';
+  /** Cinema (film hardware) vs phone (UGC smartphone) capture register. */
+  captureRegister?: 'cinema' | 'phone';
+}
+
 export interface VideoProjectManifest {
   slug: string;
   productionMode: VideoProductionMode;
@@ -34,6 +62,8 @@ export interface VideoProjectManifest {
   currentStage?: string | null;
   lastCompletedStage?: string | null;
   lastCheckpointStatus?: string | null;
+  /** Optional project-level cinematic look profile (backward-compatible). */
+  cinemaProfile?: VideoCinemaProfile;
 }
 
 export function resolveProjectWorkspace(slug: string, root = process.cwd()): VideoProjectWorkspace {
@@ -133,6 +163,37 @@ export async function updateProjectManifestMetadata(
     ...(input.tags !== undefined ? { tags: input.tags } : {}),
     ...(input.blockedBy !== undefined ? { blockedBy: input.blockedBy } : {}),
     ...(input.blockedReason !== undefined ? { blockedReason: input.blockedReason } : {}),
+  };
+  await writeProjectManifest(workspace, updatedManifest);
+  return updatedManifest;
+}
+
+/**
+ * Merge a partial {@link VideoCinemaProfile} into the project manifest's
+ * `cinemaProfile` block. Only the provided fields are written; absent fields are
+ * preserved from any existing block. Mirrors {@link updateProjectManifestMetadata}.
+ */
+export async function updateProjectManifestCinemaProfile(
+  workspace: VideoProjectWorkspace,
+  patch: VideoCinemaProfile,
+  updatedAt?: string,
+): Promise<VideoProjectManifest> {
+  const manifest = await readProjectManifest(workspace);
+  if (!manifest) {
+    throw new Error(`Cannot update cinema profile for ${workspace.slug}: manifest missing`);
+  }
+  const merged: VideoCinemaProfile = { ...(manifest.cinemaProfile ?? {}) };
+  for (const key of Object.keys(patch) as (keyof VideoCinemaProfile)[]) {
+    const value = patch[key];
+    if (value !== undefined) {
+      // Narrowing through `unknown` keeps the heterogeneous union assignment safe.
+      (merged as Record<string, unknown>)[key] = value;
+    }
+  }
+  const updatedManifest: VideoProjectManifest = {
+    ...manifest,
+    updatedAt: updatedAt ?? new Date().toISOString(),
+    cinemaProfile: merged,
   };
   await writeProjectManifest(workspace, updatedManifest);
   return updatedManifest;

@@ -130,8 +130,18 @@ const COMMANDS: CommandSpec[] = [
   },
   {
     name: 'video filmmaking-prompts',
-    usage: 'vclaw video filmmaking-prompts --project <slug> [--root <path>] [--duration <seconds>] [--storyboard-grid <path>] [--category <id>] [--genre <id>] [--phase storyboard|video] [--detail terse|standard|rich] [--sheet 8-shot|6-panel] [--realism] [--wet] [--haze thin|light|heavy] [--background mid-gray|white|black] [--lighting <id>] [--grade <id>] [--no-faces] [--write]',
-    description: 'Generate ai-filmmaking prompt packets: character sheet prompts, optional attached 9-panel storyboard grid, reference map, and Seedance Variant A/B/C packets.',
+    usage: 'vclaw video filmmaking-prompts --project <slug> [--root <path>] [--duration <seconds>] [--storyboard-grid <path>] [--category <id>] [--genre <id>] [--phase storyboard|video] [--detail terse|standard|rich] [--register prose|numeric] [--sheet 8-shot|6-panel] [--realism] [--no-realism] [--wet] [--haze thin|light|heavy] [--background mid-gray|white|black] [--lighting <id>] [--grade <id>] [--no-faces] [--write]',
+    description: 'Generate ai-filmmaking prompt packets: character sheet prompts, optional attached 9-panel storyboard grid, reference map, and Seedance Variant A/B/C packets. Default is the full photoreal treatment (rich + realism + prose); dial down with --detail/--register/--no-realism or a project cinema-profile.',
+  },
+  {
+    name: 'video prompt-lint',
+    usage: 'vclaw video prompt-lint (--project <slug> | --file <path>) [--root <path>] [--register prose|numeric] [--cast <Name:descriptor> ...] [--brand <token> ...]',
+    description: 'Pure validator over a filmmaking-prompts artifact: per-packet 10-block order, word-count window, brand/proper-name scrub, grid-guard presence, required SUBJECT LOCK/CAPTURE REALISM/CAMERA CAPTURE blocks, and no Kelvin/hue tokens in a prose-register packet. Emits {packets:[{sceneIndex,issues}],ok} and exits non-zero when not ok.',
+  },
+  {
+    name: 'video cinema-profile',
+    usage: 'vclaw video cinema-profile --project <slug> [--detail terse|standard|rich] [--register prose|numeric] [--realism on|off] [--no-realism] [--haze thin|light|heavy] [--capture cinema|phone] [--root <path>]',
+    description: 'Set the project-level cinematic look profile (persisted on project.json). Photorealism is the universal default; this dials it down by exception across every subsequent filmmaking-prompts run.',
   },
   {
     name: 'video storyboard-grid',

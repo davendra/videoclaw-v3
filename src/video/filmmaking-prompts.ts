@@ -6,11 +6,15 @@ import {
   beats,
   captureRealismBlock,
   cameraSpec,
+  cameraProse,
   backgroundPlate,
   gradeSpec,
+  gradeProse,
   lightingSpec,
+  lightingProse,
   musicSyncLine,
   orbitGrammar,
+  phoneCaptureBlock,
   type Beat,
   type CameraMove,
   type CaptureRealismOpts,
@@ -30,6 +34,9 @@ import {
   frameMapBlock,
   lastFrameBlock,
   subjectLockBlock,
+  buildPositionalDescriptorLine,
+  buildIdentityLockLine,
+  SINGLE_FULL_FRAME_GUARD,
   POSITIONAL_BINDING,
   type FrameMapEntry,
   type SubjectLockEntry,
@@ -38,7 +45,8 @@ import { listCharacterProfiles, type CharacterProfile } from './characters.js';
 import { readProductReferences } from './product-references.js';
 import { readReferenceSheetsArtifact } from './reference-sheet-store.js';
 import type { ReferenceSheet, ReferenceSheetsArtifact } from './types.js';
-import { ensureProjectWorkspace, type VideoProjectWorkspace } from './workspace.js';
+import { ensureProjectWorkspace, readProjectManifest, type VideoProjectWorkspace } from './workspace.js';
+import { resolveCinemaProfile, type ResolvedCinemaProfile, type CinemaProfileOverrides } from './cinema-profile.js';
 
 /**
  * Two-phase gate for the generation function (E5). The intended workflow is
@@ -95,6 +103,13 @@ export interface FilmmakingStoryboardGridPrompt {
   panels: FilmmakingStoryboardPanel[];
 }
 
+export interface FilmmakingTimelineBeat {
+  /** Timecode span for this beat, e.g. `0:00-0:05`. */
+  t: string;
+  /** Shot/action direction for this beat. */
+  beat: string;
+}
+
 export interface FilmmakingSeedancePacket {
   sceneIndex: number;
   variant: Extract<
@@ -102,6 +117,21 @@ export interface FilmmakingSeedancePacket {
     'text-driven' | 'storyboard-grid-reference' | 'character-sheets-plus-storyboard-grid'
   >;
   durationSeconds: number;
+  /**
+   * OUTPUT-DEPENDENT render resolution (e.g. `720p`, `1080p`). Omitted by
+   * default — only populated when the caller threads a resolution through
+   * {@link GenerateFilmmakingPromptsOptions.resolution}, so the default packet
+   * shape is byte-identical to before.
+   */
+  resolution?: string;
+  /**
+   * OUTPUT-DEPENDENT multi-beat scene timeline. A single kinetic shot needs NO
+   * timeline; a multi-beat render does. Omitted by default and whenever
+   * {@link GenerateFilmmakingPromptsOptions.singleShot} is set; populated only
+   * when {@link GenerateFilmmakingPromptsOptions.timeline} is requested AND the
+   * render is not single-shot.
+   */
+  timeline?: FilmmakingTimelineBeat[];
   references: FilmmakingReferenceSlot[];
   promptText: string;
   warnings: string[];
@@ -198,6 +228,13 @@ export interface GenerateFilmmakingPromptsOptions {
    */
   realism?: CaptureRealismOpts | false;
   /**
+   * Cinematography register for the `rich`-detail suffix and the CAMERA CAPTURE
+   * block: `'prose'` (Joey 2.0 behaviour wording, no colour-math numerals) or
+   * `'numeric'` (Kelvin / key-angle / ratio / hue°). When omitted the resolved
+   * {@link resolveCinemaProfile} register applies (HARD DEFAULT `'prose'`).
+   */
+  register?: 'prose' | 'numeric';
+  /**
    * Lighting register id for the `rich`-detail cinematography suffix (default
    * `'neutral-studio'`). Omitted → legacy default. See `lightingSpec`.
    */
@@ -214,6 +251,44 @@ export interface GenerateFilmmakingPromptsOptions {
    * mid-gray default verbatim.
    */
   plateKind?: PlateKind;
+  /**
+   * Opt-in (WS-C) canonical multi-reference text discipline proven by the user's
+   * ARK payloads. When set, EVERY multi-reference Seedance packet additionally
+   * emits: (a) a per-character POSITIONAL visual-descriptor line (Center/Left/
+   * Right/…, visual descriptors, never proper names), (b) an explicit
+   * identity-lock "no face morphing" line, (c) the single-full-frame guard on
+   * ALL packets (not only grid-bearing ones), and (d) a diegetic soundscape line
+   * when {@link generateAudio} is set (else the existing no-music line). Omitted
+   * (default) → output is byte-identical to today.
+   */
+  textDiscipline?: boolean;
+  /**
+   * Whether the scene generates audio. Only consulted when {@link textDiscipline}
+   * is set: `true` swaps the no-music line for a diegetic soundscape line; `false`
+   * (default) keeps the existing no-music line. Mirrors the execution profile's
+   * `generateAudio` flag.
+   */
+  generateAudio?: boolean;
+  /**
+   * OUTPUT-DEPENDENT render resolution (e.g. `720p`, `1080p`). When set, each
+   * generated Seedance packet carries it on `resolution`, so a downstream
+   * `buildExecutionPayload` task can submit a per-render resolution instead of a
+   * fixed one. Omitted (default) → no `resolution` field, output unchanged.
+   */
+  resolution?: string;
+  /**
+   * Emit a multi-beat scene timeline on each Seedance packet. The timeline/
+   * scene-timing block is OUTPUT-DEPENDENT: a multi-beat render wants it, a
+   * single kinetic shot does not. Default (omitted/false) → no `timeline` field,
+   * output byte-identical to today. Ignored when {@link singleShot} is set.
+   */
+  timeline?: boolean;
+  /**
+   * Render as a single kinetic shot — no scene-timing/timeline block. When set,
+   * packets NEVER carry a `timeline` field (it wins over {@link timeline}).
+   * Default (omitted/false) leaves timeline behaviour to {@link timeline}.
+   */
+  singleShot?: boolean;
 }
 
 // Quantified cinematography suffix appended only at detail === 'rich'. Built from
@@ -230,13 +305,25 @@ export function richCinematographySuffix(opts: {
   lightingId?: string;
   gradeId?: string;
   realism?: CaptureRealismOpts | false;
+  /**
+   * Cinematography register. `'numeric'` (default) keeps the legacy Kelvin /
+   * key-angle / ratio / hue° tokens via `cameraSpec`/`lightingSpec`/`gradeSpec`
+   * — byte-identical to before. `'prose'` swaps in the Joey 2.0 behaviour
+   * register (`cameraProse`/`lightingProse`/`gradeProse`) which carries no
+   * synthetic colour-math numerals.
+   */
+  register?: 'prose' | 'numeric';
 } = {}): string {
   const lightingId = opts.lightingId ?? 'neutral-studio';
   const gradeId = opts.gradeId ?? 'teal-orange';
-  const base =
-    `Cinematography: ${cameraSpec(RICH_CAMERA_MOVE, 'rich')}; ` +
-    `${lightingSpec(lightingId, 'rich')}; ` +
-    `${gradeSpec(gradeId, 'rich')}.`;
+  const register = opts.register ?? 'numeric';
+  const base = register === 'prose'
+    ? `Cinematography: ${cameraProse(RICH_CAMERA_MOVE.movement, 'rich')}; ` +
+      `${lightingProse(lightingId, 'rich')}; ` +
+      `${gradeProse(gradeId, 'rich')}.`
+    : `Cinematography: ${cameraSpec(RICH_CAMERA_MOVE, 'rich')}; ` +
+      `${lightingSpec(lightingId, 'rich')}; ` +
+      `${gradeSpec(gradeId, 'rich')}.`;
   if (opts.realism) {
     return `${base} ${captureRealismBlock(opts.realism, 'rich')}`;
   }
@@ -369,6 +456,57 @@ export function resolveGenreStyle(genre?: string): GenreStyle {
   };
 }
 
+/**
+ * Build the per-call CLI override layer for {@link resolveCinemaProfile} from the
+ * generate options. Only fields the caller actually set are forwarded so the
+ * project manifest + genre + HARD DEFAULT layers fill in the rest. The legacy
+ * `realism` option (a {@link CaptureRealismOpts} | false) is mapped onto the
+ * profile's boolean `realism` plus its `haze`/`wet` knobs.
+ */
+function cinemaOverridesFromOptions(
+  options: GenerateFilmmakingPromptsOptions,
+): CinemaProfileOverrides {
+  const overrides: CinemaProfileOverrides = {};
+  if (options.detail !== undefined) overrides.detail = options.detail;
+  if (options.register !== undefined) overrides.register = options.register;
+  if (options.lightingId !== undefined) overrides.lightingId = options.lightingId;
+  if (options.gradeId !== undefined) overrides.gradeId = options.gradeId;
+  if (options.plateKind !== undefined) overrides.plateKind = options.plateKind;
+  if (options.realism !== undefined) {
+    if (options.realism === false) {
+      overrides.realism = false;
+    } else {
+      overrides.realism = true;
+      if (options.realism.haze !== undefined) overrides.haze = options.realism.haze;
+      if (options.realism.wet !== undefined) overrides.wet = options.realism.wet;
+    }
+  }
+  return overrides;
+}
+
+/**
+ * Project the resolved profile into the cinematography-override bag accepted by
+ * {@link buildStoryboardGridPrompt} / {@link seedancePromptText}. `realism:false`
+ * disables the capture-realism block; otherwise the resolved haze/wet flow in.
+ */
+function cinematicsFromProfile(profile: ResolvedCinemaProfile): {
+  realism: CaptureRealismOpts | false;
+  register: 'prose' | 'numeric';
+  captureRegister: 'cinema' | 'phone';
+  lightingId?: string;
+  gradeId?: string;
+  plateKind: PlateKind;
+} {
+  return {
+    realism: profile.realism ? { haze: profile.haze, ...(profile.wet ? { wet: true } : {}) } : false,
+    register: profile.register,
+    captureRegister: profile.captureRegister,
+    ...(profile.lightingId !== undefined ? { lightingId: profile.lightingId } : {}),
+    ...(profile.gradeId !== undefined ? { gradeId: profile.gradeId } : {}),
+    plateKind: profile.plateKind,
+  };
+}
+
 export async function generateFilmmakingPrompts(
   options: GenerateFilmmakingPromptsOptions,
 ): Promise<GenerateFilmmakingPromptsResult> {
@@ -387,8 +525,17 @@ export async function generateFilmmakingPrompts(
   const genreStyle = resolveGenreStyle(effectiveGenre);
   const aspectRatio = options.aspectRatio?.trim() || '16:9';
   const panelCount = resolvePanelCount(options.panelCount);
-  const detail = options.detail ?? 'standard';
   const workspace = await ensureProjectWorkspace(options.projectSlug, root);
+  // Resolve the cinema profile ONCE: project manifest < CLI overrides, with the
+  // genre + HARD DEFAULT below them (Joey 2.0: rich + realism + prose by default).
+  // With ZERO flags and no project block this yields the full photoreal treatment.
+  const manifest = await readProjectManifest(workspace);
+  const profile = resolveCinemaProfile(
+    manifest?.cinemaProfile,
+    cinemaOverridesFromOptions(options),
+    effectiveGenre,
+  );
+  const detail = profile.detail;
   const brief = await readOptionalArtifact<BriefArtifact>(workspace, 'brief');
   const generatedAt = new Date().toISOString();
 
@@ -402,6 +549,7 @@ export async function generateFilmmakingPrompts(
       aspectRatio,
       durationSeconds,
       detail,
+      profile,
       generatedAt,
     });
   }
@@ -427,12 +575,7 @@ export async function generateFilmmakingPrompts(
     });
   }
   const storyboardGridPrompt = storyboard
-    ? buildStoryboardGridPrompt(storyboard, brief, characterSheetPrompts, noFaces, genreStyle, aspectRatio, panelCount, durationSeconds, detail, {
-        ...(options.realism !== undefined ? { realism: options.realism } : {}),
-        ...(options.lightingId !== undefined ? { lightingId: options.lightingId } : {}),
-        ...(options.gradeId !== undefined ? { gradeId: options.gradeId } : {}),
-        ...(options.plateKind !== undefined ? { plateKind: options.plateKind } : {}),
-      })
+    ? buildStoryboardGridPrompt(storyboard, brief, characterSheetPrompts, noFaces, genreStyle, aspectRatio, panelCount, durationSeconds, detail, cinematicsFromProfile(profile))
     : null;
   if (!storyboard) {
     issues.push({
@@ -476,7 +619,13 @@ export async function generateFilmmakingPrompts(
         aspectRatio,
         characterContext,
         detail,
+        profile,
         issues,
+        textDiscipline: options.textDiscipline ?? false,
+        generateAudio: options.generateAudio ?? false,
+        ...(options.resolution !== undefined ? { resolution: options.resolution } : {}),
+        // A single kinetic shot carries no timeline; otherwise honour the opt-in.
+        emitTimeline: !(options.singleShot ?? false) && (options.timeline ?? false),
       });
 
   const artifact: FilmmakingPromptsArtifact = {
@@ -517,9 +666,10 @@ async function generateProductPrompts(input: {
   aspectRatio: string;
   durationSeconds: number;
   detail: DetailLevel;
+  profile: ResolvedCinemaProfile;
   generatedAt: string;
 }): Promise<GenerateFilmmakingPromptsResult> {
-  const { options, workspace, brief, descriptor, genreStyle, aspectRatio, durationSeconds, detail, generatedAt } = input;
+  const { options, workspace, brief, descriptor, genreStyle, aspectRatio, durationSeconds, detail, profile, generatedAt } = input;
   const issues: FilmmakingPromptIssue[] = [];
   const { products } = await readProductReferences(workspace);
 
@@ -559,6 +709,16 @@ async function generateProductPrompts(input: {
       sceneIndex: index,
       variant: 'text-driven',
       durationSeconds,
+      // OUTPUT-DEPENDENT params (omitted unless requested → default byte-stable).
+      ...(options.resolution ? { resolution: options.resolution } : {}),
+      ...(!(options.singleShot ?? false) && (options.timeline ?? false)
+        ? {
+            timeline: productBeats.map((beat) => ({
+              t: `${formatSeconds(Math.round(beat.start))}-${formatSeconds(Math.round(beat.end))}`,
+              beat: `${beat.label.toUpperCase()}: ${beat.direction}`,
+            })),
+          }
+        : {}),
       references: productSlots,
       promptText: productPromptText({
         product,
@@ -569,6 +729,7 @@ async function generateProductPrompts(input: {
         aspectRatio,
         durationSeconds,
         detail,
+        profile,
         productBeats,
         useOrbit,
         orbitKind,
@@ -607,11 +768,12 @@ function productPromptText(input: {
   aspectRatio: string;
   durationSeconds: number;
   detail: DetailLevel;
+  profile: ResolvedCinemaProfile;
   productBeats: Beat[];
   useOrbit: boolean;
   orbitKind: 'product-rotation' | 'camera-orbit';
 }): string {
-  const { product, productSlots, brief, descriptor, genreStyle, aspectRatio, durationSeconds, detail, productBeats, useOrbit, orbitKind } = input;
+  const { product, productSlots, brief, descriptor, genreStyle, aspectRatio, durationSeconds, detail, profile, productBeats, useOrbit, orbitKind } = input;
   const productName = cleanSentence(product.name) || 'the product';
   const subjectDescription = cleanSentence(brief?.intent ?? '') || `the hero product, ${productName}`;
   const refLine = productSlots.length > 0
@@ -628,7 +790,7 @@ function productPromptText(input: {
     refLine,
     orbitLine,
     heroNote,
-    `STYLE: ${genreStyle.gridStyleDescriptors}. Aspect ratio ${aspectRatio} held across every shot.${detail === 'rich' ? ` ${richCinematographySuffix()}` : ''}`,
+    `STYLE: ${genreStyle.gridStyleDescriptors}. Aspect ratio ${aspectRatio} held across every shot.${detail === 'rich' ? ` ${richCinematographySuffix(richSuffixOptsFromProfile(profile))}` : ''}`,
     `AUDIO: diegetic product sound only, natural ambience, no voice-over unless the brief asks.${detail === 'rich' ? ` ${richAudioSuffix()}` : ''}`,
     '',
     `TIMELINE (must cover full 0:00-${formatSeconds(durationSeconds)}):`,
@@ -780,9 +942,11 @@ function buildStoryboardGridPrompt(
   panelCount = 15,
   durationSeconds = 15,
   detail: DetailLevel = 'standard',
-  // Joey opt-in cinematography overrides (default {} → byte-identical output).
+  // Resolved cinema-profile overrides (default {} → byte-identical legacy output).
   cinematics: {
     realism?: CaptureRealismOpts | false;
+    register?: 'prose' | 'numeric';
+    captureRegister?: 'cinema' | 'phone';
     lightingId?: string;
     gradeId?: string;
     plateKind?: PlateKind;
@@ -799,17 +963,19 @@ function buildStoryboardGridPrompt(
   const noFaceClause = noFaces
     ? ' Render ALL figures as backlit silhouettes, shot from behind, or at distance — faces obscured, in shadow, or turned away, with NO clear frontal facial features (this keeps the sheet usable as a provider reference image despite real-person content filters).'
     : '';
-  // At `rich`, append a quantified cinematography suffix to the Style line.
-  // `terse`/`standard` keep the line byte-identical to today. When any Joey
-  // cinematography override is set, pass them through; otherwise the no-arg call
-  // reproduces today's legacy suffix exactly.
+  // At `rich`, append a cinematography suffix to the Style line. `terse`/`standard`
+  // keep the line byte-identical to today. When any cinema-profile override is set
+  // (realism / register / lighting / grade), pass them through; otherwise the
+  // no-arg call reproduces today's legacy suffix exactly.
   const hasCinematicsOverride =
     cinematics.realism !== undefined
+    || cinematics.register !== undefined
     || cinematics.lightingId !== undefined
     || cinematics.gradeId !== undefined;
   const richStyleSuffix = detail === 'rich'
     ? ` ${hasCinematicsOverride ? richCinematographySuffix({
         ...(cinematics.realism !== undefined ? { realism: cinematics.realism } : {}),
+        ...(cinematics.register !== undefined ? { register: cinematics.register } : {}),
         ...(cinematics.lightingId !== undefined ? { lightingId: cinematics.lightingId } : {}),
         ...(cinematics.gradeId !== undefined ? { gradeId: cinematics.gradeId } : {}),
       }) : richCinematographySuffix()}`
@@ -864,7 +1030,18 @@ function buildSeedancePackets(input: {
   aspectRatio: string;
   characterContext: Map<string, { slot?: string; description: string }>;
   detail: DetailLevel;
+  /** Resolved cinema profile driving register / realism / capture register. */
+  profile: ResolvedCinemaProfile;
   issues: FilmmakingPromptIssue[];
+  textDiscipline?: boolean;
+  generateAudio?: boolean;
+  /** OUTPUT-DEPENDENT render resolution; omitted → no `resolution` field. */
+  resolution?: string;
+  /**
+   * Emit the multi-beat scene timeline on each packet. Already gated by the
+   * caller for the single-shot case, so here it is a plain populate flag.
+   */
+  emitTimeline?: boolean;
 }): FilmmakingSeedancePacket[] {
   const scenes = input.storyboard?.scenes ?? [];
   const characterSlots = input.referenceMap.filter((slot) => slot.role === 'character-sheet');
@@ -906,6 +1083,9 @@ function buildSeedancePackets(input: {
       aspectRatio: input.aspectRatio,
       characterContext: input.characterContext,
       detail: input.detail,
+      profile: input.profile,
+      textDiscipline: input.textDiscipline ?? false,
+      generateAudio: input.generateAudio ?? false,
     });
     // QA gate (WS6): only the text-driven packet follows the 10-block contract;
     // grid variants intentionally use the grid-reference body shape.
@@ -913,10 +1093,17 @@ function buildSeedancePackets(input: {
       const blockIssue = checkSeedanceBlockOrder(promptText);
       if (blockIssue) input.issues.push(blockIssue);
     }
+    const packetDurationSeconds = scene.durationSeconds ?? input.durationSeconds;
+    const action = cleanSentence(scene.scenePrompt?.animationPrompt ?? scene.description);
     return {
       sceneIndex: scene.sceneIndex,
       variant,
-      durationSeconds: scene.durationSeconds ?? input.durationSeconds,
+      durationSeconds: packetDurationSeconds,
+      // OUTPUT-DEPENDENT params (omitted unless requested → default byte-stable).
+      ...(input.resolution ? { resolution: input.resolution } : {}),
+      ...(input.emitTimeline
+        ? { timeline: threeBeatFrameMap(packetDurationSeconds, action, input.aspectRatio) }
+        : {}),
       references,
       promptText,
       warnings: references.filter((reference) => reference.status === 'pending')
@@ -971,12 +1158,6 @@ export function checkSeedanceBlockOrder(promptText: string): FilmmakingPromptIss
   return null;
 }
 
-// Positive-direction guard so the model performs the grid panels over time
-// instead of reproducing the 3x3 collage as a moving split-screen frame.
-// See multi-shot-framework Anti-patterns ("Grid leakage").
-const GRID_SINGLE_FRAME_GUARD =
-  'Output a single full-frame cinematic shot that fills the entire frame edge to edge — no 3x3 grid, no split-screen, no panel borders, no collage, no multi-panel montage. The storyboard grid is reference ONLY; perform its panels as consecutive moments over time, never as one image.';
-
 /** @internal — exported for testing the text-driven AUDIO / MOOD branch only. */
 export function seedancePromptText(input: {
   scene: StoryboardArtifact['scenes'][number];
@@ -989,10 +1170,27 @@ export function seedancePromptText(input: {
   aspectRatio?: string;
   characterContext?: Map<string, { slot?: string; description: string }>;
   detail?: DetailLevel;
+  /**
+   * Resolved cinema profile. Drives the prose-vs-numeric register, whether the
+   * CAPTURE REALISM block fires (realism), its haze/wet knobs, and the cinema-vs-
+   * phone capture register. Omitted → the legacy default (numeric register,
+   * realism on with the legacy no-arg capture block) so existing callers/tests
+   * stay byte-stable.
+   */
+  profile?: ResolvedCinemaProfile;
+  /**
+   * Opt-in (WS-C) canonical multi-reference text discipline. Default false →
+   * output byte-identical to today. See {@link GenerateFilmmakingPromptsOptions.textDiscipline}.
+   */
+  textDiscipline?: boolean;
+  /** Scene audio flag, only consulted when {@link textDiscipline} is set. */
+  generateAudio?: boolean;
 }): string {
   const genreStyle = input.genreStyle ?? resolveGenreStyle();
   const aspectRatio = input.aspectRatio ?? '16:9';
   const detail = input.detail ?? 'standard';
+  const textDiscipline = input.textDiscipline ?? false;
+  const profile = input.profile;
   const characterRefs = input.references.filter((reference) => reference.role === 'character-sheet');
   const gridRef = input.references.find((reference) => reference.role === 'storyboard-grid');
   const startFrame = input.references.find((reference) => reference.role === 'start-frame');
@@ -1001,21 +1199,43 @@ export function seedancePromptText(input: {
   const noFaceLine = input.noFaces
     ? 'Keep all figures as backlit silhouettes, backs, or distance with faces obscured (content-filter safe).'
     : '';
+  // Opt-in WS-C discipline lines, computed once and spliced into each variant.
+  // All-empty (default) → byte-identical output. The positional descriptor reuses
+  // the same scene.characters → stored-descriptor mapping as SUBJECT LOCK, so the
+  // emitted text is a visual descriptor per subject, never a proper name.
+  const positionalLine = textDiscipline
+    ? buildPositionalDescriptorLine(subjectLockEntriesFromContext(input))
+    : '';
+  const identityLockLine = textDiscipline ? buildIdentityLockLine() : '';
+  // Music suffix on the grid variants. Default keeps the hardcoded "NO MUSIC"; with
+  // text-discipline on it follows the scene's generateAudio flag (audio → diegetic).
+  const gridMusicClause = textDiscipline && input.generateAudio
+    ? 'NO TEXT ON SCREEN. Diegetic soundscape — natural ambience, environmental foley, and subject-driven sound, no added music.'
+    : 'NO TEXT ON SCREEN, NO MUSIC.';
   // Invariant: ANY packet that references a storyboard grid must carry the
-  // single-frame guard, or the grid leaks as an animated split-screen. Enforce
-  // it once at the exit (keyed on gridRef) so a new grid-bearing variant can't
-  // silently omit it. `withGridGuard` is a no-op when the body already includes
-  // the guard text (the explicit branches below keep it inline for wording).
+  // single-frame guard, or the grid leaks as an animated split-screen. With
+  // text-discipline on, the guard is unconditional (every multi-reference packet
+  // carries it, not just grid-bearing ones). Enforce it once at the exit so a new
+  // variant can't silently omit it. `withGridGuard` is a no-op when the body
+  // already includes the guard text (the explicit branches keep it inline).
   const withGridGuard = (body: string): string => (
-    gridRef && !body.includes(GRID_SINGLE_FRAME_GUARD)
-      ? `${body}\n${GRID_SINGLE_FRAME_GUARD}`
+    (gridRef || textDiscipline) && !body.includes(SINGLE_FULL_FRAME_GUARD)
+      ? `${body}\n${SINGLE_FULL_FRAME_GUARD}`
       : body
   );
   if (input.variant === 'character-sheets-plus-storyboard-grid' && gridRef) {
+    // The per-character header lines carry the sheet label (which may include a
+    // proper name). With text-discipline on they are suppressed in favour of the
+    // positional visual-descriptor line (visual descriptors only, never names).
+    const characterHeaders = textDiscipline
+      ? []
+      : characterRefs.map((reference, index) => `Character ${index + 1}: ${reference.slot} (${reference.label})`);
     return withGridGuard([
-      ...characterRefs.map((reference, index) => `Character ${index + 1}: ${reference.slot} (${reference.label})`),
+      ...characterHeaders,
+      positionalLine,
       '',
-      `Use the provided character sheets and cinematic storyboard grid ${gridRef.slot} as visual and motion reference. Create a ${duration} ${genreStyle.formatTone} sequence at ${aspectRatio}. ${GRID_SINGLE_FRAME_GUARD} Follow the panel order, camera logic, motion, and framing consistently and temporally. NO TEXT ON SCREEN, NO MUSIC.`,
+      `Use the provided character sheets and cinematic storyboard grid ${gridRef.slot} as visual and motion reference. Create a ${duration} ${genreStyle.formatTone} sequence at ${aspectRatio}. ${SINGLE_FULL_FRAME_GUARD} Follow the panel order, camera logic, motion, and framing consistently and temporally. ${gridMusicClause}`,
+      identityLockLine,
       noFaceLine,
       startFrame ? `Use ${startFrame.slot} as the scene start-frame continuity anchor.` : '',
       '',
@@ -1024,7 +1244,9 @@ export function seedancePromptText(input: {
   }
   if (input.variant === 'storyboard-grid-reference' && gridRef) {
     return withGridGuard([
-      `Use the provided cinematic storyboard grid ${gridRef.slot} as visual and motion reference. Create a ${duration} ${genreStyle.formatTone} sequence at ${aspectRatio}. ${GRID_SINGLE_FRAME_GUARD} Follow the panel order, camera logic, motion and camera framing consistently. Handheld camera moments may be used to boost realism. NO TEXT ON SCREEN, NO MUSIC.`,
+      positionalLine,
+      `Use the provided cinematic storyboard grid ${gridRef.slot} as visual and motion reference. Create a ${duration} ${genreStyle.formatTone} sequence at ${aspectRatio}. ${SINGLE_FULL_FRAME_GUARD} Follow the panel order, camera logic, motion and camera framing consistently. Handheld camera moments may be used to boost realism. ${gridMusicClause}`,
+      identityLockLine,
       noFaceLine,
       startFrame ? `Use ${startFrame.slot} as the scene start-frame continuity anchor.` : '',
       '',
@@ -1037,19 +1259,26 @@ export function seedancePromptText(input: {
   // → WORLD PLATE → SOUND BED → CAPTURE REALISM → CAMERA CAPTURE) using the
   // shared seedance-blocks.ts / cinematography.ts emitters. `terse`/`standard`
   // detail emit no quantified cinematography tokens; `rich` appends them.
+  // SOUND BED. With text-discipline on, the diegetic-vs-no-music choice is keyed
+  // on the scene's generateAudio flag (audio → diegetic soundscape; otherwise the
+  // existing no-music line). Default (text-discipline off) keeps today's wording.
   const soundBed = genreStyle.genre === 'music-video'
     ? `SOUND BED: Music-driven — ${musicSyncLine(undefined, detail)}.`
-    : `SOUND BED: No music. Natural ambience and subject-driven sound only.${detail === 'rich' ? ` ${richAudioSuffix()}` : ''}`;
-  return [
+    : textDiscipline && input.generateAudio
+      ? `SOUND BED: Diegetic soundscape — natural ambience, environmental foley, and subject-driven sound, no added music.${detail === 'rich' ? ` ${richAudioSuffix()}` : ''}`
+      : `SOUND BED: No music. Natural ambience and subject-driven sound only.${detail === 'rich' ? ` ${richAudioSuffix()}` : ''}`;
+  return withGridGuard([
     `SCENE & MOOD: ${duration} ${genreStyle.formatTone} at ${aspectRatio}. ${cleanSentence(input.brief?.intent ?? input.scene.description)}.`,
     '',
     frameMapBlock(threeBeatFrameMap(input.durationSeconds, action, aspectRatio)),
     '',
     subjectLockBlock(subjectLockEntriesFromContext(input)),
+    positionalLine,
+    identityLockLine,
     '',
     crossFrameBlock(),
     '',
-    `MOVEMENT: ${cameraSpec(RICH_CAMERA_MOVE, detail)}.`,
+    timecodedMovementBlock(input.durationSeconds, action, aspectRatio, detail),
     '',
     lastFrameBlock('resolved final beat, clean composition'),
     '',
@@ -1057,11 +1286,95 @@ export function seedancePromptText(input: {
     '',
     soundBed,
     '',
-    `CAPTURE REALISM: ${captureRealismBlock({}, detail)}`,
+    captureRealismLine(profile, detail),
     '',
-    `CAMERA CAPTURE: ${genreStyle.gridStyleDescriptors}, ${aspectRatio} held across every shot.${detail === 'rich' ? ` ${richCinematographySuffix({ realism: {} })}` : ''}`,
+    `CAMERA CAPTURE: ${genreStyle.gridStyleDescriptors}, ${aspectRatio} held across every shot.${detail === 'rich' ? ` ${richCinematographySuffix(richSuffixOptsFromProfile(profile))}` : ''}`,
     noFaceLine,
-  ].filter(Boolean).join('\n');
+  ].filter(Boolean).join('\n'));
+}
+
+/**
+ * Render the CAPTURE REALISM block from the resolved cinema profile.
+ *   - no profile (legacy callers) → today's `captureRealismBlock({}, detail)`.
+ *   - realism off → a single line stating capture realism is dialled off.
+ *   - phone capture register → the Joey 2.0 phone-capture (UGC) block.
+ *   - cinema capture register → the anti-plastic capture-realism block with the
+ *     profile's haze/wet knobs.
+ */
+function captureRealismLine(profile: ResolvedCinemaProfile | undefined, detail: DetailLevel): string {
+  if (!profile) {
+    return `CAPTURE REALISM: ${captureRealismBlock({}, detail)}`;
+  }
+  if (!profile.realism) {
+    return 'CAPTURE REALISM: realism dialled off — render the scene without the anti-plastic capture-realism treatment.';
+  }
+  if (profile.captureRegister === 'phone') {
+    return `CAPTURE REALISM: ${phoneCaptureBlock({}, detail)}`;
+  }
+  return `CAPTURE REALISM: ${captureRealismBlock({ haze: profile.haze, ...(profile.wet ? { wet: true } : {}) }, detail)}`;
+}
+
+/**
+ * Build the {@link richCinematographySuffix} opts bag from the resolved profile.
+ * No profile (legacy callers) → `{ realism: {} }`, byte-identical to before.
+ */
+function richSuffixOptsFromProfile(profile: ResolvedCinemaProfile | undefined): Parameters<typeof richCinematographySuffix>[0] {
+  if (!profile) {
+    return { realism: {} };
+  }
+  return {
+    realism: profile.realism ? { haze: profile.haze, ...(profile.wet ? { wet: true } : {}) } : false,
+    register: profile.register,
+    ...(profile.lightingId !== undefined ? { lightingId: profile.lightingId } : {}),
+    ...(profile.gradeId !== undefined ? { gradeId: profile.gradeId } : {}),
+  };
+}
+
+// Above this runtime (seconds) a single Seedance packet is treated as a genuine
+// multi-cut sequence, matching cinema-worldbuilder-pro-2.0's shot-complexity
+// guidance: "4–8 seconds — one strong character action, single locked
+// composition" (one main idea per shot) vs "12–15 seconds — 2–3 simple beats
+// with hard cuts inside the prompt". A 9–10s scene stays a single flowing shot;
+// 11s+ earns the per-shot hard-cut Movement form.
+const MULTI_CUT_DURATION_THRESHOLD_SECONDS = 10;
+
+// TIMECODED MOVEMENT block (Joey discipline): the Movement block carries per-beat
+// timestamps inline. The beats are sourced from the SAME three-beat timeline split
+// as the FRAME MAP (threeBeatFrameMap → 0:00 / d÷3 / 2d÷3 / d) so the two blocks
+// stay aligned, and the camera move per beat reuses cameraSpec(RICH_CAMERA_MOVE,
+// detail) so detail (terse/standard/rich) still governs quantified-token emission.
+//
+// The FORM depends on genuine multi-shot intent so the packet does not contradict
+// itself (cinema-worldbuilder-pro-2.0 Universal Rule #6 reserves the inline
+// per-shot "Hard cut to" form "for any multi-cut sequence"; Rule #21 is "one main
+// idea per shot"):
+//   - SINGLE-SHOT (≤ MULTI_CUT_DURATION_THRESHOLD_SECONDS): one flowing paragraph
+//     with the per-beat timestamps inline and NO "Shot N" / "Hard cut to" labels —
+//     matching the skill's single-shot Movement example, which is one continuous
+//     evolving take. This is the FRAME MAP's "wide establish → medium develop →
+//     resolved close" rendered as one shot, not three cuts.
+//   - MULTI-CUT (above the threshold): "Shot 1 (…): … Hard cut to Shot 2 (…): …"
+//     per the skill's multi-shot Movement example and cut-trigger rule.
+// Pure/deterministic — no Date, no Math.random, no I/O.
+function timecodedMovementBlock(
+  durationSeconds: number,
+  action: string,
+  aspectRatio: string,
+  detail: DetailLevel,
+): string {
+  const beats = threeBeatFrameMap(durationSeconds, action, aspectRatio);
+  const move = cameraSpec(RICH_CAMERA_MOVE, detail);
+  if (durationSeconds > MULTI_CUT_DURATION_THRESHOLD_SECONDS) {
+    const shots = beats.map((beat, index) => {
+      const lead = index === 0 ? `Shot ${index + 1}` : `Hard cut to Shot ${index + 1}`;
+      return `${lead} (${beat.t}): ${move} — ${beat.beat}.`;
+    });
+    return `MOVEMENT: ${shots.join(' ')}`;
+  }
+  // Single-shot: one continuous take. Lead the paragraph with the camera move once,
+  // then evolve the same locked composition across the inline-timestamped beats.
+  const flow = beats.map((beat) => `${beat.beat} (${beat.t}).`).join(' ');
+  return `MOVEMENT: ${move} held across one continuous take — ${flow}`;
 }
 
 // FRAME MAP rows for the text-driven packet — the original three-beat timeline

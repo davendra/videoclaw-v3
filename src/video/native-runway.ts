@@ -5,6 +5,8 @@ import {
   submitRunwayJob,
   pollRunwayJob,
   fetchRunwayResult,
+  RUNWAY_MAX_IMAGE_REFS,
+  RUNWAY_MAX_VIDEO_REFS,
   type RunwayAspectRatio,
   type RunwayDurationSeconds,
   type RunwayMode,
@@ -119,6 +121,68 @@ function classifyReferences(referencePaths: string[]): { images: string[]; video
   return { images, videos };
 }
 
+/**
+ * Preflight the Runway/Seedance-2 reference budget before any upload or submit.
+ * Mirrors `assertReferenceBudget` (native-seedance): fail-fast with a clear
+ * error rather than letting the gateway reject a partially-uploaded payload.
+ * Runway caps: ≤11 images, ≤3 videos per submission.
+ */
+function assertRunwayReferenceBudget(sceneIndex: number, images: string[], videos: string[]): void {
+  if (images.length > RUNWAY_MAX_IMAGE_REFS) {
+    throw new Error(
+      `runway-useapi scene ${sceneIndex}: ${images.length} image references exceed the Runway cap of ${RUNWAY_MAX_IMAGE_REFS}.`,
+    );
+  }
+  if (videos.length > RUNWAY_MAX_VIDEO_REFS) {
+    throw new Error(
+      `runway-useapi scene ${sceneIndex}: ${videos.length} video references exceed the Runway cap of ${RUNWAY_MAX_VIDEO_REFS}.`,
+    );
+  }
+}
+
+/**
+ * Best-effort prompt pre-validation against the shared Seedance content filter.
+ * Seedance moderation is identical across all three gateways (ARK / Runway /
+ * Dreamina), so the Runway transport reuses `seedance-content-filter` to surface
+ * HIGH/MEDIUM-risk warnings. Loaded defensively so the transport never hard-fails
+ * if the module's surface changes; warnings are advisory (returned, not thrown).
+ */
+async function preValidateRunwayPrompt(prompt: string): Promise<string[]> {
+  try {
+    const mod: Record<string, unknown> = await import('./seedance-content-filter.js');
+    const fn = mod.preValidatePrompt as
+      | ((p: string) => { warnings?: string[]; messages?: string[]; reasons?: string[] } | string[])
+      | undefined;
+    if (typeof fn !== 'function') return [];
+    const result = fn(prompt);
+    if (Array.isArray(result)) {
+      // preValidatePrompt returns ContentFilterWarning[] ({level,reason,match}).
+      // Format objects the same way native-dreamina/native-seedance do (HIGH/MEDIUM
+      // only) instead of String(obj) -> "[object Object]". A plain string[] (the
+      // defensive alt-shape) passes through unchanged.
+      return result
+        .filter((w) =>
+          typeof w === 'string' ||
+          (w as { level?: string }).level === 'HIGH' ||
+          (w as { level?: string }).level === 'MEDIUM',
+        )
+        .map((w) =>
+          typeof w === 'string'
+            ? w
+            : `${(w as { level?: string }).level} risk: ${(w as { reason?: string }).reason} (match: ${(w as { match?: string }).match})`,
+        );
+    }
+    if (result && typeof result === 'object') {
+      const out = result.warnings ?? result.messages ?? result.reasons ?? [];
+      return Array.isArray(out) ? out.map(String) : [];
+    }
+    return [];
+  } catch {
+    // Content filter is advisory only — never block submission on its absence.
+    return [];
+  }
+}
+
 async function readReferenceBytes(path: string, fetchImpl: FetchLike): Promise<Buffer | null> {
   if (!path) return null;
   if (path.startsWith('http://') || path.startsWith('https://')) {
@@ -216,23 +280,52 @@ export async function submitRunwayUseApiNative(
   const scenes: RunwayJobSceneState[] = [];
   const rawResponses: unknown[] = [];
 
+  const warnings: string[] = [];
+
   for (const task of payload.tasks) {
     const { images } = classifyReferences(task.referencePaths);
-    // Use the first usable image as the keyframe. Runway-via-UseAPI uses
-    // startFrameAssetId for Seedance-2 and firstImage_assetId for Gen-4.x;
-    // we route purely on `model`.
-    let keyframeAssetId: string | null = null;
-    if (images[0]) {
-      const bytes = await readReferenceBytes(images[0], fetchImpl);
-      if (bytes) {
-        keyframeAssetId = await uploadRunwayAsset(
-          apiToken,
-          bytes,
-          `scene-${task.sceneIndex}-frame`,
-          fetchImpl,
+    // Asset:// URIs are ARK Asset-Library avatar references — they are NOT
+    // valid Runway asset ids and cannot be resolved against UseAPI's Runway
+    // proxy, so they are skipped here (with a logged note). Only real
+    // file-path / HTTP-URL images are uploadable as Runway assets.
+    const uploadableImages = images.filter((path) => {
+      if (path.startsWith('Asset://')) {
+        warnings.push(
+          `runway-useapi scene ${task.sceneIndex}: skipped Asset:// reference (ARK avatar, not a Runway asset id): ${path}`,
         );
+        return false;
       }
+      return true;
+    });
+
+    // Fail-fast on the reference budget BEFORE uploading anything.
+    assertRunwayReferenceBudget(task.sceneIndex, uploadableImages, []);
+
+    // Surface Seedance content-moderation warnings (shared across gateways).
+    for (const note of await preValidateRunwayPrompt(task.prompt)) {
+      warnings.push(`runway-useapi scene ${task.sceneIndex}: content-filter: ${note}`);
     }
+
+    // Upload ALL usable images in referencePaths order. Each successful upload
+    // yields a Runway asset id; unresolved/missing paths are skipped.
+    const imageAssetIds: string[] = [];
+    for (let i = 0; i < uploadableImages.length; i += 1) {
+      const bytes = await readReferenceBytes(uploadableImages[i], fetchImpl);
+      if (!bytes) continue;
+      const assetId = await uploadRunwayAsset(
+        apiToken,
+        bytes,
+        `scene-${task.sceneIndex}-ref-${i + 1}`,
+        fetchImpl,
+      );
+      imageAssetIds.push(assetId);
+    }
+
+    // Routing:
+    //  - Seedance-2 + >1 image  → multi-reference (imageAssetId1..N) in submitRunwayJob.
+    //  - Seedance-2 + exactly 1 → single keyframe (startFrameAssetId) — unchanged.
+    //  - Gen-4.x + ≥1 image     → firstImageAssetId i2v (uses first image only).
+    const singleKeyframe = imageAssetIds.length === 1 ? imageAssetIds[0] : null;
 
     const seconds = clampDuration(task.durationSeconds);
     const submit = await submitRunwayJob({
@@ -242,11 +335,13 @@ export async function submitRunwayUseApiNative(
       mode,
       seconds,
       aspectRatio,
-      ...(keyframeAssetId && model === 'seedance-2.0' ? { startFrameAssetId: keyframeAssetId } : {}),
-      ...(keyframeAssetId && model !== 'seedance-2.0' ? { firstImageAssetId: keyframeAssetId } : {}),
+      ...(model === 'seedance-2.0' && imageAssetIds.length > 1 ? { imageAssetIds } : {}),
+      ...(model === 'seedance-2.0' && singleKeyframe ? { startFrameAssetId: singleKeyframe } : {}),
+      ...(model !== 'seedance-2.0' && singleKeyframe ? { firstImageAssetId: singleKeyframe } : {}),
+      ...(model !== 'seedance-2.0' && imageAssetIds.length > 1 ? { firstImageAssetId: imageAssetIds[0] } : {}),
       fetchImpl,
     });
-    rawResponses.push({ sceneIndex: task.sceneIndex, taskId: submit.taskId, keyframeAssetId });
+    rawResponses.push({ sceneIndex: task.sceneIndex, taskId: submit.taskId, imageAssetIds });
 
     scenes.push({
       sceneIndex: task.sceneIndex,
@@ -273,6 +368,7 @@ export async function submitRunwayUseApiNative(
       mode,
       submittedScenes: scenes.map((scene) => ({ sceneIndex: scene.sceneIndex, taskId: scene.taskId })),
       responses: rawResponses,
+      ...(warnings.length > 0 ? { warnings } : {}),
     },
   };
 }
